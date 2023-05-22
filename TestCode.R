@@ -28,8 +28,8 @@ SMFS_PlantInfo<-SMFS_OrganismsLookUp %>% filter(Phylum %in% c("Chlorophyta", "Tr
 
 SMFS_DebrisInfo<-SMFS_OrganismsLookUp %>% filter(OrganismCode %in% c("DET", "MUD", "many", "CLAMSHELLS"))
 
-#make a change
 
+#show color
 SBOTS_FishCodes<-unique(SBOTS2019$code) #Oh dang this only has silversides in it.
 #Will compare fish codes later!
 #So I will pull out silversides from SMFS for the purposes of this joining effort.

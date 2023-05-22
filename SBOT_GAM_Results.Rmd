@@ -1,0 +1,4246 @@
+---
+title: "SBOTS_GAMS"
+author: "OGFL"
+date: "`r Sys.Date()`"
+output: word_document
+---
+############################################################# 
+ 
+           SPECIES =  American Shad                                   
+ 
+#############################################################
+
+--------- American Shad  ( y )-------
+
+Family: Negative Binomial(0.115) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.2777     0.2354  -9.678   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(year) 9.92     11  131.7  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.033   Deviance explained = 10.7%
+-REML = 2621.9  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'      edf k-index p-value
+s(year) 12 9.919821      NA      NA
+
+CONCURVITY
+         para    s(year)
+worst       1 1.00000000
+observed    1 0.01092803
+estimate    1 0.09293199
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year) 0.7744754 0.4836791 1.240104
+
+Rank: 1/1
+          std.dev     lower    upper
+s(year) 0.7744754 0.4836791 1.240104
+
+
+--------- American Shad  ( m )-------
+
+Family: Negative Binomial(0.188) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.85562    0.06444  -44.31   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 9.167     10  516.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.104   Deviance explained = 34.4%
+-REML = 2441.6  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 9.167225 0.4380837       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 8.437476e-30
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev    lower    upper
+s(month) 2.69092 1.656594 4.371049
+
+Rank: 1/1
+         std.dev    lower    upper
+s(month) 2.69092 1.656594 4.371049
+
+
+--------- American Shad  ( ym )-------
+
+Family: Negative Binomial(0.258) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.4131     0.2845     -12   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(month)  9.009     10 1839.8  <2e-16 ***
+s(year)  10.279     11  268.6  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0291   Deviance explained = 47.3%
+-REML = 2333.3  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(month) 10  9.008606 0.5380934       0
+s(year)  12 10.278898        NA      NA
+
+CONCURVITY
+         para   s(month)    s(year)
+worst       1 0.14523540 1.00000000
+observed    1 0.03444784 0.03626953
+estimate    1 0.03227483 0.11211065
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(month) 2.405156 1.4832540 3.900058
+s(year)  0.944244 0.5959963 1.495977
+
+Rank: 2/2
+          std.dev     lower    upper
+s(month) 2.405156 1.4832540 3.900058
+s(year)  0.944244 0.5959963 1.495977
+
+
+--------- American Shad  ( r )-------
+
+Family: Negative Binomial(0.104) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -1.6075     0.1861  -8.638  < 2e-16 ***
+loc_codeA21  -0.4514     0.2728  -1.655   0.0980 .  
+loc_codeALV  -0.1554     0.2467  -0.630   0.5287    
+loc_codeART  -0.3087     0.2587  -1.193   0.2328    
+loc_codeCOY  -0.4924     0.2165  -2.275   0.0229 *  
+loc_codeDMP   0.4117     0.2988   1.378   0.1683    
+loc_codeLSB  -3.0392     0.3933  -7.727  1.1e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  0.0158   Deviance explained = 5.41%
+-REML =   2642  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- American Shad  ( ymr )-------
+
+Family: Negative Binomial(0.288) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.1028     0.3198  -9.701   <2e-16 ***
+loc_codeA21  -0.1953     0.2199  -0.888   0.3744    
+loc_codeALV  -0.3822     0.2026  -1.886   0.0592 .  
+loc_codeART  -0.1227     0.2037  -0.602   0.5469    
+loc_codeCOY  -0.3978     0.1752  -2.271   0.0232 *  
+loc_codeDMP  -0.1056     0.2386  -0.442   0.6582    
+loc_codeLSB  -3.2352     0.3841  -8.422   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(year)  10.33     11  279.8  <2e-16 ***
+s(month)  9.03     10 1622.1  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.000634   Deviance explained =   51%
+-REML = 2296.5  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.333595        NA      NA
+s(month) 10  9.029506 0.5673172       0
+
+CONCURVITY
+         para    s(year)   s(month)
+worst       1 1.00000000 0.10981505
+observed    1 0.06640756 0.03309025
+estimate    1 0.12166093 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev    lower    upper
+s(year)  0.9624889 0.609647 1.519543
+s(month) 2.4186033 1.490000 3.925935
+
+Rank: 2/2
+           std.dev    lower    upper
+s(year)  0.9624889 0.609647 1.519543
+s(month) 2.4186033 1.490000 3.925935
+
+
+--------- American Shad  ( t )-------
+
+Family: Negative Binomial(0.163) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.69213    0.06878  -39.14   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 4.997  6.128  368.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0645   Deviance explained = 27.7%
+-REML = 2066.2  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 4.996859 0.6225787       0
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 1.088716e-26
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(temp) 0.2010181 0.06917147 0.5841757
+
+Rank: 1/1
+          std.dev      lower     upper
+s(temp) 0.2010181 0.06917147 0.5841757
+
+
+--------- American Shad  ( s )-------
+
+Family: Negative Binomial(0.116) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.27057    0.07333  -30.96   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 5.189  6.306  121.7  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.031   Deviance explained =   11%
+-REML = 2160.5  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.189322 0.6051099  0.1825
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 6.678471e-25
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(sal) 0.09934735 0.03749394 0.2632397
+
+Rank: 1/1
+          std.dev      lower     upper
+s(sal) 0.09934735 0.03749394 0.2632397
+
+
+--------- American Shad  ( o )-------
+
+Family: Negative Binomial(0.12) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.34202    0.07017  -33.38   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+        edf Ref.df Chi.sq p-value    
+s(do) 4.849  5.971  96.45  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0264   Deviance explained = 8.26%
+-REML = 2068.9  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 4.849085 0.6152161   0.165
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 4.694998e-28
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev       lower      upper
+s(do) 0.01691935 0.007128775 0.04015619
+
+Rank: 1/1
+         std.dev       lower      upper
+s(do) 0.01691935 0.007128775 0.04015619
+
+
+--------- American Shad  ( ts )-------
+
+Family: Negative Binomial(0.2) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.05315    0.07487  -40.78   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 1.001  1.002  391.3  <2e-16 ***
+s(sal)  3.582  4.461  161.7  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0285   Deviance explained = 37.4%
+-REML = 1980.9  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 1.001052 0.6571705    0.00
+s(sal)   9 3.582131 0.7141133    0.25
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.02653212 0.04307284
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev        lower        upper
+s(temp) 0.000710439 2.950869e-29 1.710424e+22
+s(sal)  0.041744041 1.258259e-02 1.384901e-01
+
+Rank: 2/2
+            std.dev        lower        upper
+s(temp) 0.000710439 2.950869e-29 1.710424e+22
+s(sal)  0.041744041 1.258259e-02 1.384901e-01
+
+
+--------- American Shad  ( to )-------
+
+Family: Negative Binomial(0.173) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.7918     0.0685  -40.76   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 4.197  5.214 238.02  <2e-16 ***
+s(do)   3.463  4.372  10.78  0.0349 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0768   Deviance explained =   26%
+-REML = 1964.3  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 4.196616 0.6378744   0.000
+s(do)    9 3.463484 0.6697405   0.085
+
+CONCURVITY
+                para   s(temp)      s(do)
+worst    9.58638e-23 0.2666759 0.26667589
+observed 9.58638e-23 0.2317372 0.03456626
+estimate 9.58638e-23 0.1740899 0.17036545
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev      lower      upper
+s(temp) 0.139992105 0.04360545 0.44943437
+s(do)   0.008147566 0.00193429 0.03431896
+
+Rank: 2/2
+            std.dev      lower      upper
+s(temp) 0.139992105 0.04360545 0.44943437
+s(do)   0.008147566 0.00193429 0.03431896
+
+
+--------- American Shad  ( so )-------
+
+Family: Negative Binomial(0.152) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.73515    0.07382  -37.05   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+        edf Ref.df Chi.sq p-value    
+s(sal) 5.83  6.961  149.5  <2e-16 ***
+s(do)  5.17  6.310  142.3  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0449   Deviance explained = 21.3%
+-REML = 1990.3  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.829705 0.6722224  0.3075
+s(do)   9 5.169786 0.6736707  0.3575
+
+CONCURVITY
+                 para     s(sal)      s(do)
+worst    1.494787e-22 0.09998036 0.09998036
+observed 1.494787e-22 0.05380322 0.07674444
+estimate 1.494787e-22 0.02356712 0.04988513
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev       lower      upper
+s(sal) 0.12755035 0.055406348 0.29363225
+s(do)  0.01934606 0.008018565 0.04667543
+
+Rank: 2/2
+          std.dev       lower      upper
+s(sal) 0.12755035 0.055406348 0.29363225
+s(do)  0.01934606 0.008018565 0.04667543
+
+
+--------- American Shad  ( tso )-------
+
+Family: Negative Binomial(0.21) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.12518    0.07482  -41.77   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 1.002  1.004 242.48  <2e-16 ***
+s(sal)  4.083  5.059 140.05  <2e-16 ***
+s(do)   3.806  4.776  14.36  0.0127 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0507   Deviance explained = 35.5%
+-REML = 1886.5  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 1.002057 0.6765183   0.000
+s(sal)   9 4.083369 0.7217364   0.330
+s(do)    9 3.805931 0.7093757   0.105
+
+CONCURVITY
+                 para   s(temp)     s(sal)     s(do)
+worst    4.087899e-22 0.3437835 0.17107200 0.3710331
+observed 4.087899e-22 0.2562307 0.10729380 0.2386574
+estimate 4.087899e-22 0.2150850 0.08010749 0.2310115
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower        upper
+s(temp) 0.0009884357 2.659109e-19 3.674183e+12
+s(sal)  0.0542225745 1.810362e-02 1.624033e-01
+s(do)   0.0096662641 2.487070e-03 3.756898e-02
+
+Rank: 3/3
+             std.dev        lower        upper
+s(temp) 0.0009884357 2.659109e-19 3.674183e+12
+s(sal)  0.0542225745 1.810362e-02 1.624033e-01
+s(do)   0.0096662641 2.487070e-03 3.756898e-02
+
+
+--------- American Shad  ( ymrtso )-------
+
+Family: Negative Binomial(0.384) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.59353    0.29171 -12.319  < 2e-16 ***
+loc_codeA21  0.15496    0.23237   0.667   0.5049    
+loc_codeALV -0.52427    0.22092  -2.373   0.0176 *  
+loc_codeART -0.08408    0.24096  -0.349   0.7271    
+loc_codeCOY -0.23412    0.18142  -1.290   0.1969    
+loc_codeDMP  0.02392    0.25107   0.095   0.9241    
+loc_codeLSB -2.07448    0.44907  -4.619 3.85e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df  Chi.sq p-value    
+s(year)  9.970 11.000 194.493 < 2e-16 ***
+s(month) 8.623 10.000 325.092 < 2e-16 ***
+s(temp)  1.903  2.453   0.997 0.61311    
+s(sal)   1.820  2.294  13.802 0.00203 ** 
+s(do)    1.000  1.000   6.696 0.00968 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =   0.18   Deviance explained = 55.3%
+-REML = 1747.5  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'      edf   k-index p-value
+s(year)  12 9.969876        NA      NA
+s(month) 10 8.622788 0.6351226  0.0000
+s(temp)   9 1.903054 0.7738736  0.0225
+s(sal)    9 1.820102 0.8112885  0.5575
+s(do)     9 1.000241 0.7726876  0.0175
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.1990595 0.8353425 0.4466594 0.6563757 0.5351845
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+              std.dev        lower        upper
+s(year)  8.121351e-01 5.071643e-01 1.300493e+00
+s(month) 2.142866e+00 1.265040e+00 3.629827e+00
+s(temp)  3.399643e-02 3.065040e-03 3.770774e-01
+s(sal)   1.079174e-02 1.141044e-03 1.020659e-01
+s(do)    3.140714e-05 1.988267e-46 4.961146e+36
+
+Rank: 5/5
+              std.dev        lower        upper
+s(year)  8.121351e-01 5.071643e-01 1.300493e+00
+s(month) 2.142866e+00 1.265040e+00 3.629827e+00
+s(temp)  3.399643e-02 3.065040e-03 3.770774e-01
+s(sal)   1.079174e-02 1.141044e-03 1.020659e-01
+s(do)    3.140714e-05 1.988267e-46 4.961146e+36
+
+
+--------- American Shad  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.397) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.67105    0.32293 -11.368  < 2e-16 ***
+loc_codeA21  0.22235    0.24674   0.901  0.36752    
+loc_codeALV -0.86866    0.26760  -3.246  0.00117 ** 
+loc_codeART -0.26492    0.27732  -0.955  0.33943    
+loc_codeCOY -0.32269    0.20602  -1.566  0.11728    
+loc_codeDMP  0.09017    0.26141   0.345  0.73013    
+loc_codeLSB -2.22712    0.47803  -4.659 3.18e-06 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df  Chi.sq  p-value    
+s(year)  9.946 11.000 190.562  < 2e-16 ***
+s(month) 8.389 10.000 251.778  < 2e-16 ***
+s(temp)  2.874  3.684   5.883 0.144922    
+s(tideh) 3.054  3.869  22.469 0.000171 ***
+s(sal)   2.236  2.829   5.226 0.180641    
+s(do)    1.000  1.000   8.900 0.002853 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =    0.2   Deviance explained = 58.1%
+-REML = 1569.3  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'      edf   k-index p-value
+s(year)  12 9.946126        NA      NA
+s(month) 10 8.388953 0.6596106  0.0000
+s(temp)   9 2.874344 0.7806043  0.0475
+s(tideh)  9 3.054068 0.7827003  0.0375
+s(sal)    9 2.236382 0.8216655  0.6825
+s(do)     9 1.000089 0.7898859  0.0900
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.2332103 0.8595430 0.6503766 0.4277494 0.6187118 0.5335312
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+              std.dev        lower        upper
+s(year)  8.856992e-01 5.566829e-01 1.409174e+00
+s(month) 1.981479e+00 1.156418e+00 3.395191e+00
+s(temp)  7.087697e-02 1.975037e-02 2.543520e-01
+s(tideh) 1.463456e-01 2.719156e-02 7.876348e-01
+s(sal)   1.673974e-02 3.083639e-03 9.087284e-02
+s(do)    2.014164e-05 1.242807e-76 3.264267e+66
+
+Rank: 6/6
+              std.dev        lower        upper
+s(year)  8.856992e-01 5.566829e-01 1.409174e+00
+s(month) 1.981479e+00 1.156418e+00 3.395191e+00
+s(temp)  7.087697e-02 1.975037e-02 2.543520e-01
+s(tideh) 1.463456e-01 2.719156e-02 7.876348e-01
+s(sal)   1.673974e-02 3.083639e-03 9.087284e-02
+s(do)    2.014164e-05 1.242807e-76 3.264267e+66
+############################################################# 
+ 
+           SPECIES =  California Halibut                                   
+ 
+#############################################################
+
+--------- California Halibut  ( y )-------
+
+Family: Negative Binomial(0.325) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.8049     0.6403  -5.943  2.8e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(year) 10.41     11  754.9  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =   0.23   Deviance explained = 48.8%
+-REML = 2176.2  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'      edf k-index p-value
+s(year) 12 10.41411      NA      NA
+
+CONCURVITY
+         para    s(year)
+worst       1 1.00000000
+observed    1 0.01449617
+estimate    1 0.09293199
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev    lower    upper
+s(year) 2.159045 1.287446 3.620714
+
+Rank: 1/1
+         std.dev    lower    upper
+s(year) 2.159045 1.287446 3.620714
+
+
+--------- California Halibut  ( m )-------
+
+Family: Negative Binomial(0.119) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.35442    0.06322  -37.24   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 4.541     10  88.73  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0515   Deviance explained = 7.75%
+-REML = 2496.2  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 4.541008 0.3144194       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 3.832681e-31
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower    upper
+s(month) 0.4412051 0.1922363 1.012618
+
+Rank: 1/1
+           std.dev     lower    upper
+s(month) 0.4412051 0.1922363 1.012618
+
+
+--------- California Halibut  ( ym )-------
+
+Family: Negative Binomial(0.368) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.8920     0.6121  -6.359 2.03e-10 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(month)  4.125     10  110.9  <2e-16 ***
+s(year)  10.371     11  737.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.285   Deviance explained = 52.3%
+-REML = 2143.4  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(month) 10  4.125284 0.5923577       0
+s(year)  12 10.371410        NA      NA
+
+CONCURVITY
+         para   s(month)   s(year)
+worst       1 0.14523540 1.0000000
+observed    1 0.05332830 0.0343661
+estimate    1 0.03227483 0.1121107
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower     upper
+s(month) 0.3069369 0.1417922 0.6644249
+s(year)  2.0594008 1.2277217 3.4544731
+
+Rank: 2/2
+           std.dev     lower     upper
+s(month) 0.3069369 0.1417922 0.6644249
+s(year)  2.0594008 1.2277217 3.4544731
+
+
+--------- California Halibut  ( r )-------
+
+Family: Negative Binomial(0.114) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.44183    0.18661 -13.085  < 2e-16 ***
+loc_codeA21 -1.52641    0.30622  -4.985 6.21e-07 ***
+loc_codeALV -0.05572    0.24710  -0.226 0.821582    
+loc_codeART  0.34172    0.25492   1.340 0.180087    
+loc_codeCOY  0.53014    0.21415   2.476 0.013303 *  
+loc_codeDMP -0.10514    0.30160  -0.349 0.727379    
+loc_codeLSB  1.02303    0.29572   3.459 0.000541 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  0.0348   Deviance explained = 5.85%
+-REML =   2504  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- California Halibut  ( ymr )-------
+
+Family: Negative Binomial(0.505) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -4.63474    0.66154  -7.006 2.45e-12 ***
+loc_codeA21 -1.42592    0.28366  -5.027 4.98e-07 ***
+loc_codeALV  0.45447    0.20423   2.225   0.0261 *  
+loc_codeART  0.18765    0.20777   0.903   0.3665    
+loc_codeCOY  0.81095    0.17695   4.583 4.59e-06 ***
+loc_codeDMP  0.04982    0.25798   0.193   0.8469    
+loc_codeLSB  2.47217    0.21419  11.542  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(year)  10.353     11  976.3  <2e-16 ***
+s(month)  4.486     10  118.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.194   Deviance explained = 62.5%
+-REML = 2012.7  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(year)  12 10.35259        NA      NA
+s(month) 10  4.48554 0.6388868       0
+
+CONCURVITY
+         para   s(year)   s(month)
+worst       1 1.0000000 0.10981505
+observed    1 0.0342237 0.04515208
+estimate    1 0.1216609 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower     upper
+s(year)  2.1641110 1.3033161 3.5934310
+s(month) 0.3424191 0.1423378 0.8237504
+
+Rank: 2/2
+           std.dev     lower     upper
+s(year)  2.1641110 1.3033161 3.5934310
+s(month) 0.3424191 0.1423378 0.8237504
+
+
+--------- California Halibut  ( t )-------
+
+Family: Negative Binomial(0.11) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.33303    0.07141  -32.67   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.082  8.146  93.67  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0504   Deviance explained = 8.87%
+-REML = 2088.3  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.081744 0.5047285       0
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 3.694011e-25
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(temp) 0.5647835 0.2528963 1.261309
+
+Rank: 1/1
+          std.dev     lower    upper
+s(temp) 0.5647835 0.2528963 1.261309
+
+
+--------- California Halibut  ( s )-------
+
+Family: Negative Binomial(0.096) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.11121    0.07369  -28.65   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+       edf Ref.df Chi.sq p-value  
+s(sal)   1      1  3.442  0.0636 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0237   Deviance explained = 0.346%
+-REML = 2118.5  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 1.000173 0.5455575       0
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 1.181180e-32
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev        lower       upper
+s(sal) 0.0001137609 4.033417e-58 3.20858e+49
+
+Rank: 1/1
+            std.dev        lower       upper
+s(sal) 0.0001137609 4.033417e-58 3.20858e+49
+
+
+--------- California Halibut  ( o )-------
+
+Family: Negative Binomial(0.108) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.27414    0.07191  -31.62   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+      edf Ref.df Chi.sq p-value    
+s(do)   1  1.001  69.06  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0483   Deviance explained = 6.63%
+-REML = 2077.8  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 1.000426 0.5604757       0
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 1.030442e-33
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev        lower        upper
+s(do) 4.520026e-05 1.300044e-55 1.571534e+46
+
+Rank: 1/1
+           std.dev        lower        upper
+s(do) 4.520026e-05 1.300044e-55 1.571534e+46
+
+
+--------- California Halibut  ( ts )-------
+
+Family: Negative Binomial(0.114) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.36535    0.07105  -33.29   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.042  8.117 106.74 < 2e-16 ***
+s(sal)  1.659  2.070  13.85 0.00108 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0556   Deviance explained = 10.3%
+-REML = 2080.5  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.042161 0.5158225  0.0000
+s(sal)   9 1.659322 0.5888812  0.0075
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.03081201 0.04739399
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev        lower     upper
+s(temp) 0.55088442 0.2436051387 1.2457604
+s(sal)  0.00887764 0.0005272748 0.1494714
+
+Rank: 2/2
+           std.dev        lower     upper
+s(temp) 0.55088442 0.2436051387 1.2457604
+s(sal)  0.00887764 0.0005272748 0.1494714
+
+
+--------- California Halibut  ( to )-------
+
+Family: Negative Binomial(0.123) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.48081    0.07146  -34.72   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.754  8.595  83.78  <2e-16 ***
+s(do)   1.001  1.003  54.57  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0598   Deviance explained = 14.5%
+-REML = 2051.2  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.753531 0.5254497   0.000
+s(do)    9 1.001489 0.5980482   0.005
+
+CONCURVITY
+                para    s(temp)     s(do)
+worst    9.58638e-23 0.26667589 0.2666759
+observed 9.58638e-23 0.02547956 0.2356465
+estimate 9.58638e-23 0.17408994 0.1703655
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower        upper
+s(temp) 8.267445e-01 4.238568e-01 1.612588e+00
+s(do)   8.518393e-05 7.036401e-26 1.031252e+17
+
+Rank: 2/2
+             std.dev        lower        upper
+s(temp) 8.267445e-01 4.238568e-01 1.612588e+00
+s(do)   8.518393e-05 7.036401e-26 1.031252e+17
+
+
+--------- California Halibut  ( so )-------
+
+Family: Negative Binomial(0.11) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.28036    0.07176  -31.78   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 2.297  2.891  5.398   0.144    
+s(do)  1.002  1.003 69.775  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0514   Deviance explained = 7.17%
+-REML = 2075.7  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 2.296946 0.5728909  0.0050
+s(do)   9 1.001688 0.5659247  0.0075
+
+CONCURVITY
+                 para     s(sal)      s(do)
+worst    1.494787e-22 0.09998036 0.09998036
+observed 1.494787e-22 0.04311884 0.06791570
+estimate 1.494787e-22 0.02356712 0.04988513
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev        lower        upper
+s(sal) 1.688232e-02 2.055021e-03 1.386909e-01
+s(do)  8.998818e-05 8.159556e-43 9.924405e+33
+
+Rank: 2/2
+            std.dev        lower        upper
+s(sal) 1.688232e-02 2.055021e-03 1.386909e-01
+s(do)  8.998818e-05 8.159556e-43 9.924405e+33
+
+
+--------- California Halibut  ( tso )-------
+
+Family: Negative Binomial(0.125) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.49309    0.07127  -34.98   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.653  8.537  91.25 < 2e-16 ***
+s(sal)  1.006  1.011  10.22 0.00141 ** 
+s(do)   1.001  1.002  47.84 < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0633   Deviance explained = 15.2%
+-REML = 2045.8  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.652933 0.5342833   0.000
+s(sal)   9 1.005756 0.6107046   0.030
+s(do)    9 1.001153 0.6033685   0.005
+
+CONCURVITY
+                 para    s(temp)     s(sal)     s(do)
+worst    4.087899e-22 0.34378346 0.17107200 0.3710331
+observed 4.087899e-22 0.07202045 0.07281580 0.3180979
+estimate 4.087899e-22 0.21508503 0.08010749 0.2310115
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower        upper
+s(temp) 7.734289e-01 3.875459e-01 1.543539e+00
+s(sal)  6.437571e-04 1.060171e-20 3.909023e+13
+s(do)   7.472488e-05 1.114987e-30 5.007959e+21
+
+Rank: 3/3
+             std.dev        lower        upper
+s(temp) 7.734289e-01 3.875459e-01 1.543539e+00
+s(sal)  6.437571e-04 1.060171e-20 3.909023e+13
+s(do)   7.472488e-05 1.114987e-30 5.007959e+21
+
+
+--------- California Halibut  ( ymrtso )-------
+
+Family: Negative Binomial(0.551) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.5550     0.6880  -6.620 3.58e-11 ***
+loc_codeA21  -1.6339     0.3133  -5.215 1.84e-07 ***
+loc_codeALV   0.3664     0.2285   1.604 0.108815    
+loc_codeART   0.4582     0.2532   1.810 0.070305 .  
+loc_codeCOY   0.7554     0.1965   3.843 0.000121 ***
+loc_codeDMP   0.2490     0.2943   0.846 0.397433    
+loc_codeLSB   2.3237     0.2962   7.844 4.37e-15 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.332 11.000 726.837  < 2e-16 ***
+s(month)  3.251 10.000  35.941 4.69e-05 ***
+s(temp)   3.298  4.134  12.327   0.0178 *  
+s(sal)    5.164  6.303  28.758 7.75e-05 ***
+s(do)     2.220  2.845   5.555   0.1088    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.474   Deviance explained = 67.4%
+-REML = 1640.4  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.332402        NA      NA
+s(month) 10  3.251300 0.6630366  0.0000
+s(temp)   9  3.298372 0.8231415  0.2100
+s(sal)    9  5.164138 0.8771610  0.9875
+s(do)     9  2.220029 0.8180540  0.1675
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.2223468 0.3723051 0.4653268 0.3381568 0.5090889
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev        lower      upper
+s(year)  2.23956066 1.3469512963 3.72369214
+s(month) 0.28058325 0.0871007515 0.90386085
+s(temp)  0.08544844 0.0271359091 0.26906913
+s(sal)   0.07104540 0.0204321505 0.24703460
+s(do)    0.00317899 0.0006312139 0.01601039
+
+Rank: 5/5
+            std.dev        lower      upper
+s(year)  2.23956066 1.3469512963 3.72369214
+s(month) 0.28058325 0.0871007515 0.90386085
+s(temp)  0.08544844 0.0271359091 0.26906913
+s(sal)   0.07104540 0.0204321505 0.24703460
+s(do)    0.00317899 0.0006312139 0.01601039
+
+
+--------- California Halibut  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.513) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -4.53177    0.69165  -6.552 5.67e-11 ***
+loc_codeA21 -1.47364    0.34783  -4.237 2.27e-05 ***
+loc_codeALV  0.06597    0.27885   0.237  0.81300    
+loc_codeART  0.19433    0.30039   0.647  0.51768    
+loc_codeCOY  0.67888    0.23022   2.949  0.00319 ** 
+loc_codeDMP  0.18722    0.32640   0.574  0.56625    
+loc_codeLSB  2.28158    0.34736   6.568 5.09e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.305 11.000 523.351  < 2e-16 ***
+s(month)  3.399 10.000  33.566  0.00036 ***
+s(temp)   3.482  4.356  12.361  0.02054 *  
+s(tideh)  2.787  3.520  16.069  0.00191 ** 
+s(sal)    5.063  6.191  31.492 2.17e-05 ***
+s(do)     1.877  2.398   4.205  0.15113    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.571   Deviance explained = 67.9%
+-REML = 1376.6  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.305136        NA      NA
+s(month) 10  3.399064 0.6714770  0.0000
+s(temp)   9  3.482062 0.8284454  0.3075
+s(tideh)  9  2.786881 0.8287743  0.3450
+s(sal)    9  5.062610 0.8845928  0.9950
+s(do)     9  1.877010 0.8304700  0.4025
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.2764876 0.5093193 0.4770056 0.2830136 0.4093193 0.5241528
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower      upper
+s(year)  2.222856402 1.3331337084 3.70637285
+s(month) 0.334311920 0.0938314325 1.19111962
+s(temp)  0.106216200 0.0320239694 0.35229490
+s(tideh) 0.112789212 0.0351739886 0.36167085
+s(sal)   0.075891594 0.0197242194 0.29200314
+s(do)    0.002580628 0.0003239136 0.02055993
+
+Rank: 6/6
+             std.dev        lower      upper
+s(year)  2.222856402 1.3331337084 3.70637285
+s(month) 0.334311920 0.0938314325 1.19111962
+s(temp)  0.106216200 0.0320239694 0.35229490
+s(tideh) 0.112789212 0.0351739886 0.36167085
+s(sal)   0.075891594 0.0197242194 0.29200314
+s(do)    0.002580628 0.0003239136 0.02055993
+############################################################# 
+ 
+           SPECIES =  Longfin Smelt                                   
+ 
+#############################################################
+
+--------- Longfin Smelt  ( y )-------
+
+Family: Negative Binomial(0.059) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.6673     0.3048   -8.75   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(year) 9.833     11  122.5  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0158   Deviance explained = 13.2%
+-REML = 1757.6  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'      edf k-index p-value
+s(year) 12 9.832765      NA      NA
+
+CONCURVITY
+         para      s(year)
+worst       1 1.0000000000
+observed    1 0.0000025553
+estimate    1 0.0929319861
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year) 0.9986555 0.6286133 1.586528
+
+Rank: 1/1
+          std.dev     lower    upper
+s(year) 0.9986555 0.6286133 1.586528
+
+
+--------- Longfin Smelt  ( m )-------
+
+Family: Negative Binomial(0.119) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.3647     0.1765  -24.73   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 7.332     10  376.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0396   Deviance explained = 48.8%
+-REML = 1555.2  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 7.331827 0.4479356       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 4.864725e-30
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev    lower    upper
+s(month) 2.254092 1.242417 4.089554
+
+Rank: 1/1
+          std.dev    lower    upper
+s(month) 2.254092 1.242417 4.089554
+
+
+--------- Longfin Smelt  ( ym )-------
+
+Family: Negative Binomial(0.162) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.8441     0.3693  -13.12   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(month)  7.132     10  897.3  <2e-16 ***
+s(year)  10.133     11  167.0  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0911   Deviance explained = 58.4%
+-REML = 1497.1  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(month) 10  7.131687 0.5232243       0
+s(year)  12 10.133118        NA      NA
+
+CONCURVITY
+         para   s(month)    s(year)
+worst       1 0.14523540 1.00000000
+observed    1 0.06790592 0.02653983
+estimate    1 0.03227483 0.11211065
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(month) 2.029160 1.1198689 3.676761
+s(year)  1.106061 0.7064447 1.731731
+
+Rank: 2/2
+          std.dev     lower    upper
+s(month) 2.029160 1.1198689 3.676761
+s(year)  1.106061 0.7064447 1.731731
+
+
+--------- Longfin Smelt  ( r )-------
+
+Family: Negative Binomial(0.053) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -2.05301    0.25875  -7.934 2.12e-15 ***
+loc_codeA21  0.73501    0.37271   1.972  0.04860 *  
+loc_codeALV -0.64771    0.34582  -1.873  0.06107 .  
+loc_codeART -1.12151    0.36644  -3.061  0.00221 ** 
+loc_codeCOY  0.02994    0.29943   0.100  0.92036    
+loc_codeDMP -1.00995    0.42884  -2.355  0.01852 *  
+loc_codeLSB -2.97316    0.51982  -5.720 1.07e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  0.00921   Deviance explained = 7.86%
+-REML = 1764.4  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- Longfin Smelt  ( ymr )-------
+
+Family: Negative Binomial(0.219) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.4258     0.4137 -10.699  < 2e-16 ***
+loc_codeA21   0.5951     0.2687   2.215   0.0268 *  
+loc_codeALV  -1.3481     0.2846  -4.737 2.17e-06 ***
+loc_codeART  -1.7450     0.3041  -5.738 9.58e-09 ***
+loc_codeCOY  -0.2297     0.2238  -1.026   0.3048    
+loc_codeDMP  -1.6400     0.3643  -4.501 6.76e-06 ***
+loc_codeLSB  -3.5423     0.5107  -6.936 4.02e-12 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(year)  10.277     11  194.5  <2e-16 ***
+s(month)  7.043     10  937.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.111   Deviance explained = 65.4%
+-REML = 1434.6  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.276981        NA      NA
+s(month) 10  7.043061 0.5645141       0
+
+CONCURVITY
+         para    s(year)   s(month)
+worst       1 1.00000000 0.10981505
+observed    1 0.05212288 0.05692346
+estimate    1 0.12166093 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year)  1.142020 0.7327227 1.779951
+s(month) 1.898448 1.0810176 3.333994
+
+Rank: 2/2
+          std.dev     lower    upper
+s(year)  1.142020 0.7327227 1.779951
+s(month) 1.898448 1.0810176 3.333994
+
+
+--------- Longfin Smelt  ( t )-------
+
+Family: Negative Binomial(0.132) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.2668     0.1709  -24.97   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 5.976  6.998    374  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0538   Deviance explained = 51.3%
+-REML =   1365  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 5.975989 0.6204725       0
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 2.356373e-26
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(temp) 0.5501576 0.2546309 1.188675
+
+Rank: 1/1
+          std.dev     lower    upper
+s(temp) 0.5501576 0.2546309 1.188675
+
+
+--------- Longfin Smelt  ( s )-------
+
+Family: Negative Binomial(0.051) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.2443     0.1005  -22.34   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq  p-value    
+s(sal) 5.866   7.03  29.51 0.000118 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.00617   Deviance explained = 4.35%
+-REML = 1583.4  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.865679 0.4803899   0.235
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 1.612401e-24
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev      lower     upper
+s(sal) 0.1786484 0.07326775 0.4355974
+
+Rank: 1/1
+         std.dev      lower     upper
+s(sal) 0.1786484 0.07326775 0.4355974
+
+
+--------- Longfin Smelt  ( o )-------
+
+Family: Negative Binomial(0.068) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.9512     0.1063  -27.76   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+        edf Ref.df Chi.sq p-value    
+s(do) 4.512  5.529  149.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0182   Deviance explained =   19%
+-REML = 1446.4  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 4.512161 0.5279194       0
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 3.056149e-30
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev      lower     upper
+s(do) 0.02557623 0.01211099 0.0540124
+
+Rank: 1/1
+         std.dev      lower     upper
+s(do) 0.02557623 0.01211099 0.0540124
+
+
+--------- Longfin Smelt  ( ts )-------
+
+Family: Negative Binomial(0.143) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.3930     0.1726  -25.46   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq  p-value    
+s(temp) 6.194  7.197 376.08  < 2e-16 ***
+s(sal)  6.194  7.329  32.71 5.31e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0658   Deviance explained = 54.2%
+-REML = 1350.5  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 6.194332 0.6404044     0.0
+s(sal)   9 6.193750 0.7274241     0.1
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.02723139 0.02456389
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(temp) 0.6079474 0.28760366 1.2851019
+s(sal)  0.1882344 0.08424704 0.4205747
+
+Rank: 2/2
+          std.dev      lower     upper
+s(temp) 0.6079474 0.28760366 1.2851019
+s(sal)  0.1882344 0.08424704 0.4205747
+
+
+--------- Longfin Smelt  ( to )-------
+
+Family: Negative Binomial(0.137) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.3957     0.1773  -24.79   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 5.077  6.119 281.41  <2e-16 ***
+s(do)   3.225  4.081  10.03  0.0436 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0607   Deviance explained = 51.7%
+-REML =   1283  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 5.077395 0.6627746       0
+s(do)    9 3.225222 0.6294471       0
+
+CONCURVITY
+                para   s(temp)     s(do)
+worst    9.58638e-23 0.2666759 0.2666759
+observed 9.58638e-23 0.2296112 0.1447066
+estimate 9.58638e-23 0.1740899 0.1703655
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev       lower      upper
+s(temp) 0.36208515 0.134950532 0.97150901
+s(do)   0.01198964 0.003522539 0.04080907
+
+Rank: 2/2
+           std.dev       lower      upper
+s(temp) 0.36208515 0.134950532 0.97150901
+s(do)   0.01198964 0.003522539 0.04080907
+
+
+--------- Longfin Smelt  ( so )-------
+
+Family: Negative Binomial(0.074) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.1705     0.1122  -28.26   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 5.662  6.825  45.51  <2e-16 ***
+s(do)  4.605  5.622 158.18  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.025   Deviance explained = 24.7%
+-REML = 1421.6  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.662389 0.6025899  0.3625
+s(do)   9 4.605331 0.5483191  0.0000
+
+CONCURVITY
+                 para     s(sal)      s(do)
+worst    1.494787e-22 0.09998036 0.09998036
+observed 1.494787e-22 0.06853070 0.07627292
+estimate 1.494787e-22 0.02356712 0.04988513
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(sal) 0.15231313 0.07229440 0.3209002
+s(do)  0.02778148 0.01303994 0.0591882
+
+Rank: 2/2
+          std.dev      lower     upper
+s(sal) 0.15231313 0.07229440 0.3209002
+s(do)  0.02778148 0.01303994 0.0591882
+
+
+--------- Longfin Smelt  ( tso )-------
+
+Family: Negative Binomial(0.149) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.5144     0.1788  -25.25   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df  Chi.sq p-value    
+s(temp) 5.368  6.419 274.964 < 2e-16 ***
+s(sal)  6.568  7.679  28.829 0.00023 ***
+s(do)   2.840  3.626   7.696 0.08704 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0911   Deviance explained = 54.6%
+-REML = 1269.6  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 5.368051 0.6776412  0.0000
+s(sal)   9 6.568415 0.7512076  0.2425
+s(do)    9 2.839524 0.6420528  0.0000
+
+CONCURVITY
+                 para   s(temp)     s(sal)     s(do)
+worst    4.087899e-22 0.3437835 0.17107200 0.3710331
+observed 4.087899e-22 0.2835642 0.04922160 0.2382980
+estimate 4.087899e-22 0.2150850 0.08010749 0.2310115
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev       lower      upper
+s(temp) 0.410060619 0.163454465 1.02872510
+s(sal)  0.219563643 0.094962983 0.50765247
+s(do)   0.009713084 0.002672267 0.03530486
+
+Rank: 3/3
+            std.dev       lower      upper
+s(temp) 0.410060619 0.163454465 1.02872510
+s(sal)  0.219563643 0.094962983 0.50765247
+s(do)   0.009713084 0.002672267 0.03530486
+
+
+--------- Longfin Smelt  ( ymrtso )-------
+
+Family: Negative Binomial(0.267) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.2018     0.4511  -9.314  < 2e-16 ***
+loc_codeA21   0.3012     0.2930   1.028  0.30402    
+loc_codeALV  -1.9352     0.3108  -6.226 4.77e-10 ***
+loc_codeART  -1.4542     0.3725  -3.903 9.49e-05 ***
+loc_codeCOY  -0.6566     0.2384  -2.754  0.00589 ** 
+loc_codeDMP  -2.0351     0.3971  -5.125 2.97e-07 ***
+loc_codeLSB  -4.5276     0.7608  -5.951 2.66e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.232 11.000 149.021  < 2e-16 ***
+s(month)  3.767 10.000  52.867 2.75e-06 ***
+s(temp)   5.293  6.346  56.781  < 2e-16 ***
+s(sal)    4.716  5.800  20.636   0.0019 ** 
+s(do)     1.721  2.209   1.913   0.4304    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0725   Deviance explained = 69.7%
+-REML = 1168.3  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.231806        NA      NA
+s(month) 10  3.767171 0.6150023  0.0000
+s(temp)   9  5.293287 0.7747412  0.0025
+s(sal)    9  4.716033 0.8347935  0.5200
+s(do)     9  1.721293 0.7182182  0.0000
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.1364877 0.7639602 0.8924425 0.5144368 0.5036137
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower      upper
+s(year)  1.265906220 0.7957258722 2.01390782
+s(month) 0.660394900 0.2609330937 1.67139176
+s(temp)  0.391415499 0.1547596758 0.98996132
+s(sal)   0.093443406 0.0350351657 0.24922589
+s(do)    0.003715583 0.0002278668 0.06058609
+
+Rank: 5/5
+             std.dev        lower      upper
+s(year)  1.265906220 0.7957258722 2.01390782
+s(month) 0.660394900 0.2609330937 1.67139176
+s(temp)  0.391415499 0.1547596758 0.98996132
+s(sal)   0.093443406 0.0350351657 0.24922589
+s(do)    0.003715583 0.0002278668 0.06058609
+
+
+--------- Longfin Smelt  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.273) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.3357     0.5204  -8.331  < 2e-16 ***
+loc_codeA21   0.3340     0.3093   1.080 0.280284    
+loc_codeALV  -2.1890     0.3719  -5.887 3.94e-09 ***
+loc_codeART  -1.3739     0.4083  -3.365 0.000766 ***
+loc_codeCOY  -0.7715     0.2672  -2.887 0.003884 ** 
+loc_codeDMP  -1.9001     0.4085  -4.652 3.29e-06 ***
+loc_codeLSB  -4.6194     0.7738  -5.970 2.38e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.200 11.000 126.498  < 2e-16 ***
+s(month)  4.107 10.000  55.045 3.58e-06 ***
+s(temp)   5.000  6.055  50.260  < 2e-16 ***
+s(tideh)  2.094  2.662   5.805  0.09003 .  
+s(sal)    5.120  6.247  20.570  0.00258 ** 
+s(do)     1.505  1.885   2.149  0.27208    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.012   Deviance explained = 71.3%
+-REML = 1093.6  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.199574        NA      NA
+s(month) 10  4.107420 0.6469575    0.00
+s(temp)   9  5.000037 0.7852126    0.00
+s(tideh)  9  2.094485 0.8212025    0.17
+s(sal)    9  5.120435 0.8281101    0.24
+s(do)     9  1.504592 0.7283705    0.00
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.1850352 0.7407014 0.8953718 0.4365687 0.4098121 0.5296546
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower     upper
+s(year)  1.480623834 8.717846e-01 2.5146659
+s(month) 0.768068365 3.033226e-01 1.9448895
+s(temp)  0.351450580 1.269154e-01 0.9732272
+s(tideh) 0.109614648 1.683163e-02 0.7138565
+s(sal)   0.115556861 4.885773e-02 0.2733117
+s(do)    0.002989741 4.180337e-05 0.2138237
+
+Rank: 6/6
+             std.dev        lower     upper
+s(year)  1.480623834 8.717846e-01 2.5146659
+s(month) 0.768068365 3.033226e-01 1.9448895
+s(temp)  0.351450580 1.269154e-01 0.9732272
+s(tideh) 0.109614648 1.683163e-02 0.7138565
+s(sal)   0.115556861 4.885773e-02 0.2733117
+s(do)    0.002989741 4.180337e-05 0.2138237
+############################################################# 
+ 
+           SPECIES =  Pacific Staghorn Sculpin                                   
+ 
+#############################################################
+
+--------- Pacific Staghorn Sculpin  ( y )-------
+
+Family: Negative Binomial(0.193) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept)  -0.3144     0.3753  -0.838    0.402
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(year) 10.78     11  706.6  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0485   Deviance explained = 24.1%
+-REML = 5560.1  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'      edf k-index p-value
+s(year) 12 10.77902      NA      NA
+
+CONCURVITY
+         para    s(year)
+worst       1 1.00000000
+observed    1 0.01398365
+estimate    1 0.09293199
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev     lower    upper
+s(year) 1.287054 0.8412075 1.969203
+
+Rank: 1/1
+         std.dev     lower    upper
+s(year) 1.287054 0.8412075 1.969203
+
+
+--------- Pacific Staghorn Sculpin  ( m )-------
+
+Family: Negative Binomial(0.164) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)   
+(Intercept) -0.15072    0.04996  -3.017  0.00255 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 8.801     10  282.5  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0358   Deviance explained = 13.4%
+-REML = 5690.7  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 8.801173 0.3048462       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 1.060363e-30
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev    lower    upper
+s(month) 1.704586 1.005154 2.890713
+
+Rank: 1/1
+          std.dev    lower    upper
+s(month) 1.704586 1.005154 2.890713
+
+
+--------- Pacific Staghorn Sculpin  ( ym )-------
+
+Family: Negative Binomial(0.253) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept)  -0.6422     0.4014    -1.6     0.11
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(month)  8.337     10 1964.7  <2e-16 ***
+s(year)  10.842     11  866.9  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0243   Deviance explained =   39%
+-REML = 5358.7  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(month) 10  8.337039 0.4730846       0
+s(year)  12 10.841709        NA      NA
+
+CONCURVITY
+         para   s(month)    s(year)
+worst       1 0.14523540 1.00000000
+observed    1 0.02782157 0.06494479
+estimate    1 0.03227483 0.11211065
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(month) 1.153659 0.7070730 1.882306
+s(year)  1.380624 0.9029484 2.110999
+
+Rank: 2/2
+          std.dev     lower    upper
+s(month) 1.153659 0.7070730 1.882306
+s(year)  1.380624 0.9029484 2.110999
+
+
+--------- Pacific Staghorn Sculpin  ( r )-------
+
+Family: Negative Binomial(0.153) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.29019    0.14914   1.946   0.0517 .  
+loc_codeA21  0.06290    0.21645   0.291   0.7713    
+loc_codeALV  0.83523    0.19693   4.241 2.22e-05 ***
+loc_codeART -1.25319    0.20840  -6.013 1.82e-09 ***
+loc_codeCOY -0.09511    0.17272  -0.551   0.5818    
+loc_codeDMP -1.09190    0.24362  -4.482 7.40e-06 ***
+loc_codeLSB -2.18778    0.25258  -8.662  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  0.00268   Deviance explained = 8.45%
+-REML = 5734.6  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- Pacific Staghorn Sculpin  ( ymr )-------
+
+Family: Negative Binomial(0.3) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -0.9291     0.3936  -2.360 0.018267 *  
+loc_codeA21   0.4528     0.1645   2.752 0.005921 ** 
+loc_codeALV   1.1756     0.1498   7.848 4.24e-15 ***
+loc_codeART  -1.2140     0.1753  -6.925 4.36e-12 ***
+loc_codeCOY   0.2009     0.1327   1.514 0.129906    
+loc_codeDMP  -0.6766     0.2036  -3.323 0.000891 ***
+loc_codeLSB  -1.7843     0.2373  -7.518 5.55e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(year)  10.837     11  857.3  <2e-16 ***
+s(month)  8.436     10 2164.9  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.176   Deviance explained = 47.8%
+-REML = 5213.3  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.837216        NA      NA
+s(month) 10  8.435907 0.5015861       0
+
+CONCURVITY
+         para   s(year)   s(month)
+worst       1 1.0000000 0.10981505
+observed    1 0.1095016 0.02818071
+estimate    1 0.1216609 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year)  1.301969 0.8517751 1.990106
+s(month) 1.153456 0.7104667 1.872657
+
+Rank: 2/2
+          std.dev     lower    upper
+s(year)  1.301969 0.8517751 1.990106
+s(month) 1.153456 0.7104667 1.872657
+
+
+--------- Pacific Staghorn Sculpin  ( t )-------
+
+Family: Negative Binomial(0.155) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.21725    0.05562   3.906 9.38e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.803  8.637  138.7  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00293   Deviance explained =  6.2%
+-REML = 5121.2  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.802835 0.5032052       0
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 1.718010e-24
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(temp) 0.6160003 0.2610826 1.453396
+
+Rank: 1/1
+          std.dev     lower    upper
+s(temp) 0.6160003 0.2610826 1.453396
+
+
+--------- Pacific Staghorn Sculpin  ( s )-------
+
+Family: Negative Binomial(0.159) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)   
+(Intercept)  0.14887    0.05533    2.69  0.00714 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 5.873  7.042  209.7  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.00717   Deviance explained = 8.28%
+-REML = 5078.2  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.872956 0.5678841   0.005
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 5.755310e-25
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(sal) 0.09540549 0.03155925 0.2884165
+
+Rank: 1/1
+          std.dev      lower     upper
+s(sal) 0.09540549 0.03155925 0.2884165
+
+
+--------- Pacific Staghorn Sculpin  ( o )-------
+
+Family: Negative Binomial(0.149) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.33166    0.05687   5.832 5.47e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+       edf Ref.df Chi.sq p-value    
+s(do) 8.07  8.765   64.3  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.124   Deviance explained = 2.84%
+-REML = 5125.2  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 8.069969 0.5676448   0.095
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 5.024362e-25
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev      lower    upper
+s(do) 0.06151009 0.03236131 0.116914
+
+Rank: 1/1
+         std.dev      lower    upper
+s(do) 0.06151009 0.03236131 0.116914
+
+
+--------- Pacific Staghorn Sculpin  ( ts )-------
+
+Family: Negative Binomial(0.17) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept) -0.01998    0.05403   -0.37    0.712
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.005  8.095  124.4  <2e-16 ***
+s(sal)  6.895  7.986  204.1  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.016   Deviance explained = 13.7%
+-REML = 5027.4  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.004744 0.5468165   0.000
+s(sal)   9 6.894842 0.5817822   0.005
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.01788195 0.02764754
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(temp) 0.3974850 0.14761257 1.0703311
+s(sal)  0.1474488 0.05582597 0.3894449
+
+Rank: 2/2
+          std.dev      lower     upper
+s(temp) 0.3974850 0.14761257 1.0703311
+s(sal)  0.1474488 0.05582597 0.3894449
+
+
+--------- Pacific Staghorn Sculpin  ( to )-------
+
+Family: Negative Binomial(0.164) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)  
+(Intercept)  0.09406    0.05477   1.717   0.0859 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.332  8.336  163.8  <2e-16 ***
+s(do)   8.225  8.831  101.1  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -28.8   Deviance explained = 10.5%
+-REML = 5054.5  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.332027 0.5317931   0.000
+s(do)    9 8.224997 0.5847423   0.025
+
+CONCURVITY
+                para   s(temp)      s(do)
+worst    9.58638e-23 0.2666759 0.26667589
+observed 9.58638e-23 0.1129483 0.03548828
+estimate 9.58638e-23 0.1740899 0.17036545
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower     upper
+s(temp) 0.48116336 0.1353262 1.7108154
+s(do)   0.06831087 0.0372639 0.1252251
+
+Rank: 2/2
+           std.dev     lower     upper
+s(temp) 0.48116336 0.1353262 1.7108154
+s(do)   0.06831087 0.0372639 0.1252251
+
+
+--------- Pacific Staghorn Sculpin  ( so )-------
+
+Family: Negative Binomial(0.164) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept)  0.08873    0.05497   1.614    0.107
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 5.428  6.582 205.88  <2e-16 ***
+s(do)  7.958  8.711  53.94  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0196   Deviance explained = 10.6%
+-REML =   5029  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.428190 0.5791332  0.0025
+s(do)   9 7.958363 0.5973305  0.0975
+
+CONCURVITY
+                 para     s(sal)       s(do)
+worst    1.494787e-22 0.09998036 0.099980359
+observed 1.494787e-22 0.06146999 0.005960321
+estimate 1.494787e-22 0.02356712 0.049885134
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(sal) 0.07847665 0.02497627 0.2465774
+s(do)  0.05456771 0.02764180 0.1077222
+
+Rank: 2/2
+          std.dev      lower     upper
+s(sal) 0.07847665 0.02497627 0.2465774
+s(do)  0.05456771 0.02764180 0.1077222
+
+
+--------- Pacific Staghorn Sculpin  ( tso )-------
+
+Family: Negative Binomial(0.177) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)  
+(Intercept) -0.10131    0.05356  -1.892   0.0585 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 6.743  7.878  150.1  <2e-16 ***
+s(sal)  5.617  6.782  159.2  <2e-16 ***
+s(do)   8.176  8.811   81.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -15.5   Deviance explained = 16.7%
+-REML = 4969.7  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 6.742579 0.5667223    0.00
+s(sal)   9 5.616772 0.5975883    0.01
+s(do)    9 8.175720 0.6120570    0.07
+
+CONCURVITY
+                 para   s(temp)     s(sal)      s(do)
+worst    4.087899e-22 0.3437835 0.17107200 0.37103312
+observed 4.087899e-22 0.1188331 0.15326515 0.03622384
+estimate 4.087899e-22 0.2150850 0.08010749 0.23101148
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev      lower     upper
+s(temp) 0.35697279 0.10522124 1.2110632
+s(sal)  0.08402093 0.02739738 0.2576713
+s(do)   0.06337650 0.03244107 0.1238116
+
+Rank: 3/3
+           std.dev      lower     upper
+s(temp) 0.35697279 0.10522124 1.2110632
+s(sal)  0.08402093 0.02739738 0.2576713
+s(do)   0.06337650 0.03244107 0.1238116
+
+
+--------- Pacific Staghorn Sculpin  ( ymrtso )-------
+
+Family: Negative Binomial(0.343) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -1.2553     0.4481  -2.801  0.00509 ** 
+loc_codeA21   0.3043     0.1761   1.728  0.08404 .  
+loc_codeALV   1.1760     0.1599   7.356 1.90e-13 ***
+loc_codeART  -1.0187     0.2068  -4.927 8.37e-07 ***
+loc_codeCOY   0.2565     0.1391   1.844  0.06523 .  
+loc_codeDMP  -0.4880     0.2200  -2.219  0.02651 *  
+loc_codeLSB  -0.4523     0.2974  -1.521  0.12835    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(year)  10.796 11.000 795.82  <2e-16 ***
+s(month)  8.006 10.000 521.25  <2e-16 ***
+s(temp)   2.994  3.804  10.22   0.035 *  
+s(sal)    4.756  5.860  75.49  <2e-16 ***
+s(do)     6.340  7.505  44.74  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.149   Deviance explained = 52.6%
+-REML = 4521.9  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.796064        NA      NA
+s(month) 10  8.005706 0.5434108  0.0000
+s(temp)   9  2.993648 0.7386022  0.0950
+s(sal)    9  4.755715 0.7680310  0.7425
+s(do)     9  6.340181 0.7907667  0.9825
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.2449267 0.4497742 0.7544144 0.5334497 0.1491295
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev       lower      upper
+s(year)  1.48662946 0.967222287 2.28496302
+s(month) 1.05300452 0.631400217 1.75612630
+s(temp)  0.05540265 0.013427134 0.22860077
+s(sal)   0.04671922 0.019544523 0.11167761
+s(do)    0.01896602 0.007955543 0.04521502
+
+Rank: 5/5
+            std.dev       lower      upper
+s(year)  1.48662946 0.967222287 2.28496302
+s(month) 1.05300452 0.631400217 1.75612630
+s(temp)  0.05540265 0.013427134 0.22860077
+s(sal)   0.04671922 0.019544523 0.11167761
+s(do)    0.01896602 0.007955543 0.04521502
+
+
+--------- Pacific Staghorn Sculpin  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.351) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -0.99260    0.44048  -2.253 0.024230 *  
+loc_codeA21  0.26460    0.17956   1.474 0.140584    
+loc_codeALV  0.65935    0.18352   3.593 0.000327 ***
+loc_codeART -1.28410    0.22011  -5.834 5.42e-09 ***
+loc_codeCOY -0.01025    0.14957  -0.069 0.945374    
+loc_codeDMP -0.56988    0.22318  -2.553 0.010666 *  
+loc_codeLSB -0.95546    0.31856  -2.999 0.002706 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.767 11.000 753.332  < 2e-16 ***
+s(month)  8.092 10.000 569.111  < 2e-16 ***
+s(temp)   2.586  3.299   6.709    0.105    
+s(tideh)  1.861  2.367  33.066 1.93e-06 ***
+s(sal)    5.119  6.262  66.005  < 2e-16 ***
+s(do)     6.462  7.617  49.922  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0617   Deviance explained = 53.1%
+-REML = 4368.2  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.766567        NA      NA
+s(month) 10  8.091806 0.5478079  0.0000
+s(temp)   9  2.586243 0.7437793  0.1550
+s(tideh)  9  1.861492 0.7450102  0.1225
+s(sal)    9  5.119035 0.7768235  0.8025
+s(do)     9  6.462428 0.7966300  0.9875
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.2444025 0.5421069 0.7836761 0.5126030 0.4320436 0.1579297
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev       lower      upper
+s(year)  1.44722503 0.940872730 2.22608246
+s(month) 1.11154884 0.670734215 1.84207215
+s(temp)  0.04373564 0.010118116 0.18904770
+s(tideh) 0.04372072 0.003822936 0.50000878
+s(sal)   0.05576186 0.024317734 0.12786490
+s(do)    0.02056237 0.008870204 0.04766646
+
+Rank: 6/6
+            std.dev       lower      upper
+s(year)  1.44722503 0.940872730 2.22608246
+s(month) 1.11154884 0.670734215 1.84207215
+s(temp)  0.04373564 0.010118116 0.18904770
+s(tideh) 0.04372072 0.003822936 0.50000878
+s(sal)   0.05576186 0.024317734 0.12786490
+s(do)    0.02056237 0.008870204 0.04766646
+############################################################# 
+ 
+           SPECIES =  Striped Bass                                   
+ 
+#############################################################
+
+--------- Striped Bass  ( y )-------
+
+Family: Negative Binomial(0.177) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.1642     0.2614   -12.1   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(year) 10.05     11    135  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0291   Deviance explained = 11.6%
+-REML =   1978  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'      edf k-index p-value
+s(year) 12 10.05362      NA      NA
+
+CONCURVITY
+         para    s(year)
+worst       1 1.00000000
+observed    1 0.02454115
+estimate    1 0.09293199
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year) 0.8661911 0.5243641 1.430851
+
+Rank: 1/1
+          std.dev     lower    upper
+s(year) 0.8661911 0.5243641 1.430851
+
+
+--------- Striped Bass  ( m )-------
+
+Family: Negative Binomial(0.213) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.18593    0.05944   -53.6   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 7.041     10    250  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0461   Deviance explained = 18.8%
+-REML = 1922.9  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 7.040651 0.5718948       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 3.022179e-30
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower    upper
+s(month) 0.9421063 0.4647779 1.909653
+
+Rank: 1/1
+           std.dev     lower    upper
+s(month) 0.9421063 0.4647779 1.909653
+
+
+--------- Striped Bass  ( ym )-------
+
+Family: Negative Binomial(0.268) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -3.512      0.240  -14.63   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 6.609     10  341.9  <2e-16 ***
+s(year)  9.909     11  140.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0786   Deviance explained = 28.6%
+-REML = 1865.2  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 6.609367 0.6314175       0
+s(year)  12 9.908586        NA      NA
+
+CONCURVITY
+         para   s(month)    s(year)
+worst       1 0.14523540 1.00000000
+observed    1 0.01026948 0.03812485
+estimate    1 0.03227483 0.11211065
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower    upper
+s(month) 0.7998196 0.3695340 1.731130
+s(year)  0.7867656 0.4815731 1.285371
+
+Rank: 2/2
+           std.dev     lower    upper
+s(month) 0.7998196 0.3695340 1.731130
+s(year)  0.7867656 0.4815731 1.285371
+
+
+--------- Striped Bass  ( r )-------
+
+Family: Negative Binomial(0.179) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.1017     0.1707 -18.169  < 2e-16 ***
+loc_codeA21  -0.5245     0.2621  -2.001   0.0454 *  
+loc_codeALV  -0.5209     0.2361  -2.207   0.0273 *  
+loc_codeART   1.3761     0.2204   6.242 4.31e-10 ***
+loc_codeCOY   0.3526     0.1946   1.812   0.0700 .  
+loc_codeDMP  -0.1954     0.2776  -0.704   0.4815    
+loc_codeLSB  -0.7661     0.3019  -2.538   0.0112 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  0.0412   Deviance explained = 10.6%
+-REML = 1969.6  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- Striped Bass  ( ymr )-------
+
+Family: Negative Binomial(0.365) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.76400    0.26082 -14.431  < 2e-16 ***
+loc_codeA21 -0.73190    0.25324  -2.890  0.00385 ** 
+loc_codeALV -0.64152    0.22898  -2.802  0.00508 ** 
+loc_codeART  1.39932    0.19646   7.123 1.06e-12 ***
+loc_codeCOY  0.27142    0.17979   1.510  0.13113    
+loc_codeDMP -0.09893    0.25950  -0.381  0.70304    
+loc_codeLSB -0.55958    0.28150  -1.988  0.04683 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(year)  9.709     11  123.2  <2e-16 ***
+s(month) 7.001     10  351.4  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0984   Deviance explained = 38.2%
+-REML = 1786.6  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(year)  12 9.708567        NA      NA
+s(month) 10 7.000878 0.6990268       0
+
+CONCURVITY
+         para    s(year)   s(month)
+worst       1 1.00000000 0.10981505
+observed    1 0.03490007 0.01450357
+estimate    1 0.12166093 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower    upper
+s(year)  0.6933873 0.4244888 1.132623
+s(month) 0.8833594 0.3902892 1.999347
+
+Rank: 2/2
+           std.dev     lower    upper
+s(year)  0.6933873 0.4244888 1.132623
+s(month) 0.8833594 0.3902892 1.999347
+
+
+--------- Striped Bass  ( t )-------
+
+Family: Negative Binomial(0.194) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.19894    0.07383  -43.33   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.836   8.59  112.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0337   Deviance explained = 13.2%
+-REML = 1580.8  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.835904 0.6953174  0.0825
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 8.438898e-26
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(temp) 0.9347938 0.4643856 1.881711
+
+Rank: 1/1
+          std.dev     lower    upper
+s(temp) 0.9347938 0.4643856 1.881711
+
+
+--------- Striped Bass  ( s )-------
+
+Family: Negative Binomial(0.195) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.16701    0.06754  -46.89   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 2.576  3.235  132.6  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.028   Deviance explained = 13.1%
+-REML = 1571.3  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 2.576305 0.6661751  0.0025
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 4.733741e-29
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev       lower      upper
+s(sal) 0.02067003 0.004685629 0.09118314
+
+Rank: 1/1
+          std.dev       lower      upper
+s(sal) 0.02067003 0.004685629 0.09118314
+
+
+--------- Striped Bass  ( o )-------
+
+Family: Negative Binomial(0.154) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -2.8977     0.0654  -44.31   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+        edf Ref.df Chi.sq p-value   
+s(do) 2.451  3.137  13.61 0.00421 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0108   Deviance explained = 1.65%
+-REML = 1623.4  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 2.451165 0.6739704  0.4575
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 4.193104e-27
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev        lower      upper
+s(do) 0.00393009 0.0007922172 0.01949669
+
+Rank: 1/1
+         std.dev        lower      upper
+s(do) 0.00393009 0.0007922172 0.01949669
+
+
+--------- Striped Bass  ( ts )-------
+
+Family: Negative Binomial(0.25) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.45135    0.07719  -44.71   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.900  8.610  101.5  <2e-16 ***
+s(sal)  2.254  2.833  113.3  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0605   Deviance explained = 23.3%
+-REML = 1522.1  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.899588 0.7204837  0.0300
+s(sal)   9 2.253655 0.7123943  0.0025
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.02630715 0.04721931
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev      lower      upper
+s(temp) 0.97173515 0.47547051 1.98596798
+s(sal)  0.01569394 0.00396665 0.06209267
+
+Rank: 2/2
+           std.dev      lower      upper
+s(temp) 0.97173515 0.47547051 1.98596798
+s(sal)  0.01569394 0.00396665 0.06209267
+
+
+--------- Striped Bass  ( to )-------
+
+Family: Negative Binomial(0.205) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.23724    0.07411  -43.68   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq  p-value    
+s(temp) 7.696  8.498 115.72  < 2e-16 ***
+s(do)   3.778  4.747  22.27 0.000359 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0448   Deviance explained = 15.2%
+-REML = 1564.2  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.695895 0.7074481  0.1025
+s(do)    9 3.778157 0.7288387  0.5150
+
+CONCURVITY
+                para    s(temp)     s(do)
+worst    9.58638e-23 0.26667589 0.2666759
+observed 9.58638e-23 0.08231885 0.1724952
+estimate 9.58638e-23 0.17408994 0.1703655
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev       lower      upper
+s(temp) 0.857289046 0.406833841 1.80649797
+s(do)   0.008419318 0.001485595 0.04771485
+
+Rank: 2/2
+            std.dev       lower      upper
+s(temp) 0.857289046 0.406833841 1.80649797
+s(do)   0.008419318 0.001485595 0.04771485
+
+
+--------- Striped Bass  ( so )-------
+
+Family: Negative Binomial(0.204) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.19733    0.06813  -46.93   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 2.910  3.653 131.65 < 2e-16 ***
+s(do)  2.444  3.122  12.71 0.00651 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0368   Deviance explained = 14.7%
+-REML = 1555.4  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 2.909920 0.6763492  0.0000
+s(do)   9 2.443961 0.7065144  0.1725
+
+CONCURVITY
+                 para     s(sal)      s(do)
+worst    1.494787e-22 0.09998036 0.09998036
+observed 1.494787e-22 0.02637471 0.05338430
+estimate 1.494787e-22 0.02356712 0.04988513
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev        lower      upper
+s(sal) 0.026450803 0.0071697282 0.09758319
+s(do)  0.003764797 0.0005186883 0.02732603
+
+Rank: 2/2
+           std.dev        lower      upper
+s(sal) 0.026450803 0.0071697282 0.09758319
+s(do)  0.003764797 0.0005186883 0.02732603
+
+
+--------- Striped Bass  ( tso )-------
+
+Family: Negative Binomial(0.27) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -3.50157    0.07776  -45.03   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq  p-value    
+s(temp) 7.774  8.532 106.91  < 2e-16 ***
+s(sal)  2.908  3.653 116.11  < 2e-16 ***
+s(do)   4.553  5.643  29.26 4.07e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0844   Deviance explained =   26%
+-REML = 1503.1  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.774058 0.7358501  0.0375
+s(sal)   9 2.907696 0.7209255  0.0000
+s(do)    9 4.552757 0.7570503  0.2600
+
+CONCURVITY
+                 para   s(temp)     s(sal)     s(do)
+worst    4.087899e-22 0.3437835 0.17107200 0.3710331
+observed 4.087899e-22 0.1019181 0.09927232 0.2428847
+estimate 4.087899e-22 0.2150850 0.08010749 0.2310115
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev       lower      upper
+s(temp) 0.88803493 0.414377759 1.90310897
+s(sal)  0.02597761 0.008613185 0.07834920
+s(do)   0.01202706 0.003449239 0.04193682
+
+Rank: 3/3
+           std.dev       lower      upper
+s(temp) 0.88803493 0.414377759 1.90310897
+s(sal)  0.02597761 0.008613185 0.07834920
+s(do)   0.01202706 0.003449239 0.04193682
+
+
+--------- Striped Bass  ( ymrtso )-------
+
+Family: Negative Binomial(0.525) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -3.9260     0.3294 -11.917  < 2e-16 ***
+loc_codeA21  -0.7813     0.2783  -2.807 0.005003 ** 
+loc_codeALV  -0.9109     0.2530  -3.600 0.000319 ***
+loc_codeART   0.1668     0.2359   0.707 0.479612    
+loc_codeCOY   0.2853     0.1850   1.543 0.122938    
+loc_codeDMP  -0.1486     0.2722  -0.546 0.585135    
+loc_codeLSB   0.8235     0.3634   2.266 0.023458 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq  p-value    
+s(year)  10.008 11.000 137.41  < 2e-16 ***
+s(month)  5.893 10.000 103.22  < 2e-16 ***
+s(temp)   7.494  8.354  36.94 2.23e-05 ***
+s(sal)    3.463  4.334  80.68  < 2e-16 ***
+s(do)     3.125  3.961  18.42 0.000913 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =   0.19   Deviance explained = 46.7%
+-REML = 1377.8  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.007920        NA      NA
+s(month) 10  5.893384 0.7420084  0.0000
+s(temp)   9  7.494497 0.8309169  0.3225
+s(sal)    9  3.462517 0.8138634  0.1025
+s(do)     9  3.125345 0.8330806  0.4000
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.3278801 0.4255632 0.4609613 0.6500727 0.5541060
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev       lower      upper
+s(year)  0.949664460 0.588184979 1.53329755
+s(month) 0.706324487 0.326519593 1.52791530
+s(temp)  0.698555623 0.298441088 1.63509644
+s(sal)   0.035153227 0.010265833 0.12037497
+s(do)    0.005352923 0.001046611 0.02737769
+
+Rank: 5/5
+             std.dev       lower      upper
+s(year)  0.949664460 0.588184979 1.53329755
+s(month) 0.706324487 0.326519593 1.52791530
+s(temp)  0.698555623 0.298441088 1.63509644
+s(sal)   0.035153227 0.010265833 0.12037497
+s(do)    0.005352923 0.001046611 0.02737769
+
+
+--------- Striped Bass  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.572) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -4.0087     0.3550 -11.291  < 2e-16 ***
+loc_codeA21  -0.8223     0.2918  -2.818 0.004836 ** 
+loc_codeALV  -0.9665     0.2919  -3.311 0.000928 ***
+loc_codeART   0.1867     0.2605   0.717 0.473487    
+loc_codeCOY   0.2522     0.2006   1.258 0.208526    
+loc_codeDMP  -0.1778     0.2745  -0.648 0.517074    
+loc_codeLSB   1.2564     0.3920   3.205 0.001352 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq p-value    
+s(year)  10.067 11.000 144.213  <2e-16 ***
+s(month)  6.335 10.000 104.468  <2e-16 ***
+s(temp)   6.495  7.589  14.703  0.0322 *  
+s(tideh)  2.612  3.337   7.561  0.0709 .  
+s(sal)    3.195  4.013  87.361  <2e-16 ***
+s(do)     3.710  4.658  13.559  0.0175 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.179   Deviance explained = 49.9%
+-REML = 1258.9  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.067136        NA      NA
+s(month) 10  6.335108 0.7799700  0.0000
+s(temp)   9  6.495330 0.8284910  0.2300
+s(tideh)  9  2.611724 0.8400204  0.4600
+s(sal)    9  3.194842 0.8270629  0.1825
+s(do)     9  3.709671 0.8459945  0.5825
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.3910963 0.5273250 0.5129923 0.4274843 0.7261152 0.5059585
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+            std.dev       lower      upper
+s(year)  1.02325005 0.637410452 1.64264746
+s(month) 0.86569512 0.432680724 1.73205785
+s(temp)  0.42135659 0.094805514 1.87269039
+s(tideh) 0.10776162 0.033154652 0.35025449
+s(sal)   0.03090767 0.009088828 0.10510531
+s(do)    0.00778893 0.002370957 0.02558774
+
+Rank: 6/6
+            std.dev       lower      upper
+s(year)  1.02325005 0.637410452 1.64264746
+s(month) 0.86569512 0.432680724 1.73205785
+s(temp)  0.42135659 0.094805514 1.87269039
+s(tideh) 0.10776162 0.033154652 0.35025449
+s(sal)   0.03090767 0.009088828 0.10510531
+s(do)    0.00778893 0.002370957 0.02558774
+############################################################# 
+ 
+           SPECIES =  Threespine Stickleback                                   
+ 
+#############################################################
+
+--------- Threespine Stickleback  ( y )-------
+
+Family: Negative Binomial(0.104) 
+Link function: log 
+
+Formula:
+count ~ s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept)  -1.0064     0.6298  -1.598     0.11
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(year) 10.83     11  728.2  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0171   Deviance explained = 33.2%
+-REML = 3725.7  Scale est. = 1         n = 2519
+
+K.CHECK
+        k'    edf k-index p-value
+s(year) 12 10.835      NA      NA
+
+CONCURVITY
+         para    s(year)
+worst       1 1.00000000
+observed    1 0.01917866
+estimate    1 0.09293199
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev    lower    upper
+s(year) 2.165144 1.413261 3.317045
+
+Rank: 1/1
+         std.dev    lower    upper
+s(year) 2.165144 1.413261 3.317045
+
+
+--------- Threespine Stickleback  ( m )-------
+
+Family: Negative Binomial(0.072) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)   
+(Intercept) -0.19892    0.07513  -2.648  0.00811 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df Chi.sq p-value    
+s(month) 5.952     10    160  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00347   Deviance explained = 8.98%
+-REML = 3924.6  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'      edf   k-index p-value
+s(month) 10 5.952424 0.2588192       0
+
+CONCURVITY
+                 para     s(month)
+worst    2.617553e-29 2.515680e-29
+observed 2.617553e-29 1.534272e-30
+estimate 2.617553e-29 2.373896e-30
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev    lower    upper
+s(month) 0.8728925 0.341722 2.229711
+
+Rank: 1/1
+           std.dev    lower    upper
+s(month) 0.8728925 0.341722 2.229711
+
+
+--------- Threespine Stickleback  ( ym )-------
+
+Family: Negative Binomial(0.124) 
+Link function: log 
+
+Formula:
+count ~ s(month, bs = cc, k = 12) + s(year, bs = re)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)  
+(Intercept)  -1.3748     0.6913  -1.989   0.0467 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(month)  8.674     10 1324.7  <2e-16 ***
+s(year)  10.871     11  890.6  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0878   Deviance explained = 42.7%
+-REML = 3642.4  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(month) 10  8.674258 0.4002778       0
+s(year)  12 10.871121        NA      NA
+
+CONCURVITY
+         para   s(month)    s(year)
+worst       1 0.14523540 1.00000000
+observed    1 0.06530140 0.06713477
+estimate    1 0.03227483 0.11211065
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev    lower    upper
+s(month) 2.067322 1.099583 3.886763
+s(year)  2.380597 1.554053 3.646750
+
+Rank: 2/2
+          std.dev    lower    upper
+s(month) 2.067322 1.099583 3.886763
+s(year)  2.380597 1.554053 3.646750
+
+
+--------- Threespine Stickleback  ( r )-------
+
+Family: Negative Binomial(0.071) 
+Link function: log 
+
+Formula:
+count ~ loc_code
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   1.1522     0.2171   5.306 1.12e-07 ***
+loc_codeA21  -1.0625     0.3157  -3.365 0.000765 ***
+loc_codeALV  -1.0901     0.2877  -3.789 0.000151 ***
+loc_codeART  -0.7709     0.3013  -2.559 0.010502 *  
+loc_codeCOY  -1.4083     0.2517  -5.594 2.21e-08 ***
+loc_codeDMP  -0.7205     0.3523  -2.045 0.040828 *  
+loc_codeLSB  -8.5515     1.0643  -8.035 9.39e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+R-sq.(adj) =  -0.00697   Deviance explained =   10%
+-REML = 3906.5  Scale est. = 1         n = 2519
+
+K.CHECK
+NULL
+
+CONCURVITY
+
+VARIANCE COMPONENTS
+NULL
+
+
+--------- Threespine Stickleback  ( ymr )-------
+
+Family: Negative Binomial(0.148) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -1.0532     0.7273  -1.448  0.14759    
+loc_codeA21  -0.3213     0.2446  -1.313  0.18903    
+loc_codeALV  -1.0810     0.2310  -4.680 2.87e-06 ***
+loc_codeART   0.5310     0.2363   2.247  0.02465 *  
+loc_codeCOY  -1.1423     0.1979  -5.771 7.89e-09 ***
+loc_codeDMP   0.8296     0.2749   3.018  0.00255 ** 
+loc_codeLSB  -6.9889     1.0749  -6.502 7.92e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df Chi.sq p-value    
+s(year)  10.882     11  922.7  <2e-16 ***
+s(month)  8.457     10  993.1  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00495   Deviance explained = 51.5%
+-REML = 3531.6  Scale est. = 1         n = 2519
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.882071        NA      NA
+s(month) 10  8.456974 0.4406927       0
+
+CONCURVITY
+         para    s(year)   s(month)
+worst       1 1.00000000 0.10981505
+observed    1 0.09017508 0.05043968
+estimate    1 0.12166093 0.02468299
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(year)  2.448085 1.5998377 3.746080
+s(month) 1.810336 0.9390189 3.490151
+
+Rank: 2/2
+          std.dev     lower    upper
+s(year)  2.448085 1.5998377 3.746080
+s(month) 1.810336 0.9390189 3.490151
+
+
+--------- Threespine Stickleback  ( t )-------
+
+Family: Negative Binomial(0.059) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept) -0.09620    0.08951  -1.075    0.282
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 6.749  7.886  48.16  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0083   Deviance explained = 4.97%
+-REML = 3021.1  Scale est. = 1         n = 2132
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 6.749298 0.3802678       0
+
+CONCURVITY
+                 para      s(temp)
+worst    1.246699e-22 1.246402e-22
+observed 1.246699e-22 2.645800e-24
+estimate 1.246699e-22 3.089552e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev     lower    upper
+s(temp) 0.5862452 0.1723355 1.994269
+
+Rank: 1/1
+          std.dev     lower    upper
+s(temp) 0.5862452 0.1723355 1.994269
+
+
+--------- Threespine Stickleback  ( s )-------
+
+Family: Negative Binomial(0.077) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -1.088      0.101  -10.78   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 5.405  6.492  364.6  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0134   Deviance explained = 23.5%
+-REML = 2890.9  Scale est. = 1         n = 2125
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 5.405207 0.4565223       0
+
+CONCURVITY
+                 para       s(sal)
+worst    2.044169e-21 2.044036e-21
+observed 2.044169e-21 2.264348e-25
+estimate 2.044169e-21 5.910627e-24
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+         std.dev      lower     upper
+s(sal) 0.1461082 0.05239588 0.4074293
+
+Rank: 1/1
+         std.dev      lower     upper
+s(sal) 0.1461082 0.05239588 0.4074293
+
+
+--------- Threespine Stickleback  ( o )-------
+
+Family: Negative Binomial(0.059) 
+Link function: log 
+
+Formula:
+count ~ s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)
+(Intercept) -0.11079    0.09029  -1.227     0.22
+
+Approximate significance of smooth terms:
+        edf Ref.df Chi.sq p-value    
+s(do) 1.004  1.008  65.94  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00826   Deviance explained = 5.15%
+-REML = 2944.2  Scale est. = 1         n = 2110
+
+K.CHECK
+      k'      edf   k-index p-value
+s(do)  9 1.004222 0.3907733  0.0725
+
+CONCURVITY
+                 para        s(do)
+worst    6.470458e-23 6.473663e-23
+observed 6.470458e-23 3.181914e-33
+estimate 6.470458e-23 2.090023e-25
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev        lower    upper
+s(do) 0.0001771995 2.635536e-15 11913960
+
+Rank: 1/1
+           std.dev        lower    upper
+s(do) 0.0001771995 2.635536e-15 11913960
+
+
+--------- Threespine Stickleback  ( ts )-------
+
+Family: Negative Binomial(0.087) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -1.39317    0.09234  -15.09   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.742  8.605  124.8  <2e-16 ***
+s(sal)  4.701  5.761  430.8  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0406   Deviance explained = 30.6%
+-REML = 2842.4  Scale est. = 1         n = 2120
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.742037 0.5005792       0
+s(sal)   9 4.701377 0.4881035       0
+
+CONCURVITY
+                 para    s(temp)     s(sal)
+worst    1.821611e-19 0.07108284 0.07108284
+observed 1.821611e-19 0.03787259 0.04229737
+estimate 1.821611e-19 0.02520909 0.04626280
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev      lower     upper
+s(temp) 0.84906297 0.37854187 1.9044338
+s(sal)  0.09809878 0.03939318 0.2442903
+
+Rank: 2/2
+           std.dev      lower     upper
+s(temp) 0.84906297 0.37854187 1.9044338
+s(sal)  0.09809878 0.03939318 0.2442903
+
+
+--------- Threespine Stickleback  ( to )-------
+
+Family: Negative Binomial(0.06) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)  
+(Intercept) -0.19303    0.08975  -2.151   0.0315 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 4.398  5.460  14.20  0.0183 *  
+s(do)   1.004  1.008  38.48  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00924   Deviance explained = 6.91%
+-REML = 2929.6  Scale est. = 1         n = 2106
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 4.397616 0.3787977  0.0000
+s(do)    9 1.003765 0.4014149  0.0275
+
+CONCURVITY
+                para   s(temp)     s(do)
+worst    9.58638e-23 0.2666759 0.2666759
+observed 9.58638e-23 0.2145888 0.2356149
+estimate 9.58638e-23 0.1740899 0.1703655
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower        upper
+s(temp) 0.2138067010 0.0374471398 1.2207422408
+s(do)   0.0001686268 0.0001680643 0.0001691913
+
+Rank: 1/2
+             std.dev        lower        upper
+s(temp) 0.2138067010 0.0374471398 1.2207422408
+s(do)   0.0001686268 0.0001680643 0.0001691913
+
+
+--------- Threespine Stickleback  ( so )-------
+
+Family: Negative Binomial(0.086) 
+Link function: log 
+
+Formula:
+count ~ s(sal, bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -1.46287    0.09642  -15.17   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value    
+s(sal) 4.643  5.692  323.0  <2e-16 ***
+s(do)  7.785  8.605  151.9  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.00766   Deviance explained = 31.3%
+-REML = 2775.9  Scale est. = 1         n = 2097
+
+K.CHECK
+       k'      edf   k-index p-value
+s(sal)  9 4.643371 0.4981387  0.0025
+s(do)   9 7.784560 0.5271542  0.0475
+
+CONCURVITY
+                 para     s(sal)      s(do)
+worst    1.494787e-22 0.09998036 0.09998036
+observed 1.494787e-22 0.03871414 0.05436637
+estimate 1.494787e-22 0.02356712 0.04988513
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+          std.dev      lower     upper
+s(sal) 0.09840668 0.03629084 0.2668407
+s(do)  0.07671873 0.03635370 0.1619027
+
+Rank: 2/2
+          std.dev      lower     upper
+s(sal) 0.09840668 0.03629084 0.2668407
+s(do)  0.07671873 0.03635370 0.1619027
+
+
+--------- Threespine Stickleback  ( tso )-------
+
+Family: Negative Binomial(0.095) 
+Link function: log 
+
+Formula:
+count ~ s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + 
+    s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -1.72303    0.09219  -18.69   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+          edf Ref.df Chi.sq p-value    
+s(temp) 7.879  8.682  96.92  <2e-16 ***
+s(sal)  4.208  5.210 382.29  <2e-16 ***
+s(do)   7.732  8.578 119.24  <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  -0.0766   Deviance explained = 36.5%
+-REML = 2738.9  Scale est. = 1         n = 2094
+
+K.CHECK
+        k'      edf   k-index p-value
+s(temp)  9 7.878911 0.5415306  0.0000
+s(sal)   9 4.207507 0.5305877  0.0000
+s(do)    9 7.732241 0.5591342  0.0375
+
+CONCURVITY
+                 para   s(temp)     s(sal)     s(do)
+worst    4.087899e-22 0.3437835 0.17107200 0.3710331
+observed 4.087899e-22 0.1695845 0.09862186 0.1684754
+estimate 4.087899e-22 0.2150850 0.08010749 0.2310115
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+           std.dev      lower     upper
+s(temp) 0.91359544 0.42311710 1.9726374
+s(sal)  0.07548676 0.02802759 0.2033086
+s(do)   0.07194432 0.03579341 0.1446072
+
+Rank: 3/3
+           std.dev      lower     upper
+s(temp) 0.91359544 0.42311710 1.9726374
+s(sal)  0.07548676 0.02802759 0.2033086
+s(do)   0.07194432 0.03579341 0.1446072
+
+
+--------- Threespine Stickleback  ( ymrtso )-------
+
+Family: Negative Binomial(0.187) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(sal, bs = tp, k = 10) + s(do, 
+    bs = tp, k = 10)
+
+Parametric coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -1.953e+00  5.907e-01  -3.306 0.000946 ***
+loc_codeA21  1.986e-01  2.615e-01   0.759 0.447626    
+loc_codeALV -9.116e-01  2.505e-01  -3.639 0.000274 ***
+loc_codeART  2.245e-03  2.842e-01   0.008 0.993698    
+loc_codeCOY -1.222e+00  2.064e-01  -5.920 3.22e-09 ***
+loc_codeDMP  1.097e-01  3.003e-01   0.365 0.715001    
+loc_codeLSB -5.679e+01  5.713e+06   0.000 0.999992    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq p-value    
+s(year)  10.744 11.000 516.633  <2e-16 ***
+s(month)  9.054 10.000 254.473  <2e-16 ***
+s(temp)   6.053  7.283  42.439  <2e-16 ***
+s(sal)    1.978  2.505 130.217  <2e-16 ***
+s(do)     1.008  1.015   3.167  0.0772 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0359   Deviance explained =   64%
+-REML = 2470.9  Scale est. = 1         n = 2094
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.743523        NA      NA
+s(month) 10  9.054206 0.5334498  0.0000
+s(temp)   9  6.053046 0.7217802  0.1500
+s(sal)    9  1.978307 0.7071773  0.0275
+s(do)     9  1.007748 0.7027739  0.0225
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)    s(sal)     s(do)
+worst       1 1.0000000 0.9127786 0.9056880 0.6963719 0.5671680
+observed    1 0.3159085 0.8550463 0.8570833 0.6625351 0.5353703
+estimate    1 0.2435778 0.2727896 0.7991863 0.5900861 0.4052088
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+              std.dev        lower        upper
+s(year)  1.9407804627 1.259696e+00 2.990108e+00
+s(month) 2.8509702906 1.600407e+00 5.078729e+00
+s(temp)  0.3473489624 1.124854e-01 1.072595e+00
+s(sal)   0.0156029204 2.092410e-03 1.163496e-01
+s(do)    0.0002028303 3.503351e-44 1.174308e+36
+
+Rank: 5/5
+              std.dev        lower        upper
+s(year)  1.9407804627 1.259696e+00 2.990108e+00
+s(month) 2.8509702906 1.600407e+00 5.078729e+00
+s(temp)  0.3473489624 1.124854e-01 1.072595e+00
+s(sal)   0.0156029204 2.092410e-03 1.163496e-01
+s(do)    0.0002028303 3.503351e-44 1.174308e+36
+
+
+--------- Threespine Stickleback  ( ymrtsoh )-------
+
+Family: Negative Binomial(0.196) 
+Link function: log 
+
+Formula:
+count ~ loc_code + s(year, bs = re) + s(month, bs = cc, k = 12) + 
+    s(temp, bs = tp, k = 10) + s(tideh, bs = tp, k = 10) + s(sal, 
+    bs = tp, k = 10) + s(do, bs = tp, k = 10)
+
+Parametric coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -1.326e+00  5.890e-01  -2.251  0.02439 *  
+loc_codeA21 -8.857e-02  2.622e-01  -0.338  0.73552    
+loc_codeALV -1.776e+00  2.902e-01  -6.121  9.3e-10 ***
+loc_codeART -8.010e-01  3.077e-01  -2.603  0.00924 ** 
+loc_codeCOY -1.866e+00  2.255e-01  -8.275  < 2e-16 ***
+loc_codeDMP -3.622e-01  3.042e-01  -1.190  0.23387    
+loc_codeLSB -5.008e+01  5.819e+06   0.000  0.99999    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+            edf Ref.df  Chi.sq  p-value    
+s(year)  10.715 11.000 488.094  < 2e-16 ***
+s(month)  8.965 10.000 200.898  < 2e-16 ***
+s(temp)   5.574  6.797  32.208 2.08e-05 ***
+s(tideh)  4.034  5.053  25.476 0.000123 ***
+s(sal)    2.231  2.825  81.158  < 2e-16 ***
+s(do)     2.457  3.149   2.566 0.520795    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0121   Deviance explained = 64.2%
+-REML = 2432.1  Scale est. = 1         n = 1986
+
+K.CHECK
+         k'       edf   k-index p-value
+s(year)  12 10.715052        NA      NA
+s(month) 10  8.965324 0.5485610  0.0000
+s(temp)   9  5.573964 0.7330026  0.3050
+s(tideh)  9  4.033766 0.7003065  0.0025
+s(sal)    9  2.230869 0.7048753  0.0175
+s(do)     9  2.457021 0.7194594  0.0650
+
+CONCURVITY
+         para   s(year)  s(month)   s(temp)  s(tideh)    s(sal)     s(do)
+worst       1 1.0000000 0.9135031 0.9064376 0.5587447 0.7534581 0.5626613
+observed    1 0.3465364 0.8360667 0.8772646 0.5311114 0.7303016 0.4799496
+estimate    1 0.2676958 0.2866758 0.8082237 0.4344690 0.6494222 0.4052338
+
+VARIANCE COMPONENTS
+
+Standard deviations and 0.95 confidence intervals:
+
+             std.dev        lower     upper
+s(year)  1.916962029 1.2433236755 2.9555807
+s(month) 2.711878577 1.4923209778 4.9280855
+s(temp)  0.289039761 0.0889915531 0.9387855
+s(tideh) 0.291145177 0.0777766318 1.0898584
+s(sal)   0.019804528 0.0027740386 0.1413893
+s(do)    0.004633697 0.0001109389 0.1935403
+
+Rank: 6/6
+             std.dev        lower     upper
+s(year)  1.916962029 1.2433236755 2.9555807
+s(month) 2.711878577 1.4923209778 4.9280855
+s(temp)  0.289039761 0.0889915531 0.9387855
+s(tideh) 0.291145177 0.0777766318 1.0898584
+s(sal)   0.019804528 0.0027740386 0.1413893
+s(do)    0.004633697 0.0001109389 0.1935403

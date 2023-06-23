@@ -37,6 +37,9 @@ SMFS_OTR_Thesis_WithZeros<-SMFS_OTR_Thesis %>%
 
 SMFS_OTR_Thesis_WithZeros$Count[is.na(SMFS_OTR_Thesis_WithZeros$Count)] <- 0
 
+#you can also use spread(..... fill = 0) to add zeros to every sample x spp combo that doesn't exist or have data and then gather() it back up.
+
+
 #Now I want to look at fish and their frequencies of catch over water quality parameters. 
 
 which(is.na(SMFS_OTR_Thesis$WaterTemperature)) #THIS IS A PROBLEM (for later). Use this link to fix: https://www.tutorialspoint.com/dealing-with-missing-data-in-r#:~:text=Finding%20Missing%20Data%20in%20R&text=We%20can%20use%20the%20is,otherwise%20it%20should%20be%20False.
@@ -61,6 +64,7 @@ CatchFrequency <- function(data, x, y, title) {
     labs(x = deparse(substitute(x)), y = deparse(substitute(y)), title = title) +
     theme_minimal()
 } #deparse automatically pulls the name from x and y to label the axes. This function is to make plotting more streamlined :)
+
 #Water Temp graph for TP 2011-2023
 WT.Plot<-SMFS_OTR_Thesis %>% 
   filter(OrganismCode %in% "TP", !is.na(WaterTemperature), !is.na(Count)) %>%
@@ -214,11 +218,15 @@ Secchi.Plot<-SMFS_OTR_Thesis %>%
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
-#Lets plot CPUE now
+#Lets plot WaterTemp CPUE now
 # Step 1: Sum count over each unique sample row ID
 summed_data <- SMFS_OTR_Thesis_WithZeros %>%
-  group_by(SampleRowID) %>%
-  summarize(SumCount = sum(Count))
+  group_by(SampleRowID, OrganismCode, WaterTemperature) %>%
+  summarize(SumCount = sum(Count),
+            n=n(SampleRowID),
+            CPUE = SumCount/n())
 
 # Step 2: Calculate catch per unit effort
-summed_data$CatchPerUnitEffort <- summed_data$SumCount / n(summed_data$SampleRowID)
+summed_data$CatchPerUnitEffort <- summed_data$SumCount / 
+#this seems wrong.
+#I want CPUE for each water quality parameter

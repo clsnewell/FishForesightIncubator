@@ -23,9 +23,24 @@ FishCountTable<-SMFS_OTR_Thesis %>% group_by(OrganismCode) %>% summarise(Total=s
 FishCountTable<-SMFS_OTR_Thesis %>% group_by(OrganismCode, WaterYear) %>% summarise(Total=sum(Count))
 FishCountTable %>% spread(WaterYear)
 
+#Adding zeros for sampling events with no fish caught
+#https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
+length(unique(SMFS_OTR_Thesis$SampleRowID)) 
+length(unique(SMFS_OTR_Thesis$TrawlRowID)) 
+length(unique(SMFS_OTR_Thesis$OrganismCode))
+3702*79
+#Should end up with 292458 rows. For every sampling event (unique sample row ID) there should be catch data for each species (unique organism code). 
+
+SMFS_OTR_Thesis_WithZeros<-SMFS_OTR_Thesis %>% 
+  complete(nesting(SampleRowID, WaterTemperature, Secchi, DO, Salinity, MethodCode, StationCode, SampleDate, SampleTime, PctSaturation, SpecificConductance, TideCode, ElecCond, TowDuration, TrawlComments, Year, WaterYear), OrganismCode, fill=list(num=0))%>%
+  as.data.frame() #FAILED :( Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
+
+SMFS_OTR_Thesis_WithZeros$Count[is.na(SMFS_OTR_Thesis_WithZeros$Count)] <- 0
+
 #Now I want to look at fish and their frequencies of catch over water quality parameters. 
 
 which(is.na(SMFS_OTR_Thesis$WaterTemperature)) #THIS IS A PROBLEM (for later). Use this link to fix: https://www.tutorialspoint.com/dealing-with-missing-data-in-r#:~:text=Finding%20Missing%20Data%20in%20R&text=We%20can%20use%20the%20is,otherwise%20it%20should%20be%20False.
+
 
 # Create the catch frequency graph
 #WaterTemp Graph for Tule Perch 2011-2023
@@ -198,3 +213,12 @@ Secchi.Plot<-SMFS_OTR_Thesis %>%
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
+
+#Lets plot CPUE now
+# Step 1: Sum count over each unique sample row ID
+summed_data <- SMFS_OTR_Thesis_WithZeros %>%
+  group_by(SampleRowID) %>%
+  summarize(SumCount = sum(Count))
+
+# Step 2: Calculate catch per unit effort
+summed_data$CatchPerUnitEffort <- summed_data$SumCount / n(summed_data$SampleRowID)

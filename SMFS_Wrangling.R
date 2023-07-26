@@ -71,6 +71,9 @@ CheckCheck<- SMFS_OTR_Thesis %>% group_by(SampleDate, StationCode) %>% summarize
 
 which(is.na(SMFS_OTR_Thesis$WaterTemperature)) #THIS IS A PROBLEM (for later). Use this link to fix: https://www.tutorialspoint.com/dealing-with-missing-data-in-r#:~:text=Finding%20Missing%20Data%20in%20R&text=We%20can%20use%20the%20is,otherwise%20it%20should%20be%20False.
 
+#adding month real quick
+SMFS_OTR_Thesis_WithZeros$Month<-month(SMFS_OTR_Thesis_WithZeros$SampleDate)
+
 
 # Create the catch frequency graph
 #WaterTemp Graph for Tule Perch 2011-2023
@@ -685,4 +688,9 @@ Secchi.Plot<-CPUE_10min_Secchi %>%
   CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of SF & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+
 #NEXT: Bin original dataframe (fewer rows but higher counts, column with Species_BinSize and do complete on that.)
+glimpse(SMFS_OTR_Thesis_WithZeros)
+glimpse(SMFS_AgesBySizeMo)
+
+#Need to do this before adding zeros. New script!

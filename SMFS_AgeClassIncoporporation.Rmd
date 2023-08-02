@@ -75,3 +75,45 @@ SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$
 #NOW it has zeros
 ```
 
+# Now Plot For each age class for each species of interest
+```{r}
+#First, what are the age classes for each species?
+ClassCountTable<-SMFS_OTR_Thesis_AgeClassWithZeros %>% group_by(OrganismCode, Class) %>% summarise(Total=sum(Count))
+# Filter rows with the specified 'FishOfInterest'
+filtered_data <- SMFS_OTR_Thesis_AgeClassWithZeros %>%
+  filter(OrganismCode %in% FishOfInterest)
+
+# Count the number of distinct 'SampleRowID' values in the filtered data
+n_distinct(filtered_data$SampleRowID)
+
+```
+
+ASH: 1027 Age 0, 0 Age 1, 296 Age 1+, 0 Age 2+
+ISS: no age class info: 929 + 328
+SB: 10534 Age 0, 4069 Age 1, 0 Age 1+, 975 Age 2+, 5082 NA
+Shoot, there are a bunch of plus counted fish in here.
+I want to incorporate them. 
+
+#Lets see how many fish have no standard length associated with them.
+```{r}
+FishOfInterest<- c("SB", "ASH", "TFS", "ISS", "SCP", "SF", "TP", "LFS", "YFG")
+
+NoSL<-SMFS_OTR_Thesis %>% filter(StandardLength == 0, OrganismCode %in% FishOfInterest)
+n_distinct(NoSL$TrawlRowID)
+TotalNoSL<-NoSL %>% summarise(Total=sum(Count)) #Total number of plus counted fish in dataset = 6984
+WithSL<-SMFS_OTR_Thesis %>% filter(!StandardLength == 0, OrganismCode %in% FishOfInterest) %>% summarise(Total=sum(Count)) #Total number of fish with length data = 34641
+#Total number of fish in dataset = 41,625
+#16% of the data is plus count!!!
+```
+
+Be careful to not assign lengths to fish that were plus counted because they escaped. There should be some sort of rule where we only assign sizes if there were over 30 of a species in the trawl.
+Also, some of the entries have comments indicating the size of the fishes (though aren't always proportionally calcuable)
+Let's grab the Trawl ID's from these and then pull all of the associated trawls out into one table.
+
+```{r}
+#start with a subset for now
+PlusCountTrawls<-merge(NoSL, SMFS_OTR_Thesis, by = c("TrawlRowID", "OrganismCode")) #merging the thesis data before adding zeros with the df I made of plus count fish to retain all records of relevant fish (organism code) from the same trawls as the plus counted fish.
+n_distinct(PlusCountTrawls$TrawlRowID) #verifying that I still have the same number of trawls in consideration.
+TrawlSum<-PlusCountTrawls %>% filter(!StandardLength.y==0) %>%  group_by(TrawlRowID, OrganismCode) %>% summarise(Total=sum(Count.y))
+TrawlOver30<-TrawlSum %>% filter(Total>=30) #117 trawls have plus counted fish which we can estimate sizes for. The rest should be removed from the dataset since we don't know and can't guess their sizes.
+```

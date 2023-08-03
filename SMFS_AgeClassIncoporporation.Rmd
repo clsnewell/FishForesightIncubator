@@ -3,6 +3,8 @@ title: "AgeClass"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: word_document
+editor_options: 
+  chunk_output_type: console
 ---
 ```{r}
 library(fuzzyjoin)
@@ -26,9 +28,16 @@ str(SMFS_OTR_05202023)
 SMFS_OTR_05202023$WaterYear<-as.character(SMFS_OTR_05202023$WaterYear)#when converting the factor to a number, need to first make it a character and THEN numeric. Otherwise, the number gets changedfor some reason.
 SMFS_OTR_05202023$WaterYear<-as.numeric(SMFS_OTR_05202023$WaterYear) #need to make water year numeric so I can filter out years easily.
 SMFS_OTR_Thesis<-SMFS_OTR_05202023 %>% filter(WaterYear > 2010) #Filtering out water years which overlap with South Bay Otter Trawl Survey for my thesis work.
+
+
 library(readxl)
 SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+#The N/A class throws off r. I need to rename that value 
+SMFS_AgesBySizeMo$Class[SMFS_AgesBySizeMo$Class == 'N/A'] <- 'NA_Class'
 
+FishOfInterest<- c("SB", "ASH", "TFS", "ISS", "SCP", "SF", "TP", "LFS", "YFG")
+
+SMFS_OTR_Thesis<-SMFS_OTR_Thesis %>% filter(OrganismCode %in% FishOfInterest)
 
 # Perform a conditional left join based on range conditions
 merged_data <- fuzzy_left_join(SMFS_OTR_Thesis, SMFS_AgesBySizeMo, 
@@ -96,7 +105,6 @@ I want to incorporate them.
 
 #Lets see how many fish have no standard length associated with them.
 ```{r}
-FishOfInterest<- c("SB", "ASH", "TFS", "ISS", "SCP", "SF", "TP", "LFS", "YFG")
 
 NoSL<-SMFS_OTR_Thesis %>% filter(StandardLength == 0, OrganismCode %in% FishOfInterest)
 n_distinct(NoSL$TrawlRowID)
@@ -112,8 +120,159 @@ Let's grab the Trawl ID's from these and then pull all of the associated trawls 
 
 ```{r}
 #start with a subset for now
-PlusCountTrawls<-merge(NoSL, SMFS_OTR_Thesis, by = c("TrawlRowID", "OrganismCode")) #merging the thesis data before adding zeros with the df I made of plus count fish to retain all records of relevant fish (organism code) from the same trawls as the plus counted fish.
-n_distinct(PlusCountTrawls$TrawlRowID) #verifying that I still have the same number of trawls in consideration.
-TrawlSum<-PlusCountTrawls %>% filter(!StandardLength.y==0) %>%  group_by(TrawlRowID, OrganismCode) %>% summarise(Total=sum(Count.y))
-TrawlOver30<-TrawlSum %>% filter(Total>=30) #117 trawls have plus counted fish which we can estimate sizes for. The rest should be removed from the dataset since we don't know and can't guess their sizes.
+PlusCountSamples<-merge(NoSL, SMFS_OTR_Thesis, by = c("SampleRowID", "OrganismCode")) #merging the thesis data before adding zeros with the df I made of plus count fish to retain all records of relevant fish (organism code) from the same trawls as the plus counted fish.
+n_distinct(PlusCountSamples$SampleRowID) #verifying that I still have the same number of trawls in consideration.
+SampleSum<-PlusCountSamples %>% filter(!StandardLength.y==0) %>%  group_by(SampleRowID, OrganismCode) %>% summarise(Total=sum(Count.y)) #Taking the plus count sample tows and summing the number of counts of fish for each species to see how many fish were measured before plus counting
+SampleOver30<-SampleSum %>% filter(Total>=30) #filtering out the tows which reached the minimum number of recorded lengths 
+#make a list of sample row IDs for these 
+SampleOver30List<-SampleOver30$SampleRowID
+length(SampleOver30List)
+
+PlusCountSamplesOver30<-PlusCountSamples %>% filter(SampleRowID %in% SampleOver30List)
+
+SMFS_OTR_ThesisFish<- SMFS_OTR_Thesis %>% filter(OrganismCode %in% FishOfInterest)
+
+#I want to create a column indicating that a fish with 0 SL is a plus counted fish that we want to estimate the size of (had over 30 counts). I can use catch row ID to do this!
+
+
+# Step 1: Calculate the total standard length for each SampleRowID
+df_total_Class <- filtered_data %>% #has the data for just fish of interest
+  filter(SampleRowID %in% SampleOver30List) %>% #
+  group_by(SampleRowID, OrganismCode, Class) %>% 
+  summarise(Counted=sum(Count)) 
+
+
+df_Class_NA<-df_total_Class %>%
+  group_by(SampleRowID, OrganismCode)%>%
+  filter(OrganismCode %in% c("SB", "SCP", "TP", "LFS"),sum(Counted) >= 30)
+print(df_Class_NA, n=100)
+n_distinct(df_Class_NA$SampleRowID) #Not sure why there are 3 samples less than what we started with when I was just trying to delete the extra rows...
+df_Class_NoNA<-df_total_Class %>%
+  group_by(SampleRowID, OrganismCode)%>%
+  filter(sum(Counted, na.rm=TRUE) >= 30)
+print(df_total_Class, n=100)
 ```
+For each instance that there is "NA" in Class with a count above 0, 
+I want to take that count and distribute those counts to the other age classes that do have counts, in proportion to the age classes from that same sample (ie same sample row ID) that have counts. 
+For example, Sample Row ID {001EFF22-FE47-4468-92F6-6F1531090921}  has  29 "Age-0" "SB" and 1 "Age 2+" "SB" as well as 6 SB that have no age class value ("NA"). I want to take those 6 "NA" fish and assign them proportionally to the other age classes: ((29/30) * 6) added to "Age-0" and ((1/30) * 6) added to "Age 2+" for a total of 29+5.8 = 34.8 "Age-0" SB for Sample Row ID {001EFF22-FE47-4468-92F6-6F1531090921}  and 1+0.2 = 1.2 "Age 2+" SB and 0 "NA" SB.
+```{r}
+
+# Step 1: Filter rows where Class is not "NA_Class" and Counted is greater than 0
+df_filtered <- df_Class_NA %>%
+  filter(!is.na(Class), Class != "NA_Class", Counted > 0)
+
+# Step 2: Calculate the total count for each SampleRowID and OrganismCode
+df_total_counts <- df_filtered %>%
+  group_by(SampleRowID, OrganismCode) %>%
+  summarize(TotalCount = sum(Counted), .groups = "drop")
+
+# Step 3: Calculate the proportion for each age class
+df_proportions <- df_Class_NA %>%
+  left_join(df_total_counts, by = c("SampleRowID", "OrganismCode")) %>%
+  mutate(
+    Proportion = ifelse(
+      Class != "NA_Class",
+      Counted / TotalCount,
+      0
+    )
+  )
+
+# Step 4: Calculate the total "NA" counts for each SampleRowID
+df_na_counts <- df_proportions %>%
+  filter(is.na(Class)) %>%
+  group_by(SampleRowID) %>%
+  summarize(NA_Count = sum(Counted), .groups = "drop")
+
+# Step 5: Distribute the "NA" counts proportionally to other age classes
+df_final <- df_proportions %>%
+  left_join(df_na_counts, by = "SampleRowID") %>%
+  mutate(
+    Counted = ifelse(
+      !is.na(Class),
+      round(Counted + Proportion * NA_Count),
+      0
+    )
+  ) %>%
+  select(-TotalCount, -Proportion, -NA_Count)
+
+# View the resulting data frame
+View(df_final)
+#I think that worked!!!
+
+# Create a new column 'Counted' and set it to 0 for all rows
+#df_final <- df_final %>%
+ # mutate(Counted = 0)
+
+# Update the 'Counted' column based on conditions
+#df_final <- df_final %>%
+ # group_by(SampleRowID, OrganismCode) %>%
+  #mutate(
+   # Counted = case_when(
+    #  Class %in% c("Age-0", "Age-1", "Age-1+") & !is.na(Count) ~ sum(Count, na.rm = TRUE),
+     # Class %in% c("Age-2+") ~ sum(Count, na.rm = TRUE),
+      #TRUE ~ Counted
+    #)
+  #) %>%
+  #ungroup()
+
+# Print the first 100 rows
+#print(df_final, n = 100)
+
+
+```
+
+```{r}
+#From chatgpt:
+
+# Step 1: Filter rows where Class is not "NA_Class" and Counted is greater than 0
+#df_filtered <- df_total_Class %>%
+ # filter(!is.na(Class), Class != "NA_Class", Counted > 0)
+
+# Step 2: Calculate the total count for each SampleRowID and OrganismCode
+#df_total_counts <- df_filtered %>%
+ # group_by(SampleRowID, OrganismCode) %>%
+  #summarize(TotalCount = sum(Counted), .groups = "drop")
+
+# Step 3: For rows with "NA" in Class and Counted greater than 0, distribute the counts proportionally
+#df_distributed <- df_filtered %>%
+ # left_join(df_total_counts, by = c("SampleRowID", "OrganismCode")) %>%
+  #mutate(Proportion = Counted / TotalCount) %>%
+  #group_by(SampleRowID, OrganismCode) %>%
+  #complete(Class, fill = list(Counted = 0)) %>%
+  #mutate(
+   # Counted = ifelse(Class == "NA_Class", round(sum(Counted * Proportion)), Counted)
+  #) %>%
+  #ungroup()
+
+# Step 4: Calculate the updated total count for each SampleRowID and OrganismCode after distributing counts
+#df_updated_counts <- df_distributed %>%
+ # group_by(SampleRowID, OrganismCode) %>%
+  #summarize(UpdatedTotalCount = sum(Counted), .groups = "drop")
+
+# Step 5: Replace the "NA" rows with the updated counts for each age class
+#df_final <- df_total_Class %>%
+ # left_join(df_updated_counts, by = c("SampleRowID", "OrganismCode")) %>%
+  #mutate(
+   # Counted = ifelse(is.na(Class), UpdatedTotalCount, Counted),
+    #Class = ifelse(is.na(Class), "NA_Class", Class)
+  #) %>%
+#  select(-UpdatedTotalCount)
+
+# View the resulting data frame
+#View(df_final)
+#print(df_final, n=50)
+
+```
+In this code, we first calculate the total count for each unique combination of SampleRowID and OrganismCode. Then, we merge the total counts back to the original dataframe and calculate the proportion of each age class count to the total count. Finally, we use the ifelse function within a grouped operation to replace "NA" with the corresponding age class based on the calculated proportions.
+
+Make sure to replace 'df' with the actual name of your data frame and adjust the column names as needed to match your data.
+
+
+
+
+
+
+
+
+
+

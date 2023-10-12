@@ -1,0 +1,341 @@
+---
+title: "Using BRTs"
+author: "Nima Farchadi"
+date: "2023-10-05"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("raster", type = "binary")
+#install.packages("terra", type = "binary")
+#install.packages("dismo", type = "binary")
+
+library(dismo)
+library(tidyverse)
+library(here)
+library(lubridate)
+library(caret)
+library(sf)
+```
+
+### Overview
+
+This script below will be an example of how to use BRTs for developing SDMs but also any other analyses focused on using BRTS for inference & prediction. Here, we will use data from the first chapter of PhD which is Automatic Information System (AIS) for fishing vessel of the US Atlantic Longline Fleet. 
+
+The step here will be:
+
+1. [Tuning BRTs](#Tuning BRTs)
+2. Fitting BRTs using dismo package
+3. Validation
+4. Analyzing response curves & variable importance
+5. Creating pretty plots
+
+```{r}
+# first lets just load in the dataset and take a look at it
+setwd("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/BRT2/caroline_BRTs")
+
+NWA_PLL <-readRDS("AIS_NWA_USA_PLL.rds") %>% 
+  st_drop_geometry() # I forgot I saved this as an sf object. We need it as a dataframe which is what I am doing here
+
+head(NWA_PLL) # a brief look at the data
+
+# some data wrangling and making the df look better
+NWA_PLL <- NWA_PLL %>% dplyr::select(3,7,9:13,16:19)
+names(NWA_PLL) <- c("date", "pres_abs", "sst", "sst_sd", "ssh", "ssh_sd",
+                    "n2", "bathy", "rugosity", "dist_port", "dist_seamount")
+
+# caret package is weird and does like integers (0 & 1) for presence absence data so I have to convert it to a factor
+NWA_PLL <- NWA_PLL %>% mutate(pres_abs2 = if_else(pres_abs == 1, "present","absent"))
+
+```
+
+## Tuning BRTs
+One of the more difficult parts about using BRTs is figuring out what the hyperparameters should be for the model which are set by the user. These hyperparameters include: *tree complexity*, *learning rate*, *number of trees*, and *bag fraction*. 
+
+Rather than just randomly choosing numbers that work and seeing how well the model predicts over and over again, the `caret` package has built in functionality to streamline the tuning of the parameters to help you evaluate the effect of tuning the hyperparameters on predictive performance and choose the "optimal" model across these hyperparameters.
+
+What the `caret` package does is create a grid of all the parameters and values you want to test. It will then some sort of validation method (e.g. k-fold cross validation), calculate the performance for each iteration of the validation, determine the optimal parameter set. 
+
+FYI: `caret` doesn't using the dismo package but uses the `gbm` package for BRTs which is what the `dismo` packages is using inherently as well. 
+
+Let's try it out on the AIS data to show you what I mean. If you are having trouble understanding and want more info you can check out chapter 5 of the `caret` [vignette](https://topepo.github.io/caret/model-training-and-tuning.html#model-training-and-parameter-tuning).
+
+First lets create the grid that will be of all the combinations or parameter values
+```{r}
+gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
+                       n.trees = 2000, #number of trees
+                       shrinkage = 0.1, # or seq(0.01, 0.5, length.out =5) #learning rate
+                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. honestly dont worry about this.
+                       )
+
+gbmGrid %>% head() #take a look at what we just made
+```
+For now I am just looking at changes in the tree complexity to decrease computation time but I did comment out some code in the learning rate agrument in case you were also interested in figuring out the best learning rate parameter. You will notice the grid gets larger.
+
+
+Next lets specify the type of validation method we want to do. Here I will just do a 2 fold cross validation (again to decrease time but feel free to increase it). Specifying 'twoClassSummary' will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance....the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). I like these metrics personally as I find them intuitive and used widely in the literature. I think the default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
+```{r}
+fitControl <- trainControl(## 2-fold CV
+                           method = "cv",
+                           number = 2,
+                           classProbs = TRUE, ## Estimate class probabilities
+                           summaryFunction = twoClassSummary
+                           )
+```
+
+Now we can use the `train` function to run the analysis.
+
+```{r}
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFit <- train(pres_abs2 ~ sst + sst_sd + ssh + ssh_sd + 
+                  n2 + bathy + rugosity + dist_port + dist_seamount,
+                data = NWA_PLL, 
+                method = "gbm", 
+                trControl = fitControl, 
+                verbose = FALSE, 
+                ## Now specify the exact models 
+                ## to evaluate:
+                tuneGrid = gbmGrid,
+                metric = "ROC" # specifying which metric to choose the optimal parameter values
+                )
+gbmFit
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+Hope all that made sense, but if not I highly recommend taking a look at the `caret` package [vignette](https://topepo.github.io/caret/model-training-and-tuning.html#model-training-and-parameter-tuning).
+
+Additionally, I will note that the more folds, parameters, and values you look that the longer this evaluation will take. I usually just look at different *learning rate*, *number of trees*, and *tree complexity* and I look between 3 - 5 values for each. If you end up using `gbm.step` to build your model, which I will talk about below, you don't need to look at *number of trees* because that function will figure that out. My collaborators and I usually keep *bag.fraction* as 0.6 and I have never touched *n.minobsinnode*.    
+
+## Fitting BRTs
+
+Now lets use the `dismo` package to build our models. Here I will show you use the `gbm.step` function as well as the `gbm.fixed` function.
+
+# Using gbm.step
+As I explained in our meeting what gbm.step does is a k-fold cross validation to find the optimal number of trees. I've commented this section out because it takes awhile.
+```{r}
+ set.seed(124) # for reproducibility 
+ brt1 <- dismo::gbm.step(data=NWA_PLL, 
+                         gbm.x= c(3:11), # environmental variables
+                         gbm.y= 2, # response variable
+                         family = "bernoulli", # for counts this would be "poisson"
+                         tree.complexity = 3, # complexity of the interactions that the model will fit
+                         learning.rate = 0.15,  # optimized to end up with >1000 trees
+                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
+                         )
+
+# make sure to save the model!
+```
+
+# Using gbm.fixed
+Unlike above you need to specify the number of trees for `gbm.fixed`, which you do through the n.trees agrument. I usually do somewhere between 2000 - 5000 trees. This usually takes less time than `gbm.step` since its not doing the cross-validation. One way to see which number of trees is best preforming the different validation schemes below until performance scores (like AUC) plateu then that would mean you've hit the optimal number of trees. 
+```{r}
+set.seed(124) # for reproducibility 
+brt2 <- dismo::gbm.fixed(data=NWA_PLL, 
+                        gbm.x= c(3:11), # environmental variables
+                        gbm.y= 2, # response variable
+                        family = "bernoulli", # for counts this would be "poisson"
+                        tree.complexity = 3, # complexity of the interactions that the model will fit
+                        learning.rate = 0.15,  # optimized to end up with >1000 trees
+                        bag.fraction = 0.6, # recommended by Elith, amount of input data used each time
+                        n.trees = 2000
+                        )
+
+
+# make sure to save the model!
+```
+
+## Validation
+Below are 2 validation schemes that we typically use to assess how well the model is predicting. The first is a **K-fold cross-validation** where the data is split in k number of equal sections (i.e. folds). A model is the trained on one fold and then its predicts to the rest of the folds. It then iterates this process through all the folds. Most studies do 10 folds as this has shown to be a good number. Too low or too high has shown to potentially bias / cause variability in results.
+
+Performance metrics that are calculated are deviance explained, AUC, and TSS. Deviance explained is a metric for how much variance did our model explain (you can think of is as R squared) and AUC and TSS are assessng predictive skill. Since you are using abundance data you may need to change that to RMSE or MAE (I'd suggest taking a look at the `Metrics` package for that)
+
+**NOTE**: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will have to make a slight change to this function below. I've commented lines out since I made the model above using gbm.fixed but if used gbm.step I would used the code on those lines instead.
+```{r}
+#k fold cross validation function
+
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.05, k_folds = 5, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+  dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
+  Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
+  colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
+  counter=1
+  for (k in 1:k_folds){
+    print(k)
+    train <- dataInput[dataInput$Kset!=k,]
+    test <- dataInput[dataInput$Kset==k,]
+    
+    brt.k <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
+                             gbm.y = gbm.y, 
+                             family="bernoulli", 
+                             tree.complexity = tree.complexity,
+                             learning.rate = learning.rate, 
+                             bag.fraction = bag.fraction,
+                             n.trees = n.trees)
+    
+    # brt.k <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+    #                          gbm.y = gbm.y, 
+    #                          family="bernoulli", 
+    #                          tree.complexity = tree.complexity,
+    #                          learning.rate = learning.rate, 
+    #                          bag.fraction = bag.fraction)
+    
+    preds <- gbm::predict.gbm(brt.k, test,
+                              n.trees=brt.k$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$null.deviance #use with gbm.fixed
+      res <- x$self.statistics$resid.deviance #use with gbm.fixed
+      #null <- x$self.statistics$mean.null #use with gbm.step
+      #res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.k)
+    d <- cbind(test[gbm.y], preds)
+    pres <- as.numeric(d[d[,1]==1,2])
+    abs <- as.numeric(d[d[,1]==0,2])
+    e <- dismo::evaluate(p=pres, a=abs)
+    Evaluations_kfold_BRT[counter,1] <- k
+    Evaluations_kfold_BRT[counter,2] <- dev
+    Evaluations_kfold_BRT[counter,3] <- e@auc
+    Evaluations_kfold_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    counter=counter+1 
+  }
+  return(Evaluations_kfold_BRT)
+}
+  
+  
+brt_VDM_k <- eval_kfold_brt(dataInput = NWA_PLL,
+                        gbm.x = c(3:11),
+                        gbm.y=2, learning.rate = 0.15,
+                        bag.fraction = 0.6, tree.complexity = 3,
+                        k_folds = 10,
+                        n.trees = 2000)
+
+brt_VDM_k
+```
+
+The other validation secheme that we do is a **Leave one [year] out cross-validation**. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
+
+**NOTE**: Same as above of changing the code whether you are using gbm.fixed or gbm.step
+
+```{r}
+#leave one year out function
+
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+  
+  pres$year <- lubridate::year(pres$date)
+  abs$year <- lubridate::year(abs$date)
+  
+  ## setup output df
+  Evaluations_LOO_BRT <- as.data.frame(matrix(data = 0, nrow = 1, ncol = 5))
+  colnames(Evaluations_LOO_BRT) <- c("k","Deviance","AUC","TSS","n_pres")
+  counter=1
+  
+  u_years <- unique(pres$year)
+  for (y in u_years){
+    
+    print(paste('Running ', which(u_years == y), ' of ', length(u_years), sep=''), sep='')
+    
+    pres_train <- pres[which(pres$year != y),]
+    ## absences are sampled from the full input absence df
+    abs_train <- abs[sample(which(abs$year != y), size = nrow(pres_train), replace=F),]
+    train <- rbind(pres_train, abs_train)
+    
+    pres_test <- pres[which(pres$year == y),]
+    abs_test <- abs[sample(which(abs$year == y), size = nrow(pres_test), replace=F),]
+    test <- rbind(pres_test, abs_test)
+    
+    brt.loo <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
+                           gbm.y = gbm.y, 
+                           family="bernoulli", 
+                           tree.complexity = tree.complexity,
+                           learning.rate = learning.rate, 
+                           bag.fraction = bag.fraction,
+                           n.trees = n.trees)
+    
+    # brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+    #                            gbm.y = gbm.y, 
+    #                            family="bernoulli", 
+    #                            tree.complexity = tree.complexity,
+    #                            learning.rate = learning.rate, 
+    #                            bag.fraction = bag.fraction)
+    
+    ## make predictions for eval
+    preds <- gbm::predict.gbm(brt.loo, test,
+                              n.trees=brt.loo$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$null.deviance #use with gbm.fixed
+      res <- x$self.statistics$resid.deviance #use with gbm.fixed
+      #null <- x$self.statistics$mean.null #use with gbm.step
+      #res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.loo)
+    d <- cbind(test[,gbm.y], preds)
+    pres_y <- as.numeric(d[d[,1] == 1,2])
+    abs_y <- as.numeric(d[d[,1] == 0,2])
+    e <- dismo::evaluate(p = pres_y, a = abs_y)
+    
+    Evaluations_LOO_BRT[counter,1] <- y
+    Evaluations_LOO_BRT[counter,2] <- dev
+    Evaluations_LOO_BRT[counter,3] <- e@auc
+    Evaluations_LOO_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    Evaluations_LOO_BRT[counter,5] <- length(which(train[,gbm.y] == 1))
+    
+    counter=counter+1 
+  }
+  return(Evaluations_LOO_BRT)
+}
+
+brt_VDM_loo <- eval_loo_brt(pres = NWA_PLL[which(NWA_PLL$pres_abs == 1),],
+                        abs = NWA_PLL[which(NWA_PLL$pres_abs == 0),],
+                        gbm.x = c(3:11),
+                        gbm.y=2, learning.rate = 0.15,
+                        bag.fraction = 0.6, tree.complexity = 3,
+                        n.trees = 2000)
+
+brt_VDM_loo
+
+```
+## Analyzing response curves & variable importance
+```{r}
+### model 1 - gbm.step ###
+# looking at variable importance (i.e. relative influence)
+summary(brt1)
+
+
+# reponse curves
+par(mar=c(4, 4, 1, 1))
+
+dismo::gbm.plot(brt1, n.plots = 12, write.title= FALSE, rug = T, smooth = TRUE, plot.layout=c(4,3), common.scale = T)
+
+
+### model 2 - gbm.fixed###
+# looking at variable importance (i.e. relative influence)
+summary(brt2)
+
+
+# reponse curves
+par(mar=c(4, 4, 1, 1))
+
+dismo::gbm.plot(brt2, n.plots = 12, write.title= FALSE, rug = T, smooth = TRUE, plot.layout=c(4,3), common.scale = T)
+
+```
+
+These response plots aren't the nicest but take a look at this [code](https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R) that is on one of my github repos to make prettier plots for the both the relative importance and response plots. In fact you can take a look at the rest of repo and see what I did as I used BRTs for this study. Most of which should be really similar to what I shared in this script. 

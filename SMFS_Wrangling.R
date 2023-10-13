@@ -3,7 +3,7 @@ library(tidyverse)
 library(rlang)
 library(cowplot)
 library(readr)
-SMFS_09192023 <- read_csv("Data/SMFS_09192023.csv")
+SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_09192023.csv")
 str(SMFS_09192023)
 library(lubridate)
 SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
@@ -34,6 +34,16 @@ length(unique(SMFS_OTR_Thesis$SampleRowID))
 length(unique(SMFS_OTR_Thesis$TrawlRowID)) 
 length(unique(SMFS_OTR_Thesis$OrganismCode))
 3702*79
+
+
+Nas_<-SMFS_OTR_Thesis %>% filter(TowDuration %in% NA)
+NA_SampleRowIDs<-unique(Nas_$SampleRowID)
+NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
+unique(NA_Tow_Info$SampleRowID)
+#Okay I am deducing that these samples are actually fake samples with rod and reel info. 
+#Removing all NA Trawl Duration 
+SMFS_OTR_Thesis<-SMFS_OTR_Thesis %>% filter(!TowDuration %in% NA)
+which(is.na(SMFS_OTR_Thesis$TowDuration))
 #Should end up with 292458 rows. For every sampling event (unique sample row ID) there should be catch data for each species (unique organism code). 
 
 SMFS_OTR_Thesis_WithZeros<-SMFS_OTR_Thesis %>% 
@@ -78,9 +88,14 @@ SMFS_OTR_Thesis_WithZeros$Month<-month(SMFS_OTR_Thesis_WithZeros$SampleDate)
 Tester<-SMFS_OTR_Thesis[SMFS_OTR_Thesis$SampleRowID %in% "{E4889AE1-DD10-4A96-A1C2-E0BFFEB6FCBF}",]
 Tester2<-SMFS_OTR_Thesis_WithZeros[SMFS_OTR_Thesis_WithZeros$SampleRowID %in% "{E4889AE1-DD10-4A96-A1C2-E0BFFEB6FCBF}",]
 
+SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
+
+summary(SMFS_OTR_Thesis_WithZeros)
+
 
 #Save New DF
-write.csv(SMFS_OTR_Thesis_WithZeros, "Data/SMFS_OTR_Thesis_WithZeros.csv")
+write.csv(SMFS_OTR_Thesis_WithZeros, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
+
 
 
 

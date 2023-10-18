@@ -40,11 +40,44 @@ Nas_<-SMFS_OTR_Thesis %>% filter(TowDuration %in% NA)
 NA_SampleRowIDs<-unique(Nas_$SampleRowID)
 NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
 unique(NA_Tow_Info$SampleRowID)
-#Okay I am deducing that these samples are actually fake samples with rod and reel info. 
-#Removing all NA Trawl Duration 
-SMFS_OTR_Thesis<-SMFS_OTR_Thesis %>% filter(!TowDuration %in% NA)
-which(is.na(SMFS_OTR_Thesis$TowDuration))
-#Should end up with 292458 rows. For every sampling event (unique sample row ID) there should be catch data for each species (unique organism code). 
+#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info. 
+#Removing all NA Trawl Duration (below)
+
+
+#Why NA DO?
+NoDO<-SMFS_OTR_Thesis %>% filter(DO %in% NA)
+#Reasons for missing DO: 
+#Row 81, 232, 253,  - just didn't record DO or PctSat
+#Is it missing for other organisms from the same trawl?
+
+NoDOTrawlID<-unique(NoDO$TrawlRowID)
+length(NoDOTrawlID) #35 trawls
+NoDOTrawls<-SMFS_OTR_Thesis %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
+
+#Now checking salinity
+NoSal<-SMFS_OTR_Thesis %>% filter(Salinity %in% NA)
+NoSalTrawlID<-unique(NoSal$TrawlRowID)
+length(NoSalTrawlID) #6 trawls
+NoSalTrawls<-SMFS_OTR_Thesis %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Secchi
+NoSecchi<-SMFS_OTR_Thesis %>% filter(Secchi %in% NA)
+NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
+length(NoSecchiTrawlID) #3 trawls
+NoSecchiTrawls<-SMFS_OTR_Thesis %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Water Temp
+NoWT<-SMFS_OTR_Thesis %>% filter(WaterTemperature %in% NA)
+NoWTTrawlID<-unique(NoWT$TrawlRowID) 
+length(NoWTTrawlID) #5 trawls
+NoWTTrawls<-SMFS_OTR_Thesis %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
+
+#NOTE: There is info for other wq variables. So I am losing some amount of good info here... 
+SMFS_OTR_Thesis<-SMFS_OTR_Thesis %>% filter(!TowDuration %in% NA, !DO %in% NA, !Salinity %in% NA, !Secchi %in% NA, !WaterTemperature %in% NA, !TideCode %in% NA, !StationCode %in% NA) #Remove NA rows for Tow Duration, DO, Salinity, Secchi, and Water Temp (Important WQ). Also removed NA's for other variables of interest for good measure. 
+which(is.na(SMFS_OTR_Thesis$TowDuration)) #Tow Duration NAs removed.
+
+
+#Now we add zeros! For every sampling event (unique sample row ID) there should be catch data for each species (unique organism code). 
 
 SMFS_OTR_Thesis_WithZeros<-SMFS_OTR_Thesis %>% 
   complete(nesting(SampleRowID, 

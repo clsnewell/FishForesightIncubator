@@ -19,12 +19,12 @@ library(lubridate)
 library(caret)
 library(sf)
 library(readr)
-
+setwd("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator")
 ```
 
 # Loading Data
 ```{r}
-SMFS_OTR_Thesis_WithZeros <- read_csv("SMFS_OTR_Thesis_WithZeros.csv")
+SMFS_OTR_Thesis_WithZeros <- read_csv("Data/SMFS_OTR_Thesis_WithZeros.csv")
 
 #Next step: I need a CPUE column. Calculate as catch per minute trawl.
 SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
@@ -36,19 +36,33 @@ summary(SMFS_OTR_Thesis_WithZeros$CPUE)
 ```{r}
 glimpse(SMFS_OTR_Thesis_WithZeros)
 #Lets build a df with just TP data.
-TPData<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode == "TP")
+TPDataRaw<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% "TP")
 #TPData$CPUE<-as.numeric(TPData$CPUE)
-glimpse(TPData)
-summary(TPData)
+glimpse(TPDataRaw)
+summary(TPDataRaw)
 ```
 
-7,665 trawls in this dataset.
-6 NA salinity
-60 NA DO
-5 NA Water Temp
-13 Na Secchi
+7,588 trawls in this dataset.
 
-Need to go back to SMFS_Wrangling to clear this up for whole dataset! 
+I want to simplify the dataframe a bit to just include columns of interest: CPUE, WaterTemperature, Secchi, DO, Salinity
+
+There are lots of columns I am interested in. For now I only want the bare minimum just to get a feel for these BRTs. 
+
+```{r}
+TPData<- TPDataRaw %>% select(c(CPUE, WaterTemperature, Secchi, DO, Salinity))
+
+glimpse(TPData)
+
+
+TPData$CPUE<-as.numeric(TPData$CPUE)
+TPData$WaterTemperature<-as.numeric(TPData$WaterTemperature)
+TPData$Secchi<-as.numeric(TPData$Secchi)
+TPData$DO<-as.numeric(TPData$DO)
+TPData$Salinity<-as.numeric(TPData$Salinity)
+glimpse(TPData)
+
+```
+
 
 From here on down, I am following Nima's "caroline_BRTs.rmd" 
 
@@ -87,7 +101,7 @@ gbmFit <- train(CPUE ~ WaterTemperature + Secchi + DO + Salinity,
                 ## Now specify the exact models 
                 ## to evaluate:
                 tuneGrid = gbmGrid,
-                metric = "ROC" # specifying which metric to choose the optimal parameter values
+                metric = "ROC" # Not sure if this is best. Other options according to ChatGPT + help: RMSE, Rsquared MAE, MSE, MPE, MAPE, SMAPE
                 )
 gbmFit
 
@@ -95,4 +109,26 @@ gbmFit
 ggplot(gbmFit)
 ```
 
-I have missing values! 
+train help file: "A string that specifies what summary metric will be used to select the optimal model. By default, possible values are "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification. If custom performance metrics are used (via the summaryFunction argument in trainControl, the value of metric should match one of the arguments. If it does not, a warning is issued and the first metric given by the summaryFunction is used. (NOTE: If given, this argument must be named.)"
+
+From ChatGPT on choosing metric for train(): "Selecting the best metric for evaluating the performance of a regression model depends on the specific goals and characteristics of your predictive modeling problem. There isn't a one-size-fits-all answer, and the choice of metric should align with the objectives and requirements of your project. Here's a general guideline to help you decide which metric is best:
+
+Mean Absolute Error (MAE):
+
+Use MAE when you want to understand the average magnitude of errors in your predictions.
+MAE is less sensitive to outliers compared to MSE, which can make it a good choice when your dataset contains outliers.
+Mean Squared Error (MSE) and Root Mean Squared Error (RMSE):
+
+MSE and RMSE give higher weight to larger errors, making them suitable when large errors are more costly or need to be minimized.
+RMSE is in the same unit as the target variable, which makes it easier to interpret compared to MSE.
+R-squared (R²):
+
+R² measures the proportion of variance in the target variable that is explained by the model. A higher R² indicates a better fit.
+R² is a good choice when you want to understand how well your predictors explain the variability in the target variable.
+Adjusted R-squared (Adjusted R²):
+
+Adjusted R² adjusts for the number of predictors in the model. It penalizes adding unnecessary predictors that do not improve the model's fit.
+It's useful when you want to balance model complexity with explanatory power.
+Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), and Symmetric Mean Absolute Percentage Error (SMAPE):
+
+These metrics are used in cases where percentage errors are more meaningful than absolute errors. For instance, in forecasting and demand prediction."

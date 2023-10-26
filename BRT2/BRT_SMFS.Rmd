@@ -24,7 +24,7 @@ setwd("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator")
 
 # Loading Data
 ```{r}
-SMFS_OTR_Thesis_WithZeros <- read_csv("Data/SMFS_OTR_Thesis_WithZeros.csv")
+SMFS_OTR_Thesis_WithZeros <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
 
 #Next step: I need a CPUE column. Calculate as catch per minute trawl.
 SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
@@ -61,6 +61,32 @@ TPData$DO<-as.numeric(TPData$DO)
 TPData$Salinity<-as.numeric(TPData$Salinity)
 glimpse(TPData)
 
+
+
+#MakeTPData Pres/Abs and try again. Then see if there is improvement. 
+TPData_Binary<-TPData %>% mutate(PresAbs = if_else(CPUE > 0, "present", "absent"))
+
+TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", 1, 0))
+# caret package is weird and doesnt like integers (0 & 1) for presence absence data so I have to convert it to a factor
+
+TPData_Binary<-data.frame(TPData_Binary) #Converting from tbl to data.frame so gbm.step works properly
+
+#Some simple plotting
+TP_Water<-TPData_Binary %>% ggplot(aes(y=CPUE, x=WaterTemperature)) + 
+  geom_point()+ theme_bw()
+#how would response change if I calculated CPUE as catch per unit of water measurement?
+
+TP_DO<-TPData_Binary %>% ggplot(aes(y=CPUE, x=DO)) + 
+  geom_point()+ theme_bw()
+
+TP_Secchi<-TPData_Binary %>% ggplot(aes(y=CPUE, x=Secchi)) + 
+  geom_point()+ theme_bw()
+
+TP_Salinity<-TPData_Binary %>% ggplot(aes(y=CPUE, x=Salinity)) + 
+  geom_point() + theme_bw()
+library(cowplot)
+plot_grid(TP_Water, TP_DO, TP_Secchi, TP_Salinity, ncol = 2, labels = "AUTO")
+
 ```
 
 
@@ -93,8 +119,8 @@ I'll start with the most basic dataset for the most basic model: CPUE ~ WaterTem
 ```{r}
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
-gbmFit <- train(CPUE ~ WaterTemperature + Secchi + DO + Salinity,
-                data = TPData, 
+gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity,
+                data = TPData_Binary, 
                 method = "gbm", 
                 trControl = fitControl, 
                 verbose = FALSE, 
@@ -103,6 +129,7 @@ gbmFit <- train(CPUE ~ WaterTemperature + Secchi + DO + Salinity,
                 tuneGrid = gbmGrid,
                 metric = "ROC" # Not sure if this is best. Other options according to ChatGPT + help: RMSE, Rsquared MAE, MSE, MPE, MAPE, SMAPE
                 )
+
 gbmFit
 
 # we can plot the results too which will be easier to interpret
@@ -132,3 +159,23 @@ It's useful when you want to balance model complexity with explanatory power.
 Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), and Symmetric Mean Absolute Percentage Error (SMAPE):
 
 These metrics are used in cases where percentage errors are more meaningful than absolute errors. For instance, in forecasting and demand prediction."
+
+```{r}
+ set.seed(124) # for reproducibility 
+ brt1 <- dismo::gbm.step(data=TPData_Binary, 
+                         gbm.x= c(2:5), # environmental variables
+                         gbm.y= 1, # response variable
+                         family = "gaussian", # for counts this would be "poisson"
+                         tree.complexity = 3, # complexity of the interactions that the model will fit
+                         learning.rate = 0.15,  # optimized to end up with >1000 trees
+                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
+                         )
+
+# make sure to save the model!
+ summary(brt1)
+ # reponse curves
+par(mar=c(2, 2, 1, 1))
+
+dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T)
+summary(TPData_Binary)
+```

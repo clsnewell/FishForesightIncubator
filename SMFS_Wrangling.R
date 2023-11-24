@@ -40,7 +40,7 @@ Nas_<-SMFS_OTR_Thesis %>% filter(TowDuration %in% NA)
 NA_SampleRowIDs<-unique(Nas_$SampleRowID)
 NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
 unique(NA_Tow_Info$SampleRowID)
-#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info. 
+#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
 #Removing all NA Trawl Duration (below)
 
 
@@ -125,9 +125,16 @@ SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesi
 
 summary(SMFS_OTR_Thesis_WithZeros)
 
+#Matching fish names
+SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
+
+SMFS<-left_join(SMFS_OTR_Thesis_WithZeros, SMFS_OrganismsLookUp, by = "OrganismCode")
+
+SMFS<-mutate(SMFS, gensp = paste(Genus, Species, sep=" "))
+
 
 #Save New DF
-write.csv(SMFS_OTR_Thesis_WithZeros, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
+write.csv(SMFS, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
 
 
 

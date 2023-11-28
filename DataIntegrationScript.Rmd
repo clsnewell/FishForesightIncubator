@@ -1,0 +1,84 @@
+---
+title: "Data Integration Script"
+author: "Caroline Newell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Merging the SMFS and SBOT data.
+
+Reading in the data and loading libraries
+
+```{r}
+library(readxl)
+library(tidyverse)
+SBOTS2019 <- read_excel("Data/SBOTS2019.xlsx")
+library(readr)
+SMFS <- read_csv("Data/SMFS.csv")
+```
+
+Wrangling We want our end table to have distinct rows for SMFS and SBOT fishes but the catch and wq info goes into the same column.
+
+1.  Need to add column for "study" that specifies which study the data came from.
+
+```{r}
+#Need to add a column called Study
+SMFS<-mutate(SMFS, Study = "SMFS")
+SBOTS2019<-mutate(SBOTS2019, Study = "SBOTS")
+```
+
+2.  Matching columns...
+
+Left is SMFS, right is SBOTS. All water quality taken by SMFS is done for the surface of the water column so all water quality from SBOTS will start with "es" indicating it was taken at the end of the trawl at the surface of the water, matching SMFS methodology.
+
+| SMFS                | SBOTS   | Notes                                                                                       |
+|---------------|---------------|------------------------------------------|
+| WaterTemperature    | estemp  | water temperature in degrees C.                                                             |
+| Secchi              | esecchi | Measure of water clarity in cm.                                                             |
+| CPUE                | cpue    | catch per unit effort (trawl minutes?).                                                     |
+| Salinity            | essal   | Salinity measured in ppt (but actually practical units?).                                   |
+| TowDuration         | dur     | Number of minutes of tow (sampling effort).                                                 |
+| DO                  | esdoc   | Dissolved oxygen measured in mg/L.                                                          |
+| Count               | count   | Number of organism counted in sample.                                                       |
+| PctSaturation       | esdop   | Dissolved oxygen measured in %.                                                             |
+| SpecificConductance | escond  | Specific conductivity (μS).                                                                 |
+| StationCode         | stn     | Name of location of sample.                                                                 |
+| MethodCode          | method  | Methodology used to collect sample.                                                         |
+| SampleDate          | towdate | Date of sample.                                                                             |
+| TideCode            | tidet   | Type of tide.                                                                               |
+| Year                | year    | Year of sample.                                                                             |
+| WaterYear           | wyr     | Water year of sample.                                                                       |
+| StandardLength      | sl      | Not currently in SBOT table but may be included later (implications for cpue calculation?). |
+| Month               | month   | Month of sample.                                                                            |
+| CommonName          | comname | Common name of species.                                                                     |
+| Family              | family  | The family of the species.                                                                  |
+| Genus               | genus   | Genus of the species.                                                                       |
+| gensp               | gensp   | Genus species.                                                                              |
+| Native              | natinv  | Is species native or invasive?                                                              |
+| Study               | Study   | Which study collected this data?                                                            |
+
+```{r}
+glimpse(SBOTS2019)
+#Match column types
+SBOTS2019$estemp<-as.numeric(SBOTS2019$estemp)
+SBOTS2019$esecchi<-as.numeric(SBOTS2019$esecchi)
+SBOTS2019$essal<-as.numeric(SBOTS2019$essal)
+SBOTS2019$esdoc<-as.numeric(SBOTS2019$esdoc)
+SBOTS2019$esdop<-as.numeric(SBOTS2019$esdop)
+SBOTS2019$escond<-as.numeric(SBOTS2019$escond)
+SMFS$Native<-as.character(SMFS$Native)
+glimpse(SBOTS2019)
+
+Integrated<-full_join(SMFS, SBOTS2019, join_by(WaterTemperature==estemp, Secchi==esecchi, CPUE==cpue, Salinity==essal, TowDuration==dur, DO==esdoc, Count==count, PctSaturation==esdop, SpecificConductance==escond, StationCode==stn, MethodCode==method, SampleDate==towdate, TideCode==tidet, Year==year, WaterYear==wyr, Month==month, CommonName==comname, Family==family, Genus==genus, Species==species, Native==natinv, gensp==gensp, Study==Study))
+
+Reduced<-Integrated %>% select(CommonName, Family, Genus, Species, gensp, Native, StationCode, Study, MethodCode, TowDuration, Count, CPUE, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear, Month)
+#By ignoring SL which was used for calculating CPUE for SMFS, this join and select has removed information on SL but preserved catch and CPUE for multiple rows of the same organism for the same sampling event. Either need to re-calculate CPUE ignoring SL for SMFS, or get length info for SBOTS and re-calculate CPUE being sensitive to lengths. 
+#Ideally, we need to decide on binning sizes now so that we can give 0 catch for bins of sizes instead of 0's for every possible size...
+
+#Save New DF
+#write.csv(Reduced, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/IntegratedData.csv")
+```

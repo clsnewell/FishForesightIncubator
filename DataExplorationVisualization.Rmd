@@ -15,18 +15,249 @@ knitr::opts_chunk$set(echo = TRUE)
 #Load Libraries
 library(tidyverse)
 library(readr)
+library(cowplot)
 
 #Load Data
-SMFS_OTR_Thesis_WithZeros_WithZeros <- read_csv("Data/SMFS_OTR_Thesis_WithZeros_WithZeros.csv")
+SMFS_OTR_Thesis_WithZeros <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
 ```
 
 ```{r}
 # Create the catch frequency graph
 #WaterTemp Graph for Tule Perch 2011-2023
-glimpse(SMFS_OTR_Thesis_WithZeros_WithZeros.csv)
+glimpse(SMFS_OTR_Thesis_WithZeros)
 #dev.off()
+SMFS_OTR_Thesis_WithZeros$Year<-as.factor(SMFS_OTR_Thesis_WithZeros$Year)
+SMFS_OTR_Thesis_WithZeros$Month<-as.factor(SMFS_OTR_Thesis_WithZeros$Month)
 
-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+```
+
+# Matching Levi's Alviso Dynamics Plot
+I want to make Levi's plots!
+I need a three by four grid of boxplots as follows: 
+By year    By Month   By Site
+
+DO (%sat)
+Sal (psu)
+Temp (degC)
+SEC (cm)
+## SMFS Dynamics
+```{r}
+#need cowplot
+Year_DO<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Sal<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Temp<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_SEC<- SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+Month_DO<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Sal<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Temp<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_SEC<- SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+sort(unique(SMFS_OTR_Thesis_WithZeros$StationCode)) #gives list in alphabetical order!
+StationCode_DO<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Sal<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Temp<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_SEC<- SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sal, Year_Temp, Month_Temp, StationCode_Temp, Year_SEC, Month_SEC, StationCode_SEC, nrow=4) #wait could I do this with facet wraps??? facet_grid? No, because each plot has different x,y combo... 
+
+#Make y-axis match levi's
+```
+
+# CPUE (per minute trawl)
+```{r}
+#Calculate CPUE
+SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
+```
+
+## Frequency Distribution Plots
+I want to produce histograms/frequency distribution plots showing how data for species is represented over water quality, time, and demographics.
+
+Species of interest: Threespine stickleback, striped bass, prickly sculpin, mississippi silversides, longfin smelt, shimofuri goby, american shad, yellowfin goby, threadfin shad, pacific staghorn sculpin, shokihazi goby, starry flounder.
+
+```{r}
+FishList<-unique(SMFS_OTR_Thesis_WithZeros$OrganismCode)
+FishList<- c("STBK", "SB", "SCP", "ISS", "LFS", "SG", "ASH", "YFG", "TFS", "STAG", "SF")
+```
+
+### Water Quality
+```{r}
+# Create a function to generate histograms
+generate_histograms <- function(data, fish_species, variables) {
+  data %>%
+    filter(OrganismCode %in% fish_species) %>%
+    gather(variable, value, all_of(variables)) %>%
+    ggplot(aes(x = value, fill = variable)) +
+    geom_histogram(binwidth = 1, position = "dodge", alpha = 0.5) +
+    facet_wrap(~ variable, scales = "free") +
+    labs(title = "Frequency Distribution of CPUE by Environmental Variable",
+         x = "Value",
+         y = "Frequency") +
+    theme_minimal()
+}
+
+# Example usage of the function
+generate_histograms(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+
+# Create a function to generate separate sets of histograms for each fish species
+generate_individual_histograms <- function(data, fish_species, variables) {
+  for (species_code in fish_species) {
+    data_subset <- data %>%
+      filter(OrganismCode == species_code)
+    
+    if (nrow(data_subset) > 0) {
+      p <- data_subset %>%
+        gather(variable, value, all_of(variables)) %>%
+        ggplot(aes(x = value, fill = variable)) +
+        geom_histogram(binwidth = 1, position = "dodge", alpha = 0.5) +
+        facet_wrap(~ variable, scales = "free") +
+        labs(title = paste("Frequency Distribution for", species_code),
+             x = "Value",
+             y = "Frequency") +
+        theme_minimal()
+      
+      print(p)
+    }
+  }
+}
+
+# Example usage of the function
+generate_individual_histograms(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+
+
+generate_individual_bar_plots <- function(data, fish_species, variables) {
+  for (species_code in fish_species) {
+    data_subset <- data %>%
+      filter(OrganismCode == species_code)
+    
+    if (nrow(data_subset) > 0) {
+      p <- data_subset %>%
+        gather(variable, value, all_of(variables)) %>%
+        group_by(variable, value) %>%
+        summarise(sum_CPUE = sum(CPUE, na.rm = TRUE)) %>%
+        ggplot(aes(x = value, y = sum_CPUE, fill = variable)) +
+        geom_col(width=1) +
+        facet_wrap(~ variable, scales = "free") +
+        labs(title = paste("CPUE Distribution for", species_code),
+             x = "Value",
+             y = "Total CPUE") +  
+        theme_minimal()
+      
+      print(p)
+    }
+  }
+}
+
+# Example usage of the function
+generate_individual_bar_plots(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+
+
+#facet_grid
+WaterFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = WaterTemperature, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal()
+
+SecchiFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Secchi, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal()
+
+DOFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = DO, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal()
+
+SalinityFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Salinity, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal()
+```
+
+### Temporal
+```{r}
+YearFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Year, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal() + theme(axis.text.x = element_text(angle=45))
+
+MonthFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Month, y = CPUE)) +
+        geom_col(width=1) +
+        facet_wrap(~OrganismCode, scales = "free") +
+        theme_minimal() #+ theme(axis.text.x = element_text(angle=45))
+
+SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
+        ggplot(aes(x = Month, y = CPUE)) +
+        geom_col(width=1) +
+        facet_grid(Year~OrganismCode) +
+        theme_minimal() 
+```
+
+### Demographics
+```{r Demographics}
+SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
+        ggplot(aes(x = StandardLength, y = CPUE)) +
+        geom_col(width=1) +
+        facet_grid(Month~OrganismCode, scales = "free") +
+        theme_minimal() + xlab("Standard Length (mm)")
+```
+
+# Other plots
+```{r}
+SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP") %>% 
   ggplot(aes(x = WaterTemperature, y = Count)) +
   geom_col(position = "dodge") +
@@ -34,6 +265,7 @@ SMFS_OTR_Thesis_WithZeros_WithZeros %>%
   theme_minimal() 
 
 ```
+
 
 ```{r}
 
@@ -46,30 +278,30 @@ CatchFrequency <- function(data, x, y, title) {
 } #deparse automatically pulls the name from x and y to label the axes. This function is to make plotting more streamlined :)
 
 #Water Temp graph for TP 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "TP & Water Temp SMFS 2011-2023")
 #DO Graph for TP  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "TP & DO SMFS 2011-2023")
 #Salinity Graph for TP 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "TP & Salinity SMFS 2011-2023")
 #Secchi Graph for TP 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "TP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Striped Bass 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "SB", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "SB & Water Temp SMFS 2011-2023")
 #DO Graph for SB  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% 
+DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "SB", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "SB & DO SMFS 2011-2023")
 #Salinity Graph for SB 2011-2023
@@ -205,7 +437,7 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Lets plot WaterTemp CPUE now
 # Step 1: Sum count over each unique sample row ID
-summed_data <- SMFS_OTR_Thesis_WithZeros_WithZeros %>%
+summed_data <- SMFS_OTR_Thesis_WithZeros %>%
   group_by(SampleRowID, OrganismCode, WaterTemperature) %>%
   summarize(SumCount = sum(Count),
             n=n(SampleRowID),
@@ -217,32 +449,32 @@ summed_data <- SMFS_OTR_Thesis_WithZeros_WithZeros %>%
 #CPUE = catch per 5 minute trawl (filter out durations outside of norm) (so could split 10 min trawl catch in half or calculate them separately). For now. 
 #Use SampleRowID as unique trawls. Columns: SampleRowID, Metadata, OrganismCode, Count (size will come later), Site.
 
-CPUE_5min_Temp <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 5) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_5min_Temp <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_Temp <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 10) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_10min_Temp <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
 
 #Lets run a check real quick
 #Removing NAs from Tow Duration since we won't have CPUE from them
-SMFS_OTR_Thesis_WithZeros_WithZeros_NoTowNA<-SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(!is.na(TowDuration)) #333872
+SMFS_OTR_Thesis_WithZeros_NoTowNA<-SMFS_OTR_Thesis_WithZeros %>% filter(!is.na(TowDuration)) #333872
 
-Five<-SMFS_OTR_Thesis_WithZeros_WithZeros_NoTowNA %>% filter(TowDuration == 5) #237628, so matches the CPUE calculation
-Ten<-SMFS_OTR_Thesis_WithZeros_WithZeros_NoTowNA %>% filter(TowDuration == 10) #93027, matches CPUE calculation
-Other<-SMFS_OTR_Thesis_WithZeros_WithZeros_NoTowNA %>% filter(TowDuration != 5, 
+Five<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration == 5) #237628, so matches the CPUE calculation
+Ten<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration == 10) #93027, matches CPUE calculation
+Other<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration != 5, 
                                                     TowDuration != 10) #3217
 3217+237628+93027 #checks out!
 
-CPUE_5min_DO <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 5) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_5min_DO <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_DO <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 10) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_10min_DO <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_5min_PPT <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 5) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_5min_PPT <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_PPT <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 10) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_10min_PPT <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_5min_Secchi <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 5) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_5min_Secchi <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_Secchi <- SMFS_OTR_Thesis_WithZeros_WithZeros %>% filter(TowDuration == 10) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+CPUE_10min_Secchi <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
 
 #Plot CPUE Now
 CatchFrequency <- function(data, x, y, title) {
@@ -537,7 +769,7 @@ Secchi.Plot<-CPUE_10min_Secchi %>%
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
-NoNASecchi<-SMFS_OTR_Thesis_WithZeros_WithZeros_NoTowNA %>% filter(!is.na(Secchi))
+NoNASecchi<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(!is.na(Secchi))
 range(NoNASecchi$Secchi) #Max secchi is 99! Catches over 99 are unmeasurable (possibly written as 99?) since we only bring out a meter stick.
 
 
@@ -645,7 +877,7 @@ Secchi.Plot<-CPUE_10min_Secchi %>%
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #NEXT: Bin original dataframe (fewer rows but higher counts, column with Species_BinSize and do complete on that.)
-glimpse(SMFS_OTR_Thesis_WithZeros_WithZeros)
+glimpse(SMFS_OTR_Thesis_WithZeros)
 glimpse(SMFS_AgesBySizeMo)
 
 #Need to do this before adding zeros. New script!

@@ -36,7 +36,7 @@ summary(SMFS_OTR_Thesis_WithZeros$CPUE)
 ```{r}
 glimpse(SMFS_OTR_Thesis_WithZeros)
 #Lets build a df with just TP data.
-TPDataRaw<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% "TP")
+TPDataRaw<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% "TP") #make this a function or for loop so we can do multiple species at once?
 #TPData$CPUE<-as.numeric(TPData$CPUE)
 glimpse(TPDataRaw)
 summary(TPDataRaw)

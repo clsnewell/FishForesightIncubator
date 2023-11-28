@@ -53,7 +53,7 @@ NWA_PLL <- NWA_PLL %>% dplyr::select(3,7,9:13,16:19)
 names(NWA_PLL) <- c("date", "pres_abs", "sst", "sst_sd", "ssh", "ssh_sd",
                     "n2", "bathy", "rugosity", "dist_port", "dist_seamount")
 
-# caret package is weird and does like integers (0 & 1) for presence absence data so I have to convert it to a factor
+# caret package is weird and doesnt like integers (0 & 1) for presence absence data so I have to convert it to a factor
 NWA_PLL <- NWA_PLL %>% mutate(pres_abs2 = if_else(pres_abs == 1, "present","absent"))
 
 ```

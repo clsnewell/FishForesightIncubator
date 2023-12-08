@@ -16,11 +16,104 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(readr)
 library(cowplot)
-
-#Load Data
-SMFS_OTR_Thesis_WithZeros <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
+library(lubridate)
+library(fuzzyjoin)
 ```
 
+# Visuals of Raw Data
+
+## Load Data
+
+```{r}
+SMFS_09192023 <- read_csv("Data/SMFS_09192023.csv") #this dataset includes all SMFS data 
+glimpse(SMFS_09192023)
+#Need to merge with names and ages
+SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
+
+Raw<-full_join(SMFS_09192023, SMFS_OrganismsLookUp, by = "OrganismCode")
+
+Raw<-mutate(Raw, gensp = paste(Genus, Species, sep=" "))
+
+#Let's filter to the time frame of interest
+Raw$Year<-year(Raw$SampleDate)
+Raw$Month<-month(Raw$SampleDate)
+#Now I just want otter trawl data
+Raw<-Raw %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
+Raw$Year<-as.numeric(Raw$Year) #need to make water year numeric so I can filter out years easily.
+
+Raw<-Raw %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
+
+#I'm leaving the NA water quality in for now. 
+#filtering out to general fish of interest
+Raw<-Raw %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) #Filtering out just fish that we have age class info for...
+
+#filter out instances where there is 0 standard length, I'll rbind them back later.
+PlusCounts<-Raw %>% filter(StandardLength==0)
+Raw_AgeClass<-Raw %>% filter(StandardLength!=0)
+
+#before I add age class, I have to rename a duplicated column name "class"
+AgesBySizeMo<-SMFS_AgesBySizeMo %>% rename("AgeClass"="Class")
+#adding age class info
+Raw_AgeClass<- merge(Raw, AgesBySizeMo, by=c("OrganismCode", "Month"), all.x=TRUE)
+
+# Create a boolean condition based on the size range
+condition <- between(Raw_AgeClass$StandardLength, Raw_AgeClass$Min, Raw_AgeClass$Max)
+
+# Update the 'Class' column in 'Catch'
+Raw_AgeClass$AgeClass <- ifelse(condition, Raw_AgeClass$AgeClass, "Delete")
+unique(Raw_AgeClass$AgeClass)
+
+Raw_AgeClass <- filter(Raw_AgeClass, AgeClass != "Delete")
+unique(Raw_AgeClasses$AgeClass)
+
+
+#Now adding plus counts back in
+PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = NA)
+Raw_AgeClasses<-rbind(Raw_AgeClass, PlusCounts)
+
+# If there are missing values in the 'Class' column, you can fill them with a default value
+#Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
+#Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
+
+```
+I'm 7 rows off from the raw data... What is happening with them?
+
+## Distribution of lengths for each water quality by year
+Species of interest: LFS, ASH, ISS, SCP, STBK, SKG
+
+### LFS
+```{r}
+#Need to bin sizes
+
+#Water Temp graph for Striped Bass 2011-2023
+WT.Plot<-Raw %>% 
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
+  ggplot(aes(WaterTemperature, Count))+
+  geom_col(aes(fill=StandardLength))+
+  labs(title = "Longfin smelt standard lengths\n & Water Temp SMFS 2011-2023") +
+  facet_wrap(~Year)+
+  theme_bw()
+WT.Plot
+
+#DO Graph for SB  2011-2023
+DO.Plot<-Raw %>% 
+  filter(OrganismCode %in% "SB", !is.na(DO), !is.na(Count)) %>%
+  CatchFrequency(DO, Count, title = "SB & DO SMFS 2011-2023")
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw %>% 
+  filter(OrganismCode %in% "SB", !is.na(Salinity), !is.na(Count)) %>%
+  CatchFrequency(Salinity, Count, title = "SB & Salinity SMFS 2011-2023")
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw %>% 
+  filter(OrganismCode %in% "SB", !is.na(Secchi), !is.na(Count)) %>%
+  CatchFrequency(Secchi, Count, title = "SB & Secchi SMFS 2011-2023")
+# Arrange plots into a single image
+plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+
+
+# Visualizing data with zeros
 ```{r}
 # Create the catch frequency graph
 #WaterTemp Graph for Tule Perch 2011-2023
@@ -31,7 +124,7 @@ SMFS_OTR_Thesis_WithZeros$Month<-as.factor(SMFS_OTR_Thesis_WithZeros$Month)
 
 ```
 
-# Matching Levi's Alviso Dynamics Plot
+## Matching Levi's Alviso Dynamics Plot
 I want to make Levi's plots!
 I need a three by four grid of boxplots as follows: 
 By year    By Month   By Site
@@ -111,7 +204,7 @@ plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sa
 #Make y-axis match levi's
 ```
 
-# CPUE (per minute trawl)
+## CPUE (per minute trawl)
 ```{r}
 #Calculate CPUE
 SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
@@ -255,7 +348,7 @@ SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & Sta
         theme_minimal() + xlab("Standard Length (mm)")
 ```
 
-# Other plots
+## Other plots
 ```{r}
 SMFS_OTR_Thesis_WithZeros %>% 
   filter(OrganismCode %in% "TP") %>% 

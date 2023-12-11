@@ -37,33 +37,34 @@ SBOTS2019<-mutate(SBOTS2019, Study = "SBOTS")
 
 Left is SMFS, right is SBOTS. All water quality taken by SMFS is done for the surface of the water column so all water quality from SBOTS will start with "es" indicating it was taken at the end of the trawl at the surface of the water, matching SMFS methodology.
 
-| SMFS                | SBOTS   | Notes                                                                                       |
-|---------------|---------------|------------------------------------------|
-| WaterTemperature    | estemp  | water temperature in degrees C.                                                             |
-| Secchi              | esecchi | Measure of water clarity in cm.                                                             |
-| CPUE                | cpue    | catch per unit effort (trawl minutes?).                                                     |
-| Salinity            | essal   | Salinity measured in ppt (but actually practical units?).                                   |
-| TowDuration         | dur     | Number of minutes of tow (sampling effort).                                                 |
-| DO                  | esdoc   | Dissolved oxygen measured in mg/L.                                                          |
-| Count               | count   | Number of organism counted in sample.                                                       |
-| PctSaturation       | esdop   | Dissolved oxygen measured in %.                                                             |
-| SpecificConductance | escond  | Specific conductivity (μS).                                                                 |
-| StationCode         | stn     | Name of location of sample.                                                                 |
-| MethodCode          | method  | Methodology used to collect sample.                                                         |
-| SampleDate          | towdate | Date of sample.                                                                             |
-| TideCode            | tidet   | Type of tide.                                                                               |
-| Year                | year    | Year of sample.                                                                             |
-| WaterYear           | wyr     | Water year of sample.                                                                       |
-| StandardLength      | sl      | Not currently in SBOT table but may be included later (implications for cpue calculation?). |
-| Month               | month   | Month of sample.                                                                            |
-| CommonName          | comname | Common name of species.                                                                     |
-| Family              | family  | The family of the species.                                                                  |
-| Genus               | genus   | Genus of the species.                                                                       |
-| gensp               | gensp   | Genus species.                                                                              |
-| Native              | natinv  | Is species native or invasive?                                                              |
-| Study               | Study   | Which study collected this data?                                                            |
+| SMFS                | SBOTS   | Notes                                                                                                      |
+|---------------|---------------|-----------------------------------------|
+| WaterTemperature    | estemp  | water temperature in degrees C.                                                                            |
+| Secchi              | esecchi | Measure of water clarity in cm.                                                                            |
+| Salinity            | essal   | Salinity measured in ppt (but actually practical units?).                                                  |
+| TowDuration         | dur     | Number of minutes of tow (sampling effort).                                                                |
+| DO                  | esdoc   | Dissolved oxygen measured in mg/L.                                                                         |
+| Count               | count   | Number of organism counted in sample.                                                                      |
+| PctSaturation       | esdop   | Dissolved oxygen measured in %.                                                                            |
+| SpecificConductance | escond  | Specific conductivity (μS).                                                                                |
+| StationCode         | stn     | Name of location of sample.                                                                                |
+| MethodCode          | method  | Methodology used to collect sample.                                                                        |
+| SampleDate          | towdate | Date of sample.                                                                                            |
+| TideCode            | tidet   | Type of tide (ebb, flood, slack...)                                                                        |
+| TideHeight          | tideh   | Empty for SMFS. SBOT displays height of tide at location for the date and time. (Ex: 5.3) Unsure of units. |
+| Year                | year    | Year of sample.                                                                                            |
+| WaterYear           | wyr     | Water year of sample.                                                                                      |
+| StandardLength      | sl      | Not currently in SBOT table but may be included later (implications for cpue calculation?).                |
+| Month               | month   | Month of sample.                                                                                           |
+| CommonName          | comname | Common name of species.                                                                                    |
+| Family              | family  | The family of the species.                                                                                 |
+| Genus               | genus   | Genus of the species.                                                                                      |
+| gensp               | gensp   | Genus species.                                                                                             |
+| Native              | natinv  | Is species native or invasive?                                                                             |
+| Study               | Study   | Which study collected this data?                                                                           |
 
 ```{r}
+glimpse(SMFS)
 glimpse(SBOTS2019)
 #Match column types
 SBOTS2019$estemp<-as.numeric(SBOTS2019$estemp)

@@ -21,8 +21,9 @@ library(fuzzyjoin)
 ```
 
 # Visuals of Raw Data
+I know we are not planning to use "age classes" as they are possibly incorrect but it is a useful measure of size differences. I know they are referred to here as "age classes" but it is similar to refer to them as size classes.
 
-## Load Data
+## Load Data and Wrangle
 
 ```{r}
 SMFS_09192023 <- read_csv("Data/SMFS_09192023.csv") #this dataset includes all SMFS data 
@@ -60,11 +61,11 @@ Raw_AgeClass<- merge(Raw, AgesBySizeMo, by=c("OrganismCode", "Month"), all.x=TRU
 # Create a boolean condition based on the size range
 condition <- between(Raw_AgeClass$StandardLength, Raw_AgeClass$Min, Raw_AgeClass$Max)
 
-# Update the 'Class' column in 'Catch'
-Raw_AgeClass$AgeClass <- ifelse(condition, Raw_AgeClass$AgeClass, "Delete")
+# Update the 'Class' column in 'Raw_AgeClass'
+Raw_AgeClass$AgeClass <- ifelse(condition, Raw_AgeClass$AgeClass, "Delete") #Keeping age class assignments if condition is met, otherwise assigning "delete" value to the row.
 unique(Raw_AgeClass$AgeClass)
 
-Raw_AgeClass <- filter(Raw_AgeClass, AgeClass != "Delete")
+Raw_AgeClass <- filter(Raw_AgeClass, AgeClass != "Delete") #deleting the rows that did not match the condition
 unique(Raw_AgeClasses$AgeClass)
 
 
@@ -72,46 +73,161 @@ unique(Raw_AgeClasses$AgeClass)
 PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = NA)
 Raw_AgeClasses<-rbind(Raw_AgeClass, PlusCounts)
 
+LostRows<-anti_join(Raw, Raw_AgeClasses)
+
+Raw_AgeSnipped<-Raw_AgeClasses %>% select(OrganismCode,
+Month, ...1, CatchRowID, SampleRowID,
+StandardLength, Dead, Weight, Sex, Count,
+CatchComments, Volume,
+AgeClassforUnmeasuredFish, MethodCode,
+StationCode, SampleDate, SampleTime, QADone,
+GearID, WaterTemperature, Salinity, DO,
+PctSaturation, Secchi, SpecificConductance,
+TideCode, UserName, ElecCond, TrawlRowID,
+TowDuration, TrawlComments, StartMeter,
+EndMeter, OrganismRowID, Native, Resident,
+Active, CommonName, Phylum, Class, Order,
+Family, Genus, Species, Comments,
+TL_to_StdLen_Coefficient, Year, gensp)
+Raw<-as.data.frame(Raw)
+AddedRows<-anti_join(Raw_AgeSnipped, Raw, join_by(OrganismCode, Month, StandardLength))
+View(AddedRows)
+str(Raw_AgeSnipped)
+str(Raw)
+
 # If there are missing values in the 'Class' column, you can fill them with a default value
 #Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
 #Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
 
+#Calculating cpue
+Raw_AgeClassCpueCountValues<-Raw_AgeClasses %>% group_by(OrganismCode, StandardLength) %>% 
 ```
-I'm 7 rows off from the raw data... What is happening with them?
+I'm 7 rows off from the raw data... Why did my code add 7 rows to the raw data? I know I lost 3 rows of real fish because their sizes were above the set max range. 
 
-## Distribution of lengths for each water quality by year
+## Catch of lengths for each water quality by year
+
 Species of interest: LFS, ASH, ISS, SCP, STBK, SKG
 
-### LFS
+If we see different age classes popping up in different areas of wq (for instance most age 1 to the left, age 2 to the right, we may expect differences in sensitivity to water quality by age). If there is a lot of overlap with no clear segregation across years I imagine that means there isn't substantial support for modelling the ages separately. 
+
+### Longfin Smelt
 ```{r}
-#Need to bin sizes
 
 #Water Temp graph for Striped Bass 2011-2023
-WT.Plot<-Raw %>% 
+WT<-Raw_AgeClasses %>%  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% group_by(WaterTemperature, AgeClass) %>% summarize(Catch=sum(Count), Tow=sum(TowDuration)) %>% mutate(cpue=Catch/Tow) %>% ggplot(aes(x=WaterTemperature, y=cpue))+geom_col(aes(fill=AgeClass))+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays cpue as calculated for each unique combination of age class and water quality value. This is more along the lines of what I am interested in, however it does not match how I plan to calculate cpue for my models.
+
+WT2<-Raw_AgeClasses %>% mutate(cpue=Count/TowDuration) %>%  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% ggplot(aes(x=WaterTemperature, y=cpue))+geom_col(aes(fill=AgeClass))+facet_wrap(~AgeClass, scales="free_y")
+WT2 #Displays cpue for each unique sampling event catch. This is how I plan to calculate my cpue for my models.
+
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
-  ggplot(aes(WaterTemperature, Count))+
-  geom_col(aes(fill=StandardLength))+
-  labs(title = "Longfin smelt standard lengths\n & Water Temp SMFS 2011-2023") +
-  facet_wrap(~Year)+
+  ggplot(aes(WaterTemperature, sum(Count)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "Longfin smelt age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Grey bars indicate plus counted fish.") +
   theme_bw()
 WT.Plot
 
-#DO Graph for SB  2011-2023
-DO.Plot<-Raw %>% 
-  filter(OrganismCode %in% "SB", !is.na(DO), !is.na(Count)) %>%
-  CatchFrequency(DO, Count, title = "SB & DO SMFS 2011-2023")
-#Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw %>% 
-  filter(OrganismCode %in% "SB", !is.na(Salinity), !is.na(Count)) %>%
-  CatchFrequency(Salinity, Count, title = "SB & Salinity SMFS 2011-2023")
-#Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw %>% 
-  filter(OrganismCode %in% "SB", !is.na(Secchi), !is.na(Count)) %>%
-  CatchFrequency(Secchi, Count, title = "SB & Secchi SMFS 2011-2023")
-# Arrange plots into a single image
-plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
-```
+WT.PlotFacet<-WT.Plot + facet_wrap(~Year)
 
+WT.PlotFacet
+
+#DO Graph for SB  2011-2023
+DO.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
+  ggplot(aes(DO, sum(Count/TowDuration)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "Longfin smelt standard lengths & Dissolved Oxygen (mg/L) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  theme_bw()
+DO.Plot
+
+DO.PlotFacet<-DO.Plot + facet_wrap(~Year)
+
+DO.PlotFacet
+
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
+  ggplot(aes(Salinity, sum(Count/TowDuration)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "Longfin smelt standard lengths & salinity SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  #facet_wrap(~Year)+
+  theme_bw()
+PPT.Plot
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
+  ggplot(aes(Secchi, sum(Count/TowDuration))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "Longfin smelt standard lengths & secchi (cm) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  facet_wrap(~Year)+
+  theme_bw()
+Secchi.Plot
+# Arrange plots into a single image
+#plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+For longfin smelt, age classes don't show a lot of differences for water temperature, DO, salinity, or secchi. 
+When I split up by year, I do see some divergence between age classes. But when looking at the image with all years combined, that difference isn't reflected. So I think this sort of output suggests that age classes for LFS don't show much reason for differentiating between ages in our models and we can group them together and not worry about sizes of plus counted fish.
+
+
+### American Shad
+```{r}
+
+#Water Temp graph for Striped Bass 2011-2023
+WT.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
+  ggplot(aes(WaterTemperature, sum(Count/TowDuration)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "American shad standard lengths & Water Temp SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)" , caption = "Grey bars indicate plus counted fish.") +
+  #facet_wrap(~Year)+
+  theme_bw()
+WT.Plot
+
+WT.PlotFacet<-WT.Plot+ facet_wrap(~Year)
+
+WT.PlotFacet
+
+#DO Graph for SB  2011-2023
+DO.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
+  ggplot(aes(DO, sum(Count/TowDuration)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "American shad standard lengths & Dissolved Oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)" , caption = "Grey bars indicate plus counted fish.") +
+  #facet_wrap(~Year)+
+  theme_bw()
+DO.Plot
+
+DO.PlotFacet<-DO.Plot+ facet_wrap(~Year)
+
+DO.PlotFacet
+
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
+  ggplot(aes(Salinity, sum(Count/TowDuration)))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "American shad standard lengths & salinity SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  theme_bw()
+PPT.Plot
+
+PPT.PlotFacet<-PPT.Plot+ facet_wrap(~Year)
+
+PPT.PlotFacet
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
+  ggplot(aes(Secchi, Count/TowDuration))+
+  geom_col(aes(fill=AgeClass))+
+  labs(title = "American shad standard lengths & secchi (cm) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  facet_wrap(~Year)+
+  theme_bw()
+Secchi.Plot
+# Arrange plots into a single image
+#plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+For American shad, I notice stark differences in age classes. There seems to be a bimodal pattern with Age-1+ distribution peaking at around 10C and Age-0 peaking at much higher 22C.We still have a lot of overlap, but I see differences in responses between Age-0 and age-1+. Most of the difference seen is relfected by 2014 and 2018 when viewing the breakdown by years. 
+DO does not show stark differences between age classes aside from longer tails of the Age-1+ category. Year to year comparisons show some years with negligable age-1+ catch.
+Salinity 
 
 # Visualizing data with zeros
 ```{r}

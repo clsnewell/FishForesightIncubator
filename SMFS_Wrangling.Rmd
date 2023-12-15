@@ -42,9 +42,25 @@ SMFS_Thesis<-mutate(SMFS_OTR_Thesis, gensp = paste(Genus, Species, sep=" "))
 
 
 #Save New DF
-write.csv(SMFS_Thesis, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis.csv")
+#write.csv(SMFS_Thesis, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis.csv")
 
 ```
+
+### One fish one row
+```{r}
+SMFS_Thesis_Expand <- SMFS_Thesis %>%
+  filter(StandardLength > 0) %>%
+  uncount(Count, .remove = FALSE) 
+SMFS_Thesis_Expand$Count<-1
+
+Bind<-SMFS_Thesis %>%
+  filter(!StandardLength > 0)
+SMFS_Thesis_Expand2<-rbind(SMFS_Thesis_Expand, Bind)
+#Save New DF
+write.csv(SMFS_Thesis_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
+
+```
+
 
 ### Investigating NA's in dataset
 ```{r}

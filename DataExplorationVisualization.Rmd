@@ -65,7 +65,7 @@ unique(Raw_AgeClass$AgeClass)
 glimpse(Raw_AgeClass) #58,320 rows
 
 #Now adding plus counts back in
-PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = NA)
+PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = "PLUS")
 Raw_AgeClasses<-rbind(Raw_AgeClass, PlusCounts)
 
 glimpse(Raw) #58,638 rows and 49 columns before adding age class information. Number of rows should match Raw_AgeClasses output.

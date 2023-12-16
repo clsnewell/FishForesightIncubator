@@ -26,37 +26,32 @@ I know we are not planning to use "age classes" as they are possibly incorrect b
 ## Load Data and Wrangle
 
 ```{r}
-SMFS_09192023 <- read_csv("Data/SMFS_09192023.csv") #this dataset includes all SMFS data 
-glimpse(SMFS_09192023)
-#Need to merge with names and ages
-SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
-SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
-
-Raw<-full_join(SMFS_09192023, SMFS_OrganismsLookUp, by = "OrganismCode")
-
-Raw<-mutate(Raw, gensp = paste(Genus, Species, sep=" "))
-
-#Let's filter to the time frame of interest
-Raw$Year<-year(Raw$SampleDate)
-Raw$Month<-month(Raw$SampleDate)
-#Now I just want otter trawl data
-Raw<-Raw %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
-Raw$Year<-as.numeric(Raw$Year) #need to make water year numeric so I can filter out years easily.
-
-Raw<-Raw %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
+SMFS_Thesis <- read_csv("Data/SMFS_Thesis.csv") #this dataset includes all SMFS data 
 
 #I'm leaving the NA water quality in for now. 
+#Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
+SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+#Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
+SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == "HCH" & Month == 1 ~ 267,
+                          OrganismCode == "BF" & Month == 10  ~ 451,
+                          OrganismCode == "ASH" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
+
+#ggplot(SMFS_AgesBySizeMo, aes(x=Month, color=Class))+
+ # geom_linerange(ymin=SMFS_AgesBySizeMo$Min, ymax=SMFS_AgesBySizeMo$Max)+
+ # facet_wrap(~OrganismCode) #I want to double check these are right with no overlap by plotting them but it is hard :(
+
 #filtering out to general fish of interest
-Raw<-Raw %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) #Filtering out just fish that we have age class info for...
+Raw<-SMFS_Thesis %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) #Filtering out just fish that we have age class info for...
 
 #filter out instances where there is 0 standard length, I'll rbind them back later.
 PlusCounts<-Raw %>% filter(StandardLength==0)
-Raw_AgeClass<-Raw %>% filter(StandardLength!=0)
+Raws_AgeClass<-Raw %>% filter(StandardLength!=0)
 
 #before I add age class, I have to rename a duplicated column name "class"
 AgesBySizeMo<-SMFS_AgesBySizeMo %>% rename("AgeClass"="Class")
 #adding age class info
-Raw_AgeClass<- merge(Raw, AgesBySizeMo, by=c("OrganismCode", "Month"), all.x=TRUE)
+Raw_AgeClass<- left_join(Raws_AgeClass, AgesBySizeMo, join_by("OrganismCode", "Month"))#left join because I don't want age classes for fish we did not catch.
+glimpse(Raw_AgeClass) #148,341 rows, 52 columns.
 
 # Create a boolean condition based on the size range
 condition <- between(Raw_AgeClass$StandardLength, Raw_AgeClass$Min, Raw_AgeClass$Max)
@@ -66,43 +61,27 @@ Raw_AgeClass$AgeClass <- ifelse(condition, Raw_AgeClass$AgeClass, "Delete") #Kee
 unique(Raw_AgeClass$AgeClass)
 
 Raw_AgeClass <- filter(Raw_AgeClass, AgeClass != "Delete") #deleting the rows that did not match the condition
-unique(Raw_AgeClasses$AgeClass)
-
+unique(Raw_AgeClass$AgeClass)
+glimpse(Raw_AgeClass) #58,320 rows
 
 #Now adding plus counts back in
 PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = NA)
 Raw_AgeClasses<-rbind(Raw_AgeClass, PlusCounts)
 
-LostRows<-anti_join(Raw, Raw_AgeClasses)
+glimpse(Raw) #58,638 rows and 49 columns before adding age class information. Number of rows should match Raw_AgeClasses output.
 
-Raw_AgeSnipped<-Raw_AgeClasses %>% select(OrganismCode,
-Month, ...1, CatchRowID, SampleRowID,
-StandardLength, Dead, Weight, Sex, Count,
-CatchComments, Volume,
-AgeClassforUnmeasuredFish, MethodCode,
-StationCode, SampleDate, SampleTime, QADone,
-GearID, WaterTemperature, Salinity, DO,
-PctSaturation, Secchi, SpecificConductance,
-TideCode, UserName, ElecCond, TrawlRowID,
-TowDuration, TrawlComments, StartMeter,
-EndMeter, OrganismRowID, Native, Resident,
-Active, CommonName, Phylum, Class, Order,
-Family, Genus, Species, Comments,
-TL_to_StdLen_Coefficient, Year, gensp)
-Raw<-as.data.frame(Raw)
-AddedRows<-anti_join(Raw_AgeSnipped, Raw, join_by(OrganismCode, Month, StandardLength))
-View(AddedRows)
-str(Raw_AgeSnipped)
-str(Raw)
+glimpse(Raws_AgeClass)#58,313 rows after removing plus counts (length of 0).
 
-# If there are missing values in the 'Class' column, you can fill them with a default value
-#Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
-#Raw_AgeClass$Class.y[is.na(Raw_AgeClass$Class.y)] <- 'Unknown'
+glimpse(Raw_AgeClass) #149,168 rows and 52 columns after removing plus counts and joining data with age classes. I get every possible age class here for each fish.
 
-#Calculating cpue
-Raw_AgeClassCpueCountValues<-Raw_AgeClasses %>% group_by(OrganismCode, StandardLength) %>% 
+glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
+
+glimpse(Raw_AgeClasses) #58,647 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
+
+LostRows<-anti_join(Raw_AgeClasses, Raw) 
+
+
 ```
-I'm 7 rows off from the raw data... Why did my code add 7 rows to the raw data? I know I lost 3 rows of real fish because their sizes were above the set max range. 
 
 ## Catch of lengths for each water quality by year
 

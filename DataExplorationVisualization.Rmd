@@ -34,7 +34,7 @@ SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
 #Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
 SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == "HCH" & Month == 1 ~ 267,
                           OrganismCode == "BF" & Month == 10  ~ 451,
-                          OrganismCode == "ASH" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
+                          OrganismCode == "ASH" & Class == "Age-1+" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
 
 #ggplot(SMFS_AgesBySizeMo, aes(x=Month, color=Class))+
  # geom_linerange(ymin=SMFS_AgesBySizeMo$Min, ymax=SMFS_AgesBySizeMo$Max)+
@@ -76,10 +76,9 @@ glimpse(Raw_AgeClass) #149,168 rows and 52 columns after removing plus counts an
 
 glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
 
-glimpse(Raw_AgeClasses) #58,647 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
+glimpse(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
 
-LostRows<-anti_join(Raw_AgeClasses, Raw) 
-
+#WOO! DEBUGGED!
 
 ```
 

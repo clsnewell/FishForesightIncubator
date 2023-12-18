@@ -16,6 +16,7 @@ SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/Fish
 str(SMFS_09192023)
 library(lubridate)
 SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
+SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
 library(lfstat)
 SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
@@ -38,7 +39,7 @@ SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
 
 SMFS_Thesis<-left_join(SMFS_OTR_Thesis, SMFS_OrganismsLookUp, by = "OrganismCode")
 
-SMFS_Thesis<-mutate(SMFS_OTR_Thesis, gensp = paste(Genus, Species, sep=" "))
+SMFS_Thesis<-mutate(SMFS_Thesis, gensp = paste(Genus, Species, sep=" "))
 
 
 #Save New DF

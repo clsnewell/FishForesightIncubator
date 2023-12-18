@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #Load Libraries
 library(tidyverse)
 library(readr)
+library(readxl)
 library(cowplot)
 library(lubridate)
 library(fuzzyjoin)
@@ -26,7 +27,7 @@ I know we are not planning to use "age classes" as they are possibly incorrect b
 ## Load Data and Wrangle
 
 ```{r}
-SMFS_Thesis <- read_csv("Data/SMFS_Thesis.csv") #this dataset includes all SMFS data 
+SMFS_Thesis <- read_csv("Data/SMFS_Thesis.csv") #this dataset includes all SMFS OT data from 2011-2023 data 
 
 #I'm leaving the NA water quality in for now. 
 #Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
@@ -76,7 +77,7 @@ glimpse(Raw_AgeClass) #149,168 rows and 52 columns after removing plus counts an
 
 glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
 
-glimpse(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
+str(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
 
 #WOO! DEBUGGED!
 
@@ -88,135 +89,666 @@ Species of interest: LFS, ASH, ISS, SCP, STBK, SKG
 
 If we see different age classes popping up in different areas of wq (for instance most age 1 to the left, age 2 to the right, we may expect differences in sensitivity to water quality by age). If there is a lot of overlap with no clear segregation across years I imagine that means there isn't substantial support for modelling the ages separately. 
 
+*NOTE: These plots are only for visual assessment of age class differences in responses to water quality variables. No effort represented in these plots.*
+
 ### Longfin Smelt
 ```{r}
+test<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) #Adds new column that round water temperature to nearest 0.5
+test$water_temp_bin
 
-#Water Temp graph for Striped Bass 2011-2023
-WT<-Raw_AgeClasses %>%  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% group_by(WaterTemperature, AgeClass) %>% summarize(Catch=sum(Count), Tow=sum(TowDuration)) %>% mutate(cpue=Catch/Tow) %>% ggplot(aes(x=WaterTemperature, y=cpue))+geom_col(aes(fill=AgeClass))+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays cpue as calculated for each unique combination of age class and water quality value. This is more along the lines of what I am interested in, however it does not match how I plan to calculate cpue for my models.
+#Water Temp graph for 2011-2023
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
 
-WT2<-Raw_AgeClasses %>% mutate(cpue=Count/TowDuration) %>%  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% ggplot(aes(x=WaterTemperature, y=cpue))+geom_col(aes(fill=AgeClass))+facet_wrap(~AgeClass, scales="free_y")
-WT2 #Displays cpue for each unique sampling event catch. This is how I plan to calculate my cpue for my models.
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
 
-WT.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
-  ggplot(aes(WaterTemperature, sum(Count)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "Longfin smelt age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Grey bars indicate plus counted fish.") +
-  theme_bw()
-WT.Plot
+WT.Year.Plot
 
-WT.PlotFacet<-WT.Plot + facet_wrap(~Year)
+#DO Graph for SB  2011-20
 
-WT.PlotFacet
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & Dissolved Oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
 
-#DO Graph for SB  2011-2023
-DO.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
-  ggplot(aes(DO, sum(Count/TowDuration)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "Longfin smelt standard lengths & Dissolved Oxygen (mg/L) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
-  theme_bw()
-DO.Plot
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) + facet_wrap(~Year)
 
-DO.PlotFacet<-DO.Plot + facet_wrap(~Year)
+DO.Year.Plot
 
-DO.PlotFacet
-
+summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
 PPT.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
-  ggplot(aes(Salinity, sum(Count/TowDuration)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "Longfin smelt standard lengths & salinity SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)
   #facet_wrap(~Year)+
-  theme_bw()
 PPT.Plot
+
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
+
+summary(Raw_AgeClasses$Secchi)
 #Secchi Graph for SB 2011-2023
 Secchi.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "LFS", !is.na(Count)) %>%
-  ggplot(aes(Secchi, sum(Count/TowDuration))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "Longfin smelt standard lengths & secchi (cm) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
-  facet_wrap(~Year)+
-  theme_bw()
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20)
+  
 Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Longfin smelt age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
 # Arrange plots into a single image
-#plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 ```
-For longfin smelt, age classes don't show a lot of differences for water temperature, DO, salinity, or secchi. 
-When I split up by year, I do see some divergence between age classes. But when looking at the image with all years combined, that difference isn't reflected. So I think this sort of output suggests that age classes for LFS don't show much reason for differentiating between ages in our models and we can group them together and not worry about sizes of plus counted fish.
+
 
 
 ### American Shad
 ```{r}
 
-#Water Temp graph for Striped Bass 2011-2023
-WT.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
-  ggplot(aes(WaterTemperature, sum(Count/TowDuration)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "American shad standard lengths & Water Temp SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)" , caption = "Grey bars indicate plus counted fish.") +
-  #facet_wrap(~Year)+
-  theme_bw()
-WT.Plot
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
 
-WT.PlotFacet<-WT.Plot+ facet_wrap(~Year)
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
 
-WT.PlotFacet
+WT.Year.Plot
 
-#DO Graph for SB  2011-2023
-DO.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
-  ggplot(aes(DO, sum(Count/TowDuration)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "American shad standard lengths & Dissolved Oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)" , caption = "Grey bars indicate plus counted fish.") +
-  #facet_wrap(~Year)+
-  theme_bw()
-DO.Plot
+#DO Graph for SB  2011-20
 
-DO.PlotFacet<-DO.Plot+ facet_wrap(~Year)
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
 
-DO.PlotFacet
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) + facet_wrap(~Year)
 
+DO.Year.Plot
+
+summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
 PPT.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
-  ggplot(aes(Salinity, sum(Count/TowDuration)))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "American shad standard lengths & salinity SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
-  theme_bw()
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)
+  #facet_wrap(~Year)+
 PPT.Plot
 
-PPT.PlotFacet<-PPT.Plot+ facet_wrap(~Year)
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
 
-PPT.PlotFacet
+summary(Raw_AgeClasses$Secchi)
 #Secchi Graph for SB 2011-2023
 Secchi.Plot<-Raw_AgeClasses %>% 
-  filter(OrganismCode %in% "ASH", !is.na(Count)) %>%
-  ggplot(aes(Secchi, Count/TowDuration))+
-  geom_col(aes(fill=AgeClass))+
-  labs(title = "American shad standard lengths & secchi (cm) SMFS 2011-2023", y ="Catch per minute trawl" , caption = "Grey bars indicate plus counted fish.") +
-  facet_wrap(~Year)+
-  theme_bw()
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20)
+  
 Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "American shad age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
 # Arrange plots into a single image
-#plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 ```
-For American shad, I notice stark differences in age classes. There seems to be a bimodal pattern with Age-1+ distribution peaking at around 10C and Age-0 peaking at much higher 22C.We still have a lot of overlap, but I see differences in responses between Age-0 and age-1+. Most of the difference seen is relfected by 2014 and 2018 when viewing the breakdown by years. 
-DO does not show stark differences between age classes aside from longer tails of the Age-1+ category. Year to year comparisons show some years with negligable age-1+ catch.
-Salinity 
-
-# Visualizing data with zeros
+ 
+### ISS
 ```{r}
-# Create the catch frequency graph
-#WaterTemp Graph for Tule Perch 2011-2023
-glimpse(SMFS_OTR_Thesis_WithZeros)
-#dev.off()
-SMFS_OTR_Thesis_WithZeros$Year<-as.factor(SMFS_OTR_Thesis_WithZeros$Year)
-SMFS_OTR_Thesis_WithZeros$Month<-as.factor(SMFS_OTR_Thesis_WithZeros$Month)
 
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
+
+WT.Year.Plot
+
+#DO Graph for SB  2011-20
+
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
+
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8) + facet_wrap(~Year)
+
+DO.Year.Plot
+
+summary(Raw_AgeClasses$Salinity)
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)
+  #facet_wrap(~Year)+
+PPT.Plot
+
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 8)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
+
+test<-Raw_AgeClasses %>% filter(OrganismCode %in% "ISS")
+test$Secchi
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 10)
+  
+Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Miss. silverside age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
+# Arrange plots into a single image
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 ```
+
+### SCP
+```{r}
+
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
+
+WT.Year.Plot
+
+#DO Graph for SB  2011-20
+
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
+
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) + facet_wrap(~Year)
+
+DO.Year.Plot
+
+summary(Raw_AgeClasses$Salinity)
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)
+  #facet_wrap(~Year)+
+PPT.Plot
+
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
+
+test<-Raw_AgeClasses %>% filter(OrganismCode %in% "SCP")
+test$Secchi
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 10)
+  
+Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Prickly sculpin age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
+# Arrange plots into a single image
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+
+### STBK
+```{r}
+
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback\n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
+
+WT.Year.Plot
+
+#DO Graph for SB  2011-20
+
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
+
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) + facet_wrap(~Year)
+
+DO.Year.Plot
+
+summary(Raw_AgeClasses$Salinity)
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)
+  #facet_wrap(~Year)+
+PPT.Plot
+
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
+
+test<-Raw_AgeClasses %>% filter(OrganismCode %in% "STBK")
+test$Secchi
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 10)
+  
+Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Three-spined stickleback \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
+# Arrange plots into a single image
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+
+### SKG
+```{r}
+
+WT<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby\n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
+WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+
+WT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(water_temp_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=water_temp_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 20) + facet_wrap(~Year)
+
+WT.Year.Plot
+
+#DO Graph for SB  2011-20
+
+DO<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
+DO
+  
+
+DO.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(DO_bin = round(DO * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(DO_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=DO_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 12) + facet_wrap(~Year)
+
+DO.Year.Plot
+
+summary(Raw_AgeClasses$Salinity)
+#Salinity Graph for SB 2011-2023
+PPT.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)
+  #facet_wrap(~Year)+
+PPT.Plot
+
+PPT.Year.Plot<-Raw_AgeClasses %>% 
+  mutate(Sal_bin = round(Salinity * 2) / 2) %>%
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(Sal_bin, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Sal_bin, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
+  scale_x_continuous(n.breaks = 15)+facet_wrap(~Year)
+  #facet_wrap(~Year)+
+PPT.Year.Plot
+
+test<-Raw_AgeClasses %>% filter(OrganismCode %in% "SKG")
+test$Secchi
+#Secchi Graph for SB 2011-2023
+Secchi.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 10)
+  
+Secchi.Plot
+
+Secchi.Year.Plot<-Raw_AgeClasses %>% 
+  filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
+  group_by(Secchi, AgeClass, Year) %>% 
+  summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
+  ggplot(aes(x=Secchi, y=Catch))+
+  geom_line(aes(color=AgeClass))+ 
+  theme_bw()+ labs(title = "Shokihaze goby \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
+  scale_x_continuous(n.breaks = 20) +
+  facet_wrap(~Year)
+  
+Secchi.Year.Plot
+
+
+# Arrange plots into a single image
+plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+```
+
 
 ## Matching Levi's Alviso Dynamics Plot
 I want to make Levi's plots!
@@ -229,65 +761,67 @@ Temp (degC)
 SEC (cm)
 ## SMFS Dynamics
 ```{r}
+SMFS_Thesis$Year<-as.factor(SMFS_Thesis$Year)
+SMFS_Thesis$Month<-as.factor(SMFS_Thesis$Month)
 #need cowplot
-Year_DO<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+Year_DO<-SMFS_Thesis %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Year_Sal<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+Year_Sal<-SMFS_Thesis %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Year_Temp<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+Year_Temp<-SMFS_Thesis %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Year_SEC<- SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+Year_SEC<- SMFS_Thesis %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
 
-Month_DO<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+Month_DO<-SMFS_Thesis %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Month_Sal<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+Month_Sal<-SMFS_Thesis %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Month_Temp<-SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+Month_Temp<-SMFS_Thesis %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-Month_SEC<- SMFS_OTR_Thesis_WithZeros %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+Month_SEC<- SMFS_Thesis %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-sort(unique(SMFS_OTR_Thesis_WithZeros$StationCode)) #gives list in alphabetical order!
-StationCode_DO<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+sort(unique(SMFS_Thesis$StationCode)) #gives list in alphabetical order!
+StationCode_DO<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-StationCode_Sal<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+StationCode_Sal<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-StationCode_Temp<-SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+StationCode_Temp<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
                col = "red")
-StationCode_SEC<- SMFS_OTR_Thesis_WithZeros %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+StationCode_SEC<- SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
   stat_summary(fun = median,
                geom = "line",
                aes(group = 1),
@@ -298,11 +832,6 @@ plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sa
 #Make y-axis match levi's
 ```
 
-## CPUE (per minute trawl)
-```{r}
-#Calculate CPUE
-SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
-```
 
 ## Frequency Distribution Plots
 I want to produce histograms/frequency distribution plots showing how data for species is represented over water quality, time, and demographics.

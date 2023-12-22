@@ -98,7 +98,7 @@ test<-Raw_AgeClasses %>%
 test$water_temp_bin
 
 #Water Temp graph for 2011-2023
-WT<-Raw_AgeClasses %>% 
+WT_LFS<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -107,7 +107,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Longfin smelt age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_LFS #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -123,7 +123,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_LFS<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -132,7 +132,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Longfin smelt age classes & Dissolved Oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_LFS
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -149,7 +149,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_LFS<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -159,7 +159,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Longfin smelt age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_LFS
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -175,7 +175,7 @@ PPT.Year.Plot
 
 summary(Raw_AgeClasses$Secchi)
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_LFS<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -184,7 +184,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Longfin smelt age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts.\n No effort accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 20)
   
-Secchi.Plot
+Secchi_LFS
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(Count)) %>% 
@@ -200,15 +200,14 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_LFS, DO_LFS, PPT_LFS, Secchi_LFS, ncol = 2, labels = "AUTO")
 ```
 
 
 
 ### American Shad
 ```{r}
-
-WT<-Raw_AgeClasses %>% 
+WT_ASH<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -217,7 +216,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "American shad age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_ASH #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -233,7 +232,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_ASH<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -242,7 +241,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "American shad age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_ASH
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -259,7 +258,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_ASH<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -269,7 +268,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "American shad age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_ASH
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -285,7 +284,7 @@ PPT.Year.Plot
 
 summary(Raw_AgeClasses$Secchi)
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_ASH<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -294,7 +293,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "American shad age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 20)
   
-Secchi.Plot
+Secchi_ASH
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(Count)) %>% 
@@ -310,13 +309,13 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_ASH, DO_ASH, PPT_ASH, Secchi_ASH, ncol = 2, labels = "AUTO")
 ```
  
 ### ISS
 ```{r}
 
-WT<-Raw_AgeClasses %>% 
+WT_ISS<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -325,7 +324,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Miss. silverside age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_ISS #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -341,7 +340,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_ISS<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -350,7 +349,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Miss. silverside age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_ISS
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -367,7 +366,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_ISS<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -377,7 +376,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Miss. silverside age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 8)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_ISS
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -394,7 +393,7 @@ PPT.Year.Plot
 test<-Raw_AgeClasses %>% filter(OrganismCode %in% "ISS")
 test$Secchi
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_ISS<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -403,7 +402,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Miss. silverside age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 10)
   
-Secchi.Plot
+Secchi_ISS
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ISS", !is.na(Count)) %>% 
@@ -419,13 +418,13 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_ISS, DO_ISS, PPT_ISS, Secchi_ISS, ncol = 2, labels = "AUTO")
 ```
 
 ### SCP
 ```{r}
 
-WT<-Raw_AgeClasses %>% 
+WT_SCP<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -434,7 +433,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Prickly sculpin age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_SCP #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -450,7 +449,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_SCP<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -459,7 +458,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Prickly sculpin age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_SCP
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -476,7 +475,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_SCP<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -486,7 +485,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Prickly sculpin age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 15)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_SCP
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -503,7 +502,7 @@ PPT.Year.Plot
 test<-Raw_AgeClasses %>% filter(OrganismCode %in% "SCP")
 test$Secchi
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_SCP<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -512,7 +511,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Prickly sculpin age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 10)
   
-Secchi.Plot
+Secchi_SCP
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(Count)) %>% 
@@ -528,13 +527,13 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_SCP, DO_SCP, PPT_SCP, Secchi_SCP, ncol = 2, labels = "AUTO")
 ```
 
 ### STBK
 ```{r}
 
-WT<-Raw_AgeClasses %>% 
+WT_STBK<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -543,7 +542,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Three-spined stickleback\n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_STBK #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -559,7 +558,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_STBK<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -568,7 +567,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Three-spined stickleback \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_STBK
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -585,7 +584,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_STBK<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -595,7 +594,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Three-spined stickleback \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 15)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_STBK
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -612,7 +611,7 @@ PPT.Year.Plot
 test<-Raw_AgeClasses %>% filter(OrganismCode %in% "STBK")
 test$Secchi
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_STBK<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -621,7 +620,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Three-spined stickleback \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 10)
   
-Secchi.Plot
+Secchi_STBK
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "STBK", !is.na(Count)) %>% 
@@ -637,13 +636,12 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_STBK, DO_STBK, PPT_STBK, Secchi_STBK, ncol = 2, labels = "AUTO")
 ```
 
 ### SKG
 ```{r}
-
-WT<-Raw_AgeClasses %>% 
+WT_SKG<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
   filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
   group_by(water_temp_bin, AgeClass) %>% 
@@ -652,7 +650,7 @@ WT<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Shokihaze goby\n age classes & water temperature SMFS 2011-2023", y ="Summed Catch", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped by age class and water temperature\n to get sum of counts. No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 20) #+facet_wrap(~AgeClass, scales="free_y")
-WT #Displays catch as calculated for each unique combination of age class and water quality value. 
+WT_SKG #Displays catch as calculated for each unique combination of age class and water quality value. 
 
 WT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -668,7 +666,7 @@ WT.Year.Plot
 
 #DO Graph for SB  2011-20
 
-DO<-Raw_AgeClasses %>% 
+DO_SKG<-Raw_AgeClasses %>% 
   mutate(DO_bin = round(DO * 2) / 2) %>%
   filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
   group_by(DO_bin, AgeClass) %>% 
@@ -677,7 +675,7 @@ DO<-Raw_AgeClasses %>%
   geom_line(aes(color=AgeClass))+ 
   theme_bw()+ labs(title = "Shokihaze goby \n age classes & dissolved oxygen SMFS 2011-2023", y ="Summed Catch", x="DO (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped by age class and DO to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 12) #+facet_wrap(~AgeClass, scales="free_y")
-DO
+DO_SKG
   
 
 DO.Year.Plot<-Raw_AgeClasses %>% 
@@ -694,7 +692,7 @@ DO.Year.Plot
 
 summary(Raw_AgeClasses$Salinity)
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-Raw_AgeClasses %>% 
+PPT_SKG<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
   filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
   group_by(Sal_bin, AgeClass) %>% 
@@ -704,7 +702,7 @@ PPT.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Shokihaze goby \n age classes & salinity SMFS 2011-2023", y ="Summed Catch", x="Salinity", caption = "Salinity rounded to 0.5 then grouped by age class and salinity to get sum of counts.\n No effort accounted for in the data represented.") + 
   scale_x_continuous(n.breaks = 15)
   #facet_wrap(~Year)+
-PPT.Plot
+PPT_SKG
 
 PPT.Year.Plot<-Raw_AgeClasses %>% 
   mutate(Sal_bin = round(Salinity * 2) / 2) %>%
@@ -721,7 +719,7 @@ PPT.Year.Plot
 test<-Raw_AgeClasses %>% filter(OrganismCode %in% "SKG")
 test$Secchi
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-Raw_AgeClasses %>% 
+Secchi_SKG<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
   group_by(Secchi, AgeClass) %>% 
   summarize(Catch=sum(Count), Tow=sum(TowDuration))  %>% 
@@ -730,7 +728,7 @@ Secchi.Plot<-Raw_AgeClasses %>%
   theme_bw()+ labs(title = "Shokihaze goby \n age classes & secchi (cm) SMFS 2011-2023", y ="Summed Catch", x="Secchi (cm)", caption = "Grouped by age class and secchi to get sum of counts. No effort \n accounted for in the data represented. Water is more clear at higher secchi readings.") + 
   scale_x_continuous(n.breaks = 10)
   
-Secchi.Plot
+Secchi_SKG
 
 Secchi.Year.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SKG", !is.na(Count)) %>% 
@@ -746,9 +744,72 @@ Secchi.Year.Plot
 
 
 # Arrange plots into a single image
-plot_grid(WT, DO, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
+plot_grid(WT_SKG, DO_SKG, PPT_SKG, Secchi_SKG, ncol = 2, labels = "AUTO")
 ```
 
+
+
+Doesnt seem important to parse out age classes. Check with big group for confirmation.
+
+Note: put responses from different species in a grid for visual comparison.
+
+### All together now
+```{r}
+plot_grid(WT_LFS, WT_ASH, WT_ISS, WT_SCP, WT_STBK, WT_SKG, ncol = 2, labels = "AUTO")
+
+plot_grid(DO_LFS, DO_ASH, DO_ISS, DO_SCP, DO_STBK, DO_SKG, ncol = 2, labels = "AUTO")
+
+plot_grid(PPT_LFS, PPT_ASH, PPT_ISS, PPT_SCP, PPT_STBK, PPT_SKG, ncol = 2, labels = "AUTO")
+
+plot_grid(Secchi_LFS, Secchi_ASH, Secchi_ISS, Secchi_SCP, Secchi_STBK, Secchi_SKG, ncol = 2, labels = "AUTO")
+```
+
+## Seasonality
+First need to convert date to day of year for simpler look at when species are present or not. I also want to make a dataframe that gives 0 or 1 for each day of year for each species across all years as well as for each year...
+```{r}
+Seasonal<-Raw_AgeClasses %>% mutate(DOY=yday(SampleDate)) #adds a column with day of year using yday from lubridate
+Seasonal_All<-Seasonal %>% group_by(CommonName, DOY, Year) %>% summarize(Count=sum(Count)) %>% distinct() #Only have presence in the dataset. Add zeros for each sampling event... Do for species and then run code to see if accuracy improves..
+Seasonal_All$Year<-as.factor(Seasonal_All$Year)
+unique(Seasonal_All$CommonName)
+```
+### Longfin smelt
+```{r}
+l<-Seasonal_All %>% filter(CommonName == "Longfin Smelt") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Longfin smelt catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+l
+l+facet_wrap(~Year)
+```
+### American shad
+```{r}
+a<-Seasonal_All %>% filter(CommonName == "American Shad") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="American shad catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+a
+a+facet_wrap(~Year)
+```
+### Inland Mississippi silverside
+```{r}
+I<-Seasonal_All %>% filter(CommonName == "Inland Silverside") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Inland Silverside catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+I
+I+facet_wrap(~Year)
+```
+### Prickly Sculpin
+```{r}
+P<-Seasonal_All %>% filter(CommonName == "Prickly Sculpin") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Prickly Sculpin catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+P
+P+facet_wrap(~Year)
+```
+### Three-spine stickleback
+```{r}
+Three<-Seasonal_All %>% filter(CommonName == "Threespine Stickleback") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Threespine Stickleback catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+Three
+Three+facet_wrap(~Year)
+```
+### Shokihaze goby
+```{r}
+S<-Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Shokihaze Goby catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
+S
+S+facet_wrap(~Year)
+```
+
+Look at Dylans code to do heat map through years instead...
 
 ## Matching Levi's Alviso Dynamics Plot
 I want to make Levi's plots!
@@ -839,7 +900,7 @@ I want to produce histograms/frequency distribution plots showing how data for s
 Species of interest: Threespine stickleback, striped bass, prickly sculpin, mississippi silversides, longfin smelt, shimofuri goby, american shad, yellowfin goby, threadfin shad, pacific staghorn sculpin, shokihazi goby, starry flounder.
 
 ```{r}
-FishList<-unique(SMFS_OTR_Thesis_WithZeros$OrganismCode)
+FishList<-unique(Raw_AgeClasses$OrganismCode)
 FishList<- c("STBK", "SB", "SCP", "ISS", "LFS", "SG", "ASH", "YFG", "TFS", "STAG", "SF")
 ```
 
@@ -853,14 +914,14 @@ generate_histograms <- function(data, fish_species, variables) {
     ggplot(aes(x = value, fill = variable)) +
     geom_histogram(binwidth = 1, position = "dodge", alpha = 0.5) +
     facet_wrap(~ variable, scales = "free") +
-    labs(title = "Frequency Distribution of CPUE by Environmental Variable",
+    labs(title = "Frequency Distribution of Count by Environmental Variable",
          x = "Value",
          y = "Frequency") +
     theme_minimal()
 }
 
 # Example usage of the function
-generate_histograms(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+generate_histograms(Raw_AgeClasses, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
 
 # Create a function to generate separate sets of histograms for each fish species
 generate_individual_histograms <- function(data, fish_species, variables) {
@@ -885,7 +946,7 @@ generate_individual_histograms <- function(data, fish_species, variables) {
 }
 
 # Example usage of the function
-generate_individual_histograms(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+generate_individual_histograms(Raw_AgeClasses, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
 
 
 generate_individual_bar_plots <- function(data, fish_species, variables) {
@@ -897,13 +958,13 @@ generate_individual_bar_plots <- function(data, fish_species, variables) {
       p <- data_subset %>%
         gather(variable, value, all_of(variables)) %>%
         group_by(variable, value) %>%
-        summarise(sum_CPUE = sum(CPUE, na.rm = TRUE)) %>%
-        ggplot(aes(x = value, y = sum_CPUE, fill = variable)) +
+        summarise(sum_Count = sum(Count, na.rm = TRUE)) %>%
+        ggplot(aes(x = value, y = sum_Count, fill = variable)) +
         geom_col(width=1) +
         facet_wrap(~ variable, scales = "free") +
-        labs(title = paste("CPUE Distribution for", species_code),
+        labs(title = paste("Count Distribution for", species_code),
              x = "Value",
-             y = "Total CPUE") +  
+             y = "Total Count") +  
         theme_minimal()
       
       print(p)
@@ -912,30 +973,30 @@ generate_individual_bar_plots <- function(data, fish_species, variables) {
 }
 
 # Example usage of the function
-generate_individual_bar_plots(SMFS_OTR_Thesis_WithZeros, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
+generate_individual_bar_plots(Raw_AgeClasses, FishList, c("WaterTemperature", "Salinity", "DO", "Secchi"))
 
 
 #facet_grid
-WaterFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = WaterTemperature, y = CPUE)) +
+WaterFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = WaterTemperature, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal()
 
-SecchiFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = Secchi, y = CPUE)) +
+SecchiFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Secchi, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal()
 
-DOFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = DO, y = CPUE)) +
+DOFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = DO, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal()
 
-SalinityFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = Salinity, y = CPUE)) +
+SalinityFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Salinity, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal()
@@ -943,20 +1004,20 @@ SalinityFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) 
 
 ### Temporal
 ```{r}
-YearFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = Year, y = CPUE)) +
+YearFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Year, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal() + theme(axis.text.x = element_text(angle=45))
 
-MonthFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList) %>% 
-        ggplot(aes(x = Month, y = CPUE)) +
+MonthFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
+        ggplot(aes(x = Month, y = Count)) +
         geom_col(width=1) +
         facet_wrap(~OrganismCode, scales = "free") +
         theme_minimal() #+ theme(axis.text.x = element_text(angle=45))
 
-SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
-        ggplot(aes(x = Month, y = CPUE)) +
+SizeFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
+        ggplot(aes(x = Month, y = Count)) +
         geom_col(width=1) +
         facet_grid(Year~OrganismCode) +
         theme_minimal() 
@@ -964,8 +1025,8 @@ SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & Sta
 
 ### Demographics
 ```{r Demographics}
-SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
-        ggplot(aes(x = StandardLength, y = CPUE)) +
+SizeFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
+        ggplot(aes(x = StandardLength, y = Count)) +
         geom_col(width=1) +
         facet_grid(Month~OrganismCode, scales = "free") +
         theme_minimal() + xlab("Standard Length (mm)")
@@ -973,7 +1034,7 @@ SizeFacet<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% FishList & Sta
 
 ## Other plots
 ```{r}
-SMFS_OTR_Thesis_WithZeros %>% 
+Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP") %>% 
   ggplot(aes(x = WaterTemperature, y = Count)) +
   geom_col(position = "dodge") +
@@ -994,152 +1055,152 @@ CatchFrequency <- function(data, x, y, title) {
 } #deparse automatically pulls the name from x and y to label the axes. This function is to make plotting more streamlined :)
 
 #Water Temp graph for TP 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "TP & Water Temp SMFS 2011-2023")
 #DO Graph for TP  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "TP & DO SMFS 2011-2023")
 #Salinity Graph for TP 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "TP & Salinity SMFS 2011-2023")
 #Secchi Graph for TP 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "TP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Striped Bass 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SB", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "SB & Water Temp SMFS 2011-2023")
 #DO Graph for SB  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SB", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "SB & DO SMFS 2011-2023")
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SB", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "SB & Salinity SMFS 2011-2023")
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SB", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "SB & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Prickly Sculpin 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "SCP & Water Temp SMFS 2011-2023")
 #DO Graph for SCP  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "SCP & DO SMFS 2011-2023")
 #Salinity Graph for SCP 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "SCP & Salinity SMFS 2011-2023")
 #Secchi Graph for SCP 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SCP", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "SCP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Longfin Smelt 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "LFS & Water Temp SMFS 2011-2023")
 #DO Graph for LFS  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "LFS & DO SMFS 2011-2023")
 #Salinity Graph for LFS 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "LFS & Salinity SMFS 2011-2023")
 #Secchi Graph for LFS 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "LFS", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "LFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Yellowfin Goby 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "YFG", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "YFG & Water Temp SMFS 2011-2023")
 #DO Graph for YFG  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "YFG", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "YFG & DO SMFS 2011-2023")
 #Salinity Graph for YFG 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "YFG", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "YFG & Salinity SMFS 2011-2023")
 #Secchi Graph for YFG 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "YFG", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "YFG & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for American Shad 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "ASH & Water Temp SMFS 2011-2023")
 #DO Graph for ASH  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "ASH & DO SMFS 2011-2023")
 #Salinity Graph for ASH 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "ASH & Salinity SMFS 2011-2023")
 #Secchi Graph for ASH 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "ASH", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "ASH & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Threadfin Shad 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TFS", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "TFS & Water Temp SMFS 2011-2023")
 #DO Graph for TFS  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TFS", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "TFS & DO SMFS 2011-2023")
 #Salinity Graph for TFS 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TFS", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "TFS & Salinity SMFS 2011-2023")
 #Secchi Graph for TFS 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TFS", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "TFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for Starry Flounder 2011-2023
-WT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+WT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SF", !is.na(WaterTemperature), !is.na(Count)) %>%
   CatchFrequency(WaterTemperature, Count, title = "SF & Water Temp SMFS 2011-2023")
 #DO Graph for SF  2011-2023
-DO.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+DO.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SF", !is.na(DO), !is.na(Count)) %>%
   CatchFrequency(DO, Count, title = "SF & DO SMFS 2011-2023")
 #Salinity Graph for SF 2011-2023
-PPT.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+PPT.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SF", !is.na(Salinity), !is.na(Count)) %>%
   CatchFrequency(Salinity, Count, title = "SF & Salinity SMFS 2011-2023")
 #Secchi Graph for SF 2011-2023
-Secchi.Plot<-SMFS_OTR_Thesis_WithZeros %>% 
+Secchi.Plot<-Raw_AgeClasses %>% 
   filter(OrganismCode %in% "SF", !is.na(Secchi), !is.na(Count)) %>%
   CatchFrequency(Secchi, Count, title = "SF & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
@@ -1148,51 +1209,51 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 ```
 
-```{r}
+```{r, eval=FALSE, echo=FALSE}
 
 
-#Lets plot WaterTemp CPUE now
+#Lets plot WaterTemp Count now
 # Step 1: Sum count over each unique sample row ID
-summed_data <- SMFS_OTR_Thesis_WithZeros %>%
+summed_data <- Raw_AgeClasses %>%
   group_by(SampleRowID, OrganismCode, WaterTemperature) %>%
   summarize(SumCount = sum(Count),
             n=n(SampleRowID),
-            CPUE = SumCount/n())
+            Count = SumCount/n())
 
 # Step 2: Calculate catch per unit effort
-#I want CPUE for each water quality parameter
+#I want Count for each water quality parameter
 
-#CPUE = catch per 5 minute trawl (filter out durations outside of norm) (so could split 10 min trawl catch in half or calculate them separately). For now. 
+#Count = catch per 5 minute trawl (filter out durations outside of norm) (so could split 10 min trawl catch in half or calculate them separately). For now. 
 #Use SampleRowID as unique trawls. Columns: SampleRowID, Metadata, OrganismCode, Count (size will come later), Site.
 
-CPUE_5min_Temp <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_5min_Temp <- Raw_AgeClasses %>% filter(TowDuration == 5) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_Temp <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_10min_Temp <- Raw_AgeClasses %>% filter(TowDuration == 10) %>% group_by(WaterTemperature, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
 
 #Lets run a check real quick
-#Removing NAs from Tow Duration since we won't have CPUE from them
-SMFS_OTR_Thesis_WithZeros_NoTowNA<-SMFS_OTR_Thesis_WithZeros %>% filter(!is.na(TowDuration)) #333872
+#Removing NAs from Tow Duration since we won't have Count from them
+Raw_AgeClasses_NoTowNA<-Raw_AgeClasses %>% filter(!is.na(TowDuration)) #333872
 
-Five<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration == 5) #237628, so matches the CPUE calculation
-Ten<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration == 10) #93027, matches CPUE calculation
-Other<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(TowDuration != 5, 
+Five<-Raw_AgeClasses_NoTowNA %>% filter(TowDuration == 5) #237628, so matches the Count calculation
+Ten<-Raw_AgeClasses_NoTowNA %>% filter(TowDuration == 10) #93027, matches Count calculation
+Other<-Raw_AgeClasses_NoTowNA %>% filter(TowDuration != 5, 
                                                     TowDuration != 10) #3217
 3217+237628+93027 #checks out!
 
-CPUE_5min_DO <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_5min_DO <- Raw_AgeClasses %>% filter(TowDuration == 5) %>% group_by(DO, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_DO <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(DO, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_10min_DO <- Raw_AgeClasses %>% filter(TowDuration == 10) %>% group_by(DO, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_5min_PPT <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_5min_PPT <- Raw_AgeClasses %>% filter(TowDuration == 5) %>% group_by(Salinity, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_PPT <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(Salinity, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_10min_PPT <- Raw_AgeClasses %>% filter(TowDuration == 10) %>% group_by(Salinity, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_5min_Secchi <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 5) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_5min_Secchi <- Raw_AgeClasses %>% filter(TowDuration == 5) %>% group_by(Secchi, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-CPUE_10min_Secchi <- SMFS_OTR_Thesis_WithZeros %>% filter(TowDuration == 10) %>% group_by(Secchi, OrganismCode) %>% summarize(CPUE = sum(Count)/n(), n = n(), Count = Count)
+Count_10min_Secchi <- Raw_AgeClasses %>% filter(TowDuration == 10) %>% group_by(Secchi, OrganismCode) %>% summarize(Count = sum(Count)/n(), n = n(), Count = Count)
 
-#Plot CPUE Now
+#Plot Count Now
 CatchFrequency <- function(data, x, y, title) {
   ggplot(data) +
     aes({{x}}, {{y}}) +
@@ -1201,89 +1262,89 @@ CatchFrequency <- function(data, x, y, title) {
     theme_minimal() + scale_x_continuous(breaks = seq(0, 1000, 5)) + scale_y_continuous(breaks = seq(0, 50, 1))
 }
 #Water Temp graph for TP 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "TP", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of TP & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of TP & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for TP  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "TP", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of TP & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of TP & DO SMFS 2011-2023")
 #Salinity Graph for TP 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "TP", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of TP & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of TP & Salinity SMFS 2011-2023")
 #Secchi Graph for TP 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "TP", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of TP & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of TP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for TP 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "TP", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of TP & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of TP & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for TP  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "TP", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of TP & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of TP & DO SMFS 2011-2023")
 #Salinity Graph for TP 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "TP", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of TP & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of TP & Salinity SMFS 2011-2023")
 #Secchi Graph for TP 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "TP", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of TP & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of TP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
 
-#Water Temp CPUE graph for SB 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for SB 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "SB", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of SB & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of SB & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SB  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "SB", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of SB & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of SB & DO SMFS 2011-2023")
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "SB", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of SB & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of SB & Salinity SMFS 2011-2023")
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "SB", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of SB & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of SB & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for SB 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "SB", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of SB & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of SB & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SB  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "SB", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of SB & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of SB & DO SMFS 2011-2023")
 #Salinity Graph for SB 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "SB", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of SB & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of SB & Salinity SMFS 2011-2023")
 #Secchi Graph for SB 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "SB", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of SB & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of SB & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
@@ -1292,45 +1353,45 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
-#Water Temp CPUE graph for SCP 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for SCP 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "SCP", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of SCP & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of SCP & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SCP  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "SCP", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of SCP & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of SCP & DO SMFS 2011-2023")
 #Salinity Graph for SCP 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "SCP", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of SCP & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of SCP & Salinity SMFS 2011-2023")
 #Secchi Graph for SCP 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "SCP", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of SCP & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of SCP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for SCP 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "SCP", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of SCP & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of SCP & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SCP  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "SCP", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of SCP & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of SCP & DO SMFS 2011-2023")
 #Salinity Graph for SCP 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "SCP", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of SCP & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of SCP & Salinity SMFS 2011-2023")
 #Secchi Graph for SCP 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "SCP", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of SCP & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of SCP & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
@@ -1340,45 +1401,45 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
-#Water Temp CPUE graph for LFS 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for LFS 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "LFS", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of LFS & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of LFS & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for LFS  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "LFS", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of LFS & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of LFS & DO SMFS 2011-2023")
 #Salinity Graph for LFS 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "LFS", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of LFS & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of LFS & Salinity SMFS 2011-2023")
 #Secchi Graph for LFS 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "LFS", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of LFS & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of LFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for LFS 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "LFS", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of LFS & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of LFS & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for LFS  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "LFS", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of LFS & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of LFS & DO SMFS 2011-2023")
 #Salinity Graph for LFS 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "LFS", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of LFS & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of LFS & Salinity SMFS 2011-2023")
 #Secchi Graph for LFS 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "LFS", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of LFS & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of LFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
@@ -1393,45 +1454,45 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
-#Water Temp CPUE graph for YFG 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for YFG 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "YFG", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of YFG & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of YFG & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for YFG  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "YFG", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of YFG & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of YFG & DO SMFS 2011-2023")
 #Salinity Graph for YFG 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "YFG", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of YFG & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of YFG & Salinity SMFS 2011-2023")
 #Secchi Graph for YFG 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "YFG", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of YFG & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of YFG & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for YFG 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "YFG", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of YFG & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of YFG & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for YFG  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "YFG", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of YFG & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of YFG & DO SMFS 2011-2023")
 #Salinity Graph for YFG 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "YFG", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of YFG & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of YFG & Salinity SMFS 2011-2023")
 #Secchi Graph for YFG 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "YFG", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of YFG & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of YFG & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
@@ -1443,49 +1504,49 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
-#Water Temp CPUE graph for ASH 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for ASH 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "ASH", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of ASH & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of ASH & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for ASH  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "ASH", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of ASH & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of ASH & DO SMFS 2011-2023")
 #Salinity Graph for ASH 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "ASH", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of ASH & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of ASH & Salinity SMFS 2011-2023")
 #Secchi Graph for ASH 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "ASH", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of ASH & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of ASH & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for ASH 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "ASH", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of ASH & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of ASH & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for ASH  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "ASH", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of ASH & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of ASH & DO SMFS 2011-2023")
 #Salinity Graph for ASH 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "ASH", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of ASH & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of ASH & Salinity SMFS 2011-2023")
 #Secchi Graph for ASH 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "ASH", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of ASH & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of ASH & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
-NoNASecchi<-SMFS_OTR_Thesis_WithZeros_NoTowNA %>% filter(!is.na(Secchi))
+NoNASecchi<-Raw_AgeClasses_NoTowNA %>% filter(!is.na(Secchi))
 range(NoNASecchi$Secchi) #Max secchi is 99! Catches over 99 are unmeasurable (possibly written as 99?) since we only bring out a meter stick.
 
 
@@ -1498,45 +1559,45 @@ range(NoNASecchi$Secchi) #Max secchi is 99! Catches over 99 are unmeasurable (po
 
 
 
-#Water Temp CPUE graph for TFS 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for TFS 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "TFS", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of TFS & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of TFS & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for TFS  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "TFS", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of TFS & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of TFS & DO SMFS 2011-2023")
 #Salinity Graph for TFS 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "TFS", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of TFS & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of TFS & Salinity SMFS 2011-2023")
 #Secchi Graph for TFS 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "TFS", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of TFS & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of TFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for TFS 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "TFS", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of TFS & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of TFS & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for TFS  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "TFS", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of TFS & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of TFS & DO SMFS 2011-2023")
 #Salinity Graph for TFS 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "TFS", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of TFS & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of TFS & Salinity SMFS 2011-2023")
 #Secchi Graph for TFS 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "TFS", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of TFS & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of TFS & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
@@ -1550,50 +1611,50 @@ plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 
 
-#Water Temp CPUE graph for SF 2011-2023
-WT.Plot<-CPUE_5min_Temp %>% 
+#Water Temp Count graph for SF 2011-2023
+WT.Plot<-Count_5min_Temp %>% 
   filter(OrganismCode %in% "SF", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "5 min Trawl Catch per Trawl of SF & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "5 min Trawl Catch per Trawl of SF & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SF  2011-2023
-DO.Plot<-CPUE_5min_DO %>% 
+DO.Plot<-Count_5min_DO %>% 
   filter(OrganismCode %in% "SF", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "5 min Trawl Catch per Trawl of SF & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "5 min Trawl Catch per Trawl of SF & DO SMFS 2011-2023")
 #Salinity Graph for SF 2011-2023
-PPT.Plot<-CPUE_5min_PPT %>% 
+PPT.Plot<-Count_5min_PPT %>% 
   filter(OrganismCode %in% "SF", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "5 min Trawl Catch per Trawl of SF & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "5 min Trawl Catch per Trawl of SF & Salinity SMFS 2011-2023")
 #Secchi Graph for SF 2011-2023
-Secchi.Plot<-CPUE_5min_Secchi %>% 
+Secchi.Plot<-Count_5min_Secchi %>% 
   filter(OrganismCode %in% "SF", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "5 min Trawl Catch per Trawl of SF & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "5 min Trawl Catch per Trawl of SF & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #Water Temp graph for SF 2011-2023
-WT.Plot<-CPUE_10min_Temp %>% 
+WT.Plot<-Count_10min_Temp %>% 
   filter(OrganismCode %in% "SF", !is.na(WaterTemperature)) %>%
-  CatchFrequency(WaterTemperature, CPUE, title = "10 min Trawl Catch per Trawl of SF & Water Temp SMFS 2011-2023")
+  CatchFrequency(WaterTemperature, Count, title = "10 min Trawl Catch per Trawl of SF & Water Temp SMFS 2011-2023")
 WT.Plot
 
 #DO Graph for SF  2011-2023
-DO.Plot<-CPUE_10min_DO %>% 
+DO.Plot<-Count_10min_DO %>% 
   filter(OrganismCode %in% "SF", !is.na(DO)) %>%
-  CatchFrequency(DO, CPUE, title = "10 min Trawl Catch per Trawl of SF & DO SMFS 2011-2023")
+  CatchFrequency(DO, Count, title = "10 min Trawl Catch per Trawl of SF & DO SMFS 2011-2023")
 #Salinity Graph for SF 2011-2023
-PPT.Plot<-CPUE_10min_PPT %>% 
+PPT.Plot<-Count_10min_PPT %>% 
   filter(OrganismCode %in% "SF", !is.na(Salinity)) %>%
-  CatchFrequency(Salinity, CPUE, title = "10 min Trawl Catch per Trawl of SF & Salinity SMFS 2011-2023")
+  CatchFrequency(Salinity, Count, title = "10 min Trawl Catch per Trawl of SF & Salinity SMFS 2011-2023")
 #Secchi Graph for SF 2011-2023
-Secchi.Plot<-CPUE_10min_Secchi %>% 
+Secchi.Plot<-Count_10min_Secchi %>% 
   filter(OrganismCode %in% "SF", !is.na(Secchi)) %>%
-  CatchFrequency(Secchi, CPUE, title = "10 min Trawl Catch per Trawl of SF & Secchi SMFS 2011-2023")
+  CatchFrequency(Secchi, Count, title = "10 min Trawl Catch per Trawl of SF & Secchi SMFS 2011-2023")
 # Arrange plots into a single image
 plot_grid(WT.Plot, DO.Plot, PPT.Plot, Secchi.Plot, ncol = 2, labels = "AUTO")
 
 #NEXT: Bin original dataframe (fewer rows but higher counts, column with Species_BinSize and do complete on that.)
-glimpse(SMFS_OTR_Thesis_WithZeros)
+glimpse(Raw_AgeClasses)
 glimpse(SMFS_AgesBySizeMo)
 
 #Need to do this before adding zeros. New script!

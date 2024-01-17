@@ -13,60 +13,66 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Merging the SMFS and SBOT data.
 
-Reading in the data and loading libraries
+## Reading in the data and loading libraries
 
 ```{r}
 library(readxl)
 library(tidyverse)
-SBOTS2019 <- read_excel("Data/SBOTS2019.xlsx")
 library(readr)
+
+SBOTS2019 <- read_excel("Data/SBOTS2019.xlsx")
 SMFS <- read_csv("Data/SMFS.csv")
 ```
 
-Wrangling We want our end table to have distinct rows for SMFS and SBOT fishes but the catch and wq info goes into the same column.
+Wrangling
 
-1.  Need to add column for "study" that specifies which study the data came from.
+We want our end table to have distinct rows for SMFS and SBOT fishes but the catch and wq info goes into the same column.
+
+# 1. Need to add column for "study" that specifies which study the data came from.
 
 ```{r}
-#Need to add a column called Study
+#Need to add a column called Study to make it easy to parse later after merge.
 SMFS<-mutate(SMFS, Study = "SMFS")
 SBOTS2019<-mutate(SBOTS2019, Study = "SBOTS")
 ```
 
-2.  Matching columns...
+# 2. Matching columns...
 
 Left is SMFS, right is SBOTS. All water quality taken by SMFS is done for the surface of the water column so all water quality from SBOTS will start with "es" indicating it was taken at the end of the trawl at the surface of the water, matching SMFS methodology.
 
-| SMFS                | SBOTS   | Notes                                                                                                      |
-|---------------|---------------|-----------------------------------------|
-| WaterTemperature    | estemp  | water temperature in degrees C.                                                                            |
-| Secchi              | esecchi | Measure of water clarity in cm.                                                                            |
-| Salinity            | essal   | Salinity measured in ppt (but actually practical units?).                                                  |
-| TowDuration         | dur     | Number of minutes of tow (sampling effort).                                                                |
-| DO                  | esdoc   | Dissolved oxygen measured in mg/L.                                                                         |
-| Count               | count   | Number of organism counted in sample.                                                                      |
-| PctSaturation       | esdop   | Dissolved oxygen measured in %.                                                                            |
-| SpecificConductance | escond  | Specific conductivity (μS).                                                                                |
-| StationCode         | stn     | Name of location of sample.                                                                                |
-| MethodCode          | method  | Methodology used to collect sample.                                                                        |
-| SampleDate          | towdate | Date of sample.                                                                                            |
-| TideCode            | tidet   | Type of tide (ebb, flood, slack...)                                                                        |
-| TideHeight          | tideh   | Empty for SMFS. SBOT displays height of tide at location for the date and time. (Ex: 5.3) Unsure of units. |
-| Year                | year    | Year of sample.                                                                                            |
-| WaterYear           | wyr     | Water year of sample.                                                                                      |
-| StandardLength      | sl      | Not currently in SBOT table but may be included later (implications for cpue calculation?).                |
-| Month               | month   | Month of sample.                                                                                           |
-| CommonName          | comname | Common name of species.                                                                                    |
-| Family              | family  | The family of the species.                                                                                 |
-| Genus               | genus   | Genus of the species.                                                                                      |
-| gensp               | gensp   | Genus species.                                                                                             |
-| Native              | natinv  | Is species native or invasive?                                                                             |
-| Study               | Study   | Which study collected this data?                                                                           |
+|                     |                                        |           |                           |                                                                                                                                                                                                                                    |
+|---------------|---------------|---------------|---------------|---------------|
+| **SMFS**            | **SMFS_Example**                       | **SBOTS** | **SBOT_Example**          | **Notes**                                                                                                                                                                                                                          |
+| TrawlRowID          | {00002451-7B5A-47A8-8D9F-486D054DC257} | id        | 3654                      | Unique identification number assigned  to each tow when entered into the database. Not all data entered in order of date, so id \# may be out of order with date. Multiple rows have same id for each species/length combination.  |
+| WaterTemperature    | 11.8                                   | estemp    | 12.46                     | Water temperature in degrees C.                                                                                                                                                                                                    |
+| Secchi              | 49                                     | esecchi   | 36                        | Measure of water clarity in cm.                                                                                                                                                                                                    |
+| Salinity            | 4.9                                    | essal     | 10.63                     | Salinity measured in ppt (but actually practical units?).                                                                                                                                                                          |
+| TowDuration         | 5                                      | dur       | 10                        | Number of minutes of tow (sampling effort).                                                                                                                                                                                        |
+| DO                  | 8.41                                   | esdoc     | 10.05                     | Dissolved oxygen measured in mg/L.                                                                                                                                                                                                 |
+| Count               | 12                                     | count     | 16                        | Number of organism counted in sample.                                                                                                                                                                                              |
+| PctSaturation       | 80.2                                   | esdop     | 92.3                      | Dissolved oxygen measured in %.                                                                                                                                                                                                    |
+| SpecificConductance | 8670                                   | escond    | 17935                     | Specific conductivity (μS).                                                                                                                                                                                                        |
+| StationCode         | MZ2                                    | stn       | ALV 1                     | Name of location of sample.                                                                                                                                                                                                        |
+| MethodCode          | OTR                                    | method    | LOT                       | Methodology used to collect sample.                                                                                                                                                                                                |
+| SampleDate          | 12/4/2013                              | towdate   | 1/12/2019                 | Date of sample.                                                                                                                                                                                                                    |
+| TideCode            | flood                                  | tidet     | Ebb                       | Type of tide.                                                                                                                                                                                                                      |
+| TideHeight          | NA                                     | tideh     | Ex: 5.3 (Unsure of units) | Height of tide at location for the date and time. (Will need to be calculated for SMFS).                                                                                                                                           |
+| Year                | 2012                                   | year      | 2019                      | Year of sample.                                                                                                                                                                                                                    |
+| WaterYear           | 2011                                   | wyr       | 2018                      | Water year of sample.                                                                                                                                                                                                              |
+| StandardLength      | 63                                     | sl        |                           | Not currently in SBOT table but may be included later.                                                                                                                                                                             |
+| Month               | 12                                     | month     | 1                         | Month of sample.                                                                                                                                                                                                                   |
+| CommonName          | Arrow Goby                             | comname   | Mississippi Silverside    | Common name of species.                                                                                                                                                                                                            |
+| Family              | Gobiidae                               | family    | Atherinopsidae            | The family of the species.                                                                                                                                                                                                         |
+| Genus               | Clevelandia                            | genus     | Menidia                   | Genus of the species.                                                                                                                                                                                                              |
+| gensp               | Clevelandia ios                        | gensp     | Menidia audens            | Genus species.                                                                                                                                                                                                                     |
+| Native              | TRUE or FALSE                          | natinv    | Invasive                  | Is species native or not/invasive?                                                                                                                                                                                                 |
+| Study               | SMFS                                   | Study     | SBOTS                     | Which study collected this data?                                                                                                                                                                                                   |
 
 ```{r}
+#Checking column types match up
 glimpse(SMFS)
 glimpse(SBOTS2019)
-#Match column types
+#Fixing column types so they work together.
 SBOTS2019$estemp<-as.numeric(SBOTS2019$estemp)
 SBOTS2019$esecchi<-as.numeric(SBOTS2019$esecchi)
 SBOTS2019$essal<-as.numeric(SBOTS2019$essal)
@@ -75,15 +81,15 @@ SBOTS2019$esdop<-as.numeric(SBOTS2019$esdop)
 SBOTS2019$escond<-as.numeric(SBOTS2019$escond)
 SMFS$Native<-as.character(SMFS$Native)
 glimpse(SBOTS2019)
+```
 
-Integrated<-full_join(SMFS, SBOTS2019, join_by(WaterTemperature==estemp, Secchi==esecchi, CPUE==cpue, Salinity==essal, TowDuration==dur, DO==esdoc, Count==count, PctSaturation==esdop, SpecificConductance==escond, StationCode==stn, MethodCode==method, SampleDate==towdate, TideCode==tidet, Year==year, WaterYear==wyr, Month==month, CommonName==comname, Family==family, Genus==genus, Species==species, Native==natinv, gensp==gensp, Study==Study))
+# 3. Join
 
-Reduced<-Integrated %>% select(CommonName, Family, Genus, Species, gensp, Native, StationCode, Study, MethodCode, TowDuration, Count, CPUE, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear, Month)
+```{r}
+#Joining the two datasets.
+Integrated<-full_join(SMFS, SBOTS2019, join_by(WaterTemperature==estemp, Secchi==esecchi, CPUE==cpue, Salinity==essal, TowDuration==dur, DO==esdoc, Count==count, PctSaturation==esdop, SpecificConductance==escond, StationCode==stn, MethodCode==method, SampleDate==towdate, TideCode==tidet, Year==year, WaterYear==wyr, Month==month, CommonName==comname, Family==family, Genus==genus, Species==species, Native==natinv, gensp==gensp, Study==Study)) #join_by allows for easy matching of columns with different names. Retains first name.
 
-
-sum(is.na(Reduced$WaterTemperature))
-#By ignoring SL which was used for calculating CPUE for SMFS, this join and select has removed information on SL but preserved catch and CPUE for multiple rows of the same organism for the same sampling event. Either need to re-calculate CPUE ignoring SL for SMFS, or get length info for SBOTS and re-calculate CPUE being sensitive to lengths. 
-#Ideally, we need to decide on binning sizes now so that we can give 0 catch for bins of sizes instead of 0's for every possible size...
+Reduced<-Integrated %>% select(CommonName, Family, Genus, Species, gensp, Native, StationCode, Study, MethodCode, TowDuration, Count, CPUE, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear, Month) #Selecting only the columns of interest. Standard length will be included later.
 
 #Save New DF
 #write.csv(Reduced, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/IntegratedData.csv")

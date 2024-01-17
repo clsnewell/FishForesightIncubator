@@ -807,9 +807,12 @@ Three+facet_wrap(~Year)
 S<-Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Shokihaze Goby catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 S
 S+facet_wrap(~Year)
+
+Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=Year, fill=Count)) + geom_tile()
+
 ```
 
-Look at Dylans code to do heat map through years instead...
+Better to do heat map through years instead...
 
 ## Matching Levi's Alviso Dynamics Plot
 I want to make Levi's plots!

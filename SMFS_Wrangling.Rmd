@@ -48,11 +48,12 @@ SMFS_Thesis<-mutate(SMFS_Thesis, gensp = paste(Genus, Species, sep=" "))
 ```
 
 ### One fish one row
+I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
 ```{r}
 SMFS_Thesis_Expand <- SMFS_Thesis %>%
-  filter(StandardLength > 0) %>%
-  uncount(Count, .remove = FALSE) 
-SMFS_Thesis_Expand$Count<-1
+  filter(StandardLength > 0) %>% #only keeping measured fish
+  uncount(Count, .remove = FALSE) #keeps number of rows that corresponds to the Count value
+SMFS_Thesis_Expand$Count<-1 #assigns value of 1
 
 Bind<-SMFS_Thesis %>%
   filter(!StandardLength > 0)

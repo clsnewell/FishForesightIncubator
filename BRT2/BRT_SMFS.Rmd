@@ -1,4 +1,4 @@
----
+ ---
 title: "BRT_SMFS"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
@@ -7,11 +7,36 @@ editor_options:
   chunk_output_type: console
 ---
 
+CANT USE POISSON ON ZEROS - POSITIVE NUMBERS ONLY I try to model species abundance data using the gbm.step function in R by Elith et al. 2008. In this function you have to choose a family aka loss function. There are several options:
+
+-   "gaussian" (for minimizing squared error)
+
+-   "laplace" (for minimizing absolute loss)
+
+-   "bernoulli" (logistic regression for 0-1 out-comes)
+
+-   "poisson" (count outcomes; requires the response to be a positive integer)
+
+    <https://stats.stackexchange.com/questions/257946/how-to-choose-the-family-in-gbm-step>
+
+    In gradient boosting the trees (or whatever weak learners) are not fit to the loss function (the function being minimized), they are fit to the gradient of the loss function with respect to the prediction (\*).
+
+That's hard to digest, so here's how it works out in the squared error case. Here the loss function for a single data point is
+
+$L(y,yhat)=(y−yhat)^2$
+
+The yhat is what I'm calling the prediction. If we treat it like a formal variable and differentiate, we get
+
+$∇L(y,yhat)=−2(y−yhat)$
+
+It is this function that the trees are fit to, we plug the appropriate values of y and yhat into ∇L , and the result is our working response for one round of boosting. In the initial boosting iteration we initialize y\^ to a constant (here the mean of the response), and in subsequent iterations to the prediction of the previous rounds of boosting. <https://stats.stackexchange.com/questions/217416/gbm-impact-of-the-loss-function>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Loading Libraries
+
 ```{r}
 library(dismo)
 library(tidyverse)
@@ -23,20 +48,20 @@ setwd("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator")
 ```
 
 # Loading Data
+
 ```{r}
-SMFS_OTR_Thesis_WithZeros <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OTR_Thesis_WithZeros.csv")
-
-#Next step: I need a CPUE column. Calculate as catch per minute trawl.
-SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
-
-summary(SMFS_OTR_Thesis_WithZeros$CPUE)
+SMFS <- read_csv("Data/SMFS.csv")
 ```
 
 # TP Practice
+
 ```{r}
-glimpse(SMFS_OTR_Thesis_WithZeros)
+glimpse(SMFS)
 #Lets build a df with just TP data.
-TPDataRaw<-SMFS_OTR_Thesis_WithZeros %>% filter(OrganismCode %in% "TP") #make this a function or for loop so we can do multiple species at once?
+TPDataRaw<-SMFS %>% filter(OrganismCode %in% "TP") 
+TPDataRaw<-as.data.frame(TPDataRaw)
+
+#make this a function or for loop so we can do multiple species at once?
 #TPData$CPUE<-as.numeric(TPData$CPUE)
 glimpse(TPDataRaw)
 summary(TPDataRaw)
@@ -46,51 +71,41 @@ summary(TPDataRaw)
 
 I want to simplify the dataframe a bit to just include columns of interest: CPUE, WaterTemperature, Secchi, DO, Salinity
 
-There are lots of columns I am interested in. For now I only want the bare minimum just to get a feel for these BRTs. 
+There are lots of columns I am interested in. For now I only want the bare minimum just to get a feel for these BRTs.
 
 ```{r}
-TPData<- TPDataRaw %>% select(c(CPUE, WaterTemperature, Secchi, DO, Salinity))
+TPData<- TPDataRaw %>% select(Count, WaterTemperature, Secchi, DO, Salinity, TowDuration)
 
-glimpse(TPData)
-
-
-TPData$CPUE<-as.numeric(TPData$CPUE)
-TPData$WaterTemperature<-as.numeric(TPData$WaterTemperature)
-TPData$Secchi<-as.numeric(TPData$Secchi)
-TPData$DO<-as.numeric(TPData$DO)
-TPData$Salinity<-as.numeric(TPData$Salinity)
 glimpse(TPData)
 
 
 
 #MakeTPData Pres/Abs and try again. Then see if there is improvement. 
-TPData_Binary<-TPData %>% mutate(PresAbs = if_else(CPUE > 0, "present", "absent"))
+TPData_Binary<-TPData %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"))
 
 TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", 1, 0))
 # caret package is weird and doesnt like integers (0 & 1) for presence absence data so I have to convert it to a factor
 
-TPData_Binary<-data.frame(TPData_Binary) #Converting from tbl to data.frame so gbm.step works properly
 
 #Some simple plotting
-TP_Water<-TPData_Binary %>% ggplot(aes(y=CPUE, x=WaterTemperature)) + 
+TP_Water<-TPData_Binary %>% ggplot(aes(y=Count, x=WaterTemperature, color = TowDuration)) + 
   geom_point()+ theme_bw()
-#how would response change if I calculated CPUE as catch per unit of water measurement?
+#tow duration not reflected
 
-TP_DO<-TPData_Binary %>% ggplot(aes(y=CPUE, x=DO)) + 
-  geom_point()+ theme_bw()
-
-TP_Secchi<-TPData_Binary %>% ggplot(aes(y=CPUE, x=Secchi)) + 
+TP_DO<-TPData_Binary %>% ggplot(aes(y=Count, x=DO, color = TowDuration)) + 
   geom_point()+ theme_bw()
 
-TP_Salinity<-TPData_Binary %>% ggplot(aes(y=CPUE, x=Salinity)) + 
+TP_Secchi<-TPData_Binary %>% ggplot(aes(y=Count, x=Secchi, color = TowDuration)) + 
+  geom_point()+ theme_bw()
+
+TP_Salinity<-TPData_Binary %>% ggplot(aes(y=Count, x=Salinity, color = TowDuration)) + 
   geom_point() + theme_bw()
 library(cowplot)
 plot_grid(TP_Water, TP_DO, TP_Secchi, TP_Salinity, ncol = 2, labels = "AUTO")
 
 ```
 
-
-From here on down, I am following Nima's "caroline_BRTs.rmd" 
+From here on down, I am following Nima's "caroline_BRTs.rmd"
 
 ```{r}
 gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
@@ -114,12 +129,12 @@ fitControl <- trainControl(## 2-fold CV
 
 Now we can use the `train` function to run the analysis.
 
-I'll start with the most basic dataset for the most basic model: CPUE ~ WaterTemp + Secchi + DO + Salinity
+I'll start with the most basic dataset for the most basic model: CPUE \~ WaterTemp + Secchi + DO + Salinity
 
 ```{r}
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
-gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity,
+gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration,
                 data = TPData_Binary, 
                 method = "gbm", 
                 trControl = fitControl, 
@@ -142,28 +157,20 @@ From ChatGPT on choosing metric for train(): "Selecting the best metric for eval
 
 Mean Absolute Error (MAE):
 
-Use MAE when you want to understand the average magnitude of errors in your predictions.
-MAE is less sensitive to outliers compared to MSE, which can make it a good choice when your dataset contains outliers.
-Mean Squared Error (MSE) and Root Mean Squared Error (RMSE):
+Use MAE when you want to understand the average magnitude of errors in your predictions. MAE is less sensitive to outliers compared to MSE, which can make it a good choice when your dataset contains outliers. Mean Squared Error (MSE) and Root Mean Squared Error (RMSE):
 
-MSE and RMSE give higher weight to larger errors, making them suitable when large errors are more costly or need to be minimized.
-RMSE is in the same unit as the target variable, which makes it easier to interpret compared to MSE.
-R-squared (R²):
+MSE and RMSE give higher weight to larger errors, making them suitable when large errors are more costly or need to be minimized. RMSE is in the same unit as the target variable, which makes it easier to interpret compared to MSE. R-squared (R²):
 
-R² measures the proportion of variance in the target variable that is explained by the model. A higher R² indicates a better fit.
-R² is a good choice when you want to understand how well your predictors explain the variability in the target variable.
-Adjusted R-squared (Adjusted R²):
+R² measures the proportion of variance in the target variable that is explained by the model. A higher R² indicates a better fit. R² is a good choice when you want to understand how well your predictors explain the variability in the target variable. Adjusted R-squared (Adjusted R²):
 
-Adjusted R² adjusts for the number of predictors in the model. It penalizes adding unnecessary predictors that do not improve the model's fit.
-It's useful when you want to balance model complexity with explanatory power.
-Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), and Symmetric Mean Absolute Percentage Error (SMAPE):
+Adjusted R² adjusts for the number of predictors in the model. It penalizes adding unnecessary predictors that do not improve the model's fit. It's useful when you want to balance model complexity with explanatory power. Mean Percentage Error (MPE), Mean Absolute Percentage Error (MAPE), and Symmetric Mean Absolute Percentage Error (SMAPE):
 
 These metrics are used in cases where percentage errors are more meaningful than absolute errors. For instance, in forecasting and demand prediction."
 
 ```{r}
  set.seed(124) # for reproducibility 
  brt1 <- dismo::gbm.step(data=TPData_Binary, 
-                         gbm.x= c(2:5), # environmental variables
+                         gbm.x= c(2:6), # environmental variables
                          gbm.y= 1, # response variable
                          family = "gaussian", # for counts this would be "poisson"
                          tree.complexity = 3, # complexity of the interactions that the model will fit
@@ -176,6 +183,6 @@ These metrics are used in cases where percentage errors are more meaningful than
  # reponse curves
 par(mar=c(2, 2, 1, 1))
 
-dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T)
+dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
 summary(TPData_Binary)
 ```

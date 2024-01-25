@@ -7,30 +7,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-CANT USE POISSON ON ZEROS - POSITIVE NUMBERS ONLY I try to model species abundance data using the gbm.step function in R by Elith et al. 2008. In this function you have to choose a family aka loss function. There are several options:
-
--   "gaussian" (for minimizing squared error)
-
--   "laplace" (for minimizing absolute loss)
-
--   "bernoulli" (logistic regression for 0-1 out-comes)
-
--   "poisson" (count outcomes; requires the response to be a positive integer)
-
-    <https://stats.stackexchange.com/questions/257946/how-to-choose-the-family-in-gbm-step>
-
-    In gradient boosting the trees (or whatever weak learners) are not fit to the loss function (the function being minimized), they are fit to the gradient of the loss function with respect to the prediction (\*).
-
-That's hard to digest, so here's how it works out in the squared error case. Here the loss function for a single data point is
-
-$L(y,yhat)=(y−yhat)^2$
-
-The yhat is what I'm calling the prediction. If we treat it like a formal variable and differentiate, we get
-
-$∇L(y,yhat)=−2(y−yhat)$
-
-It is this function that the trees are fit to, we plug the appropriate values of y and yhat into ∇L , and the result is our working response for one round of boosting. In the initial boosting iteration we initialize y\^ to a constant (here the mean of the response), and in subsequent iterations to the prediction of the previous rounds of boosting. <https://stats.stackexchange.com/questions/217416/gbm-impact-of-the-loss-function>
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -55,6 +31,7 @@ SMFS <- read_csv("Data/SMFS.csv")
 
 # TP Practice
 
+## Binary (presence/absence) Model
 ```{r}
 glimpse(SMFS)
 #Lets build a df with just TP data.
@@ -76,17 +53,30 @@ There are lots of columns I am interested in. For now I only want the bare minim
 ```{r}
 TPData<- TPDataRaw %>% select(Count, WaterTemperature, Secchi, DO, Salinity, TowDuration)
 
-glimpse(TPData)
-
-
 
 #MakeTPData Pres/Abs and try again. Then see if there is improvement. 
 TPData_Binary<-TPData %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"))
 
-TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", 1, 0))
-# caret package is weird and doesnt like integers (0 & 1) for presence absence data so I have to convert it to a factor
+#TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", 1, 0))
 
+#glimpse(TPData_Binary)
+#summary(TPData_Binary$PresAbs2)
 
+#TPData_Binary$PresAbs2 <-factor(TPData_Binary$PresAbs2, levels = c(0, 1))
+
+is.na(TPData_Binary)
+
+TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", "Yes", "No"))
+
+TPData_Binary$PresAbs2 <-factor(TPData_Binary$PresAbs2, levels = c("No", "Yes"))
+
+# caret package is weird and doesnt like integers (0 & 1) for presence absence data so I have to convert it to a factor. I'll later change it to 0,1 to make gbm.step work. 
+
+levels(TPData_Binary$PresAbs2)
+
+```
+
+```{r}
 #Some simple plotting
 TP_Water<-TPData_Binary %>% ggplot(aes(y=Count, x=WaterTemperature, color = TowDuration)) + 
   geom_point()+ theme_bw()
@@ -109,7 +99,92 @@ From here on down, I am following Nima's "caroline_BRTs.rmd"
 
 ```{r}
 gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
-                       n.trees = 2000, #number of trees
+                       n.trees = 3600, #number of trees
+                       shrinkage = 0.1, # or seq(0.01, 0.5, length.out =5) #learning rate
+                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this.
+                       )
+
+gbmGrid %>% head() #take a look at what we just made
+```
+
+```{r}
+#specify type of resampling
+fitControl <- trainControl(## 2-fold CV
+                           method = "cv",
+                           number = 2, #Either the number of folds or number of resampling iterations
+                           classProbs = TRUE, ## Estimate class probabilities for classification models
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+```
+
+Now we can use the `train` function to run the analysis.
+
+I'll start with the most basic dataset for the most basic model: CPUE \~ WaterTemp + Secchi + DO + Salinity
+
+```{r}
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFit <- train(PresAbs2 ~ WaterTemperature + Secchi + DO + Salinity + TowDuration,
+                data = TPData_Binary, 
+                method = "gbm", 
+                trControl = fitControl, 
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models 
+                ## to evaluate:
+                tuneGrid = gbmGrid,
+                metric = "ROC" # Not sure if this is best. the methods for measuring performance. If unspecified, overall accuracy and the Kappa statistic are computed. For regression models, root mean squared error and R2 are computed. For pls, the function will be altered to estimate the area under the ROC curve, the sensitivity and specificity. Other options according to ChatGPT + help: RMSE, Rsquared MAE, MSE, MPE, MAPE, SMAPE
+                )
+
+gbmFit
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+Sensitivity =  True positives
+Specificity = True negatives
+
+
+```{r}
+ set.seed(124) # for reproducibility 
+TPData_Binary<-TPData_Binary %>% mutate(PresAbs2 = if_else(PresAbs %in% "present", 1, 0)) #gbm.step wants bernoulli to be {0, 1} 
+ brt1 <- dismo::gbm.step(data=TPData_Binary, 
+                         gbm.x= c(2:6), # environmental variables
+                         gbm.y= 8, # response variable
+                         family = "bernoulli", # for counts this would be "poisson"
+                         tree.complexity = 3, # complexity of the interactions that the model will fit
+                         learning.rate = 0.15,  # optimized to end up with >1000 trees
+                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
+                         )
+
+# make sure to save the model!
+Saved_brt1<- summary(brt1)
+Saved_brt1
+ # reponse curves
+par(mar=c(2, 2, 1, 1))
+
+dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
+summary(TPData_Binary)
+```
+
+
+## Count Data
+
+```{r}
+TPDataRaw<-SMFS %>% filter(OrganismCode %in% "TP") 
+TPDataRaw<-as.data.frame(TPDataRaw)
+TPData<- TPDataRaw %>% select(Count, WaterTemperature, Secchi, DO, Salinity, TowDuration)
+#Only keep counts over zero
+TPCounts<-TPData %>% filter(Count>0)
+summary(TPCounts$Count)
+```
+
+From here on down, I am following Nima's "caroline_BRTs.rmd"
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
+                       n.trees = 3000, #number of trees
                        shrinkage = 0.1, # or seq(0.01, 0.5, length.out =5) #learning rate
                        #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith
                        n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. honestly dont worry about this.
@@ -132,24 +207,66 @@ Now we can use the `train` function to run the analysis.
 I'll start with the most basic dataset for the most basic model: CPUE \~ WaterTemp + Secchi + DO + Salinity
 
 ```{r}
+#does it make sense to make counts factors?
+unique(TPCounts$Count)
+TPCounts$Count<-factor(TPCounts$Count, levels = c(1,  2,  4,  3,  8,  5,  7, 9,  6,  14, 15, 53))
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
-gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration,
-                data = TPData_Binary, 
+gbmFit2 <- train(Count ~ WaterTemperature + Secchi + DO + Salinity + TowDuration,
+                data = TPCounts, 
                 method = "gbm", 
                 trControl = fitControl, 
                 verbose = FALSE, 
                 ## Now specify the exact models 
                 ## to evaluate:
                 tuneGrid = gbmGrid,
-                metric = "ROC" # Not sure if this is best. Other options according to ChatGPT + help: RMSE, Rsquared MAE, MSE, MPE, MAPE, SMAPE
+                metric = "RMSE" # Not sure if this is best. Other options according to ChatGPT + help: RMSE, Rsquared MAE, MSE, MPE, MAPE, SMAPE
                 )
 
-gbmFit
+gbmFit2
 
 # we can plot the results too which will be easier to interpret
-ggplot(gbmFit)
+ggplot(gbmFit2)
 ```
+
+
+
+```{r}
+ set.seed(124) # for reproducibility 
+glimpse(TPCounts)
+ brt2 <- dismo::gbm.step(data=TPCounts, 
+                         gbm.x= c(2:6), # environmental variables
+                         gbm.y= 1, # response variable
+                         family = "poisson", # for counts this would be "poisson"
+                         tree.complexity = 3, # complexity of the interactions that the model will fit
+                         learning.rate = 0.1,  # optimized to end up with >1000 trees
+                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
+                         )
+# Firstly, the things you can see: 
+# The R console will show some results ? see the Word version of this tutorial for an example. It reports a brief model summary ? all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
+
+# There will also be a graph..
+# This model was built with the default 10-fold cross-validation (CV) ? the solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal. 
+
+# make sure to save the model!
+names(brt2)
+brt2$contributions
+brt2$cv.statistics
+
+summary(brt2)
+ # reponse curves
+par(mar=c(2, 2, 1, 1))
+
+dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
+```
+
+# NOTES
+https://stats.stackexchange.com/questions/229356/gbm-package-vs-caret-using-gbm
+- There is a difference in output between gbm package and caret using gbm.
+People use caret for model tuning and then run the model in gbm but this user noted a 5% difference between outputs for the same data between caret and gbm. 
+Another user suggested using the default grid to optimize parameters and use predict to have the same results...
+
+*- email people for coding language for leathwick paper and others...*
 
 train help file: "A string that specifies what summary metric will be used to select the optimal model. By default, possible values are "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification. If custom performance metrics are used (via the summaryFunction argument in trainControl, the value of metric should match one of the arguments. If it does not, a warning is issued and the first metric given by the summaryFunction is used. (NOTE: If given, this argument must be named.)"
 
@@ -167,22 +284,29 @@ Adjusted R² adjusts for the number of predictors in the model. It penalizes add
 
 These metrics are used in cases where percentage errors are more meaningful than absolute errors. For instance, in forecasting and demand prediction."
 
-```{r}
- set.seed(124) # for reproducibility 
- brt1 <- dismo::gbm.step(data=TPData_Binary, 
-                         gbm.x= c(2:6), # environmental variables
-                         gbm.y= 1, # response variable
-                         family = "gaussian", # for counts this would be "poisson"
-                         tree.complexity = 3, # complexity of the interactions that the model will fit
-                         learning.rate = 0.15,  # optimized to end up with >1000 trees
-                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
-                         )
 
-# make sure to save the model!
- summary(brt1)
- # reponse curves
-par(mar=c(2, 2, 1, 1))
+- CANT USE POISSON ON ZEROS - POSITIVE NUMBERS ONLY I try to model species abundance data using the gbm.step function in R by Elith et al. 2008. In this function you have to choose a family aka loss function. There are several options:
 
-dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
-summary(TPData_Binary)
-```
+-   "gaussian" (for minimizing squared error)
+
+-   "laplace" (for minimizing absolute loss)
+
+-   "bernoulli" (logistic regression for 0-1 out-comes)
+
+-   "poisson" (count outcomes; requires the response to be a positive integer)
+
+    <https://stats.stackexchange.com/questions/257946/how-to-choose-the-family-in-gbm-step>
+
+    In gradient boosting the trees (or whatever weak learners) are not fit to the loss function (the function being minimized), they are fit to the gradient of the loss function with respect to the prediction (\*).
+
+That's hard to digest, so here's how it works out in the squared error case. Here the loss function for a single data point is
+
+$L(y,yhat)=(y−yhat)^2$
+
+The yhat is what I'm calling the prediction. If we treat it like a formal variable and differentiate, we get
+
+$∇L(y,yhat)=−2(y−yhat)$
+
+It is this function that the trees are fit to, we plug the appropriate values of y and yhat into ∇L , and the result is our working response for one round of boosting. In the initial boosting iteration we initialize y\^ to a constant (here the mean of the response), and in subsequent iterations to the prediction of the previous rounds of boosting. <https://stats.stackexchange.com/questions/217416/gbm-impact-of-the-loss-function>
+
+vignette('sdm','dismo')

@@ -83,6 +83,36 @@ str(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count
 
 ```
 
+## Water Quality
+
+```{r}
+#Make a histogram of all the water quality observed in the data.
+WaQua<-Raw_AgeClasses %>% group_by(TrawlRowID) %>% summarize(WaterTemperature = WaterTemperature, Salinity = Salinity, DO = DO, PctSaturation=PctSaturation, Secchi=Secchi, SpecificConductance=SpecificConductance, Month=Month, Year=Year, TowDuration=TowDuration, StationCode=StationCode) %>% distinct() #Creating a df of water quality for each unique trawl
+DOplot<-WaQua %>% ggplot()+geom_freqpoly(aes(DO)) + xlab("Dissolved Oxygen (mg/L)")
+Templot<-WaQua %>% ggplot()+geom_freqpoly(aes(WaterTemperature)) + xlab("Water Temperature (Celcius)")
+SecchiPlot<-WaQua %>% ggplot()+geom_freqpoly(aes(Secchi)) + xlab("Secchi (cm)")
+SalPlot<-WaQua %>% ggplot()+geom_freqpoly(aes(Salinity)) + xlab("Salinity (psu)")
+
+WaQuaPlots<-plot_grid(Templot, DOplot, SalPlot, SecchiPlot, ncol = 2, labels = "AUTO")
+# now add the title
+title <- ggdraw() + draw_label("Frequency of Water Quality for SMFS trawls 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, WaQuaPlots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+
+#Which sites to keep?
+WaQua %>% ggplot() + geom_bar(aes(StationCode))+geom_hline(aes(yintercept=30), color="red") +theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ #adding a cutoff of 30 to be included in the study.
+#Remove the following: c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2")
+
+BetterData<-Raw_AgeClasses %>% filter(!StationCode%in% c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2"))
+```
+
 ## Catch of lengths for each water quality by year
 
 Species of interest: LFS, ASH, ISS, SCP, STBK, SKG
@@ -762,7 +792,74 @@ plot_grid(DO_LFS, DO_ASH, DO_ISS, DO_SCP, DO_STBK, DO_SKG, ncol = 2, labels = "A
 plot_grid(PPT_LFS, PPT_ASH, PPT_ISS, PPT_SCP, PPT_STBK, PPT_SKG, ncol = 2, labels = "AUTO")
 
 plot_grid(Secchi_LFS, Secchi_ASH, Secchi_ISS, Secchi_SCP, Secchi_STBK, Secchi_SKG, ncol = 2, labels = "AUTO")
+
+
+
 ```
+
+
+### Stickleback had weird differences between normal and plus counted individuals. Want to investigate
+First I will subset to trawl ids and sum rows for catch then divide by number of minutes spent trawling then join to environmental data. 
+
+```{r}
+Stick<- Raw_AgeClasses %>% filter(CommonName == "Threespine Stickleback") %>% group_by(TrawlRowID) %>% summarize(StickleSum = sum(Count)) #Creating a table of stickleback catch which sums counts.
+Sticks<-full_join(Stick, WaQua) #Automatically knows key
+#now I need to replace the NAs with 0
+Sticks <- Sticks %>% mutate(StickleSum = ifelse(is.na(StickleSum), 0, StickleSum), CatchPerMinute = StickleSum/TowDuration) #also adds a CPUE column
+
+#Now plot
+Sticks %>% ggplot()+geom_jitter(aes(DO, CatchPerMinute))+theme_bw()
+
+
+WT_Stick<-Sticks %>% 
+  ggplot(aes(x=WaterTemperature, y=CatchPerMinute))+ geom_point(alpha=0.5)+
+  theme_bw()+ labs(y ="Catch per Minute Trawl", x="Water Temperature (C)", caption="Darker dots have overlapping points. Alpha = 0.5") 
+
+WT_Stick 
+
+DO_Stick<-Sticks %>% 
+  ggplot(aes(x=DO, y=CatchPerMinute))+ geom_point(alpha=0.5)+
+  theme_bw()+ labs(y ="Catch per Minute Trawl", x="DO (mg/L)", caption = "Darker dots have overlapping points. Alpha = 0.5") 
+
+DO_Stick 
+  
+Salinity_Stick<-Sticks %>% 
+  ggplot(aes(x=Salinity, y=CatchPerMinute))+ geom_point(alpha=0.5)+
+  theme_bw()+ labs(y ="Catch per Minute Trawl", x="Salinity", caption = "Darker dots have overlapping points. Alpha = 0.5") 
+
+Salinity_Stick 
+
+
+Secchi_Stick<-Sticks %>% 
+  ggplot(aes(x=Salinity, y=CatchPerMinute))+ geom_point(alpha=0.5)+
+  theme_bw()+ labs(y ="Catch per Minute Trawl", x="Secchi (cm)", caption = "Darker dots have overlapping points. Alpha = 0.5") 
+
+Secchi_Stick 
+
+StickPlots<-plot_grid(WT_Stick, DO_Stick, Salinity_Stick, Secchi_Stick, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Three-spined stickleback by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, StickPlots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+#Where are these fish caught?
+Sticks %>% filter(!TrawlRowID%in%c("{CA55F407-453C-4827-B4FF-502469BA719B}","{C196AC37-0B72-4E75-B234-4677DE6193C0}","{70D120E5-241E-479A-82C5-CB74FB16A1D2}","{0DB41738-469A-421A-864A-0A9E82D2C4C6}","{4DCDE915-7D26-4DE5-8955-B157B41ABF97}","{19D692A3-82C8-46B7-BCC2-E97C48FAB747}","{3D3E4136-42D6-4B6D-BBF0-4B83E8E0CCD1}","{9E32B7B2-865E-4609-9807-EEC4661F02F8}","{DCA730D8-AFCA-4BCA-96E3-553BBFCD0246}","{0448E685-802D-4CB4-B86E-D8ADC921AF62}")) %>% #removing plus count trawls because they are outliers
+  ggplot()+geom_violin(aes(x=StationCode, y=CatchPerMinute))
+
+#Looking closer at plus counted fish
+#I could just look at trawls with plus counted fish and see how long those trawls are, where they are, when they are?
+PlusStickles<-Raw_AgeClasses %>% filter(CommonName == "Threespine Stickleback", StandardLength== 0)
+#The plus counts of stickleback come from 10 trawls. 7 trawls in good year (which has duck ponds) for a total of 315 fish. 58 fish were caught in 1 trawl in boynton, 1 in 1 at Nurse, 6 in 1 at "TRDB2."
+
+PlusStickles$TrawlRowID
+```
+
 
 ## Seasonality
 First need to convert date to day of year for simpler look at when species are present or not. I also want to make a dataframe that gives 0 or 1 for each day of year for each species across all years as well as for each year...
@@ -813,6 +910,8 @@ Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=
 ```
 
 Better to do heat map through years instead...
+
+
 
 ## Matching Levi's Alviso Dynamics Plot
 I want to make Levi's plots!

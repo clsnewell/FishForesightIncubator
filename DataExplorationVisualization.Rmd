@@ -7,6 +7,14 @@ editor_options:
   chunk_output_type: console
 ---
 
+In this rmd, I take SMFS_Integrate created in SMFS_Wrangling to complete the following objectives: 
+Visualize
+- Water Quality
+- Levi's WQ Plot matching
+- Lengths across WQ for each species of interest
+- Seasonality of fish catch
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -22,64 +30,15 @@ library(fuzzyjoin)
 ```
 
 # Visuals of Raw Data
+
 I know we are not planning to use "age classes" as they are possibly incorrect but it is a useful measure of size differences. I know they are referred to here as "age classes" but it is similar to refer to them as size classes.
 
-## Load Data and Wrangle
+## Load Data 
 
 ```{r}
-SMFS_Thesis <- read_csv("Data/SMFS_Thesis.csv") #this dataset includes all SMFS OT data from 2011-2023 data 
+SMFS_Integrate <- read_csv("Data/SMFS_Integrate.csv") #this dataset includes all SMFS OT data from 2011-2023 data 
 
 #I'm leaving the NA water quality in for now. 
-#Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
-SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
-#Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
-SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == "HCH" & Month == 1 ~ 267,
-                          OrganismCode == "BF" & Month == 10  ~ 451,
-                          OrganismCode == "ASH" & Class == "Age-1+" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
-
-#ggplot(SMFS_AgesBySizeMo, aes(x=Month, color=Class))+
- # geom_linerange(ymin=SMFS_AgesBySizeMo$Min, ymax=SMFS_AgesBySizeMo$Max)+
- # facet_wrap(~OrganismCode) #I want to double check these are right with no overlap by plotting them but it is hard :(
-
-#filtering out to general fish of interest
-Raw<-SMFS_Thesis %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) #Filtering out just fish that we have age class info for...
-
-#filter out instances where there is 0 standard length, I'll rbind them back later.
-PlusCounts<-Raw %>% filter(StandardLength==0)
-Raws_AgeClass<-Raw %>% filter(StandardLength!=0)
-
-#before I add age class, I have to rename a duplicated column name "class"
-AgesBySizeMo<-SMFS_AgesBySizeMo %>% rename("AgeClass"="Class")
-#adding age class info
-Raw_AgeClass<- left_join(Raws_AgeClass, AgesBySizeMo, join_by("OrganismCode", "Month"))#left join because I don't want age classes for fish we did not catch.
-glimpse(Raw_AgeClass) #148,341 rows, 52 columns.
-
-# Create a boolean condition based on the size range
-condition <- between(Raw_AgeClass$StandardLength, Raw_AgeClass$Min, Raw_AgeClass$Max)
-
-# Update the 'Class' column in 'Raw_AgeClass'
-Raw_AgeClass$AgeClass <- ifelse(condition, Raw_AgeClass$AgeClass, "Delete") #Keeping age class assignments if condition is met, otherwise assigning "delete" value to the row.
-unique(Raw_AgeClass$AgeClass)
-
-Raw_AgeClass <- filter(Raw_AgeClass, AgeClass != "Delete") #deleting the rows that did not match the condition
-unique(Raw_AgeClass$AgeClass)
-glimpse(Raw_AgeClass) #58,320 rows
-
-#Now adding plus counts back in
-PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = "PLUS")
-Raw_AgeClasses<-rbind(Raw_AgeClass, PlusCounts)
-
-glimpse(Raw) #58,638 rows and 49 columns before adding age class information. Number of rows should match Raw_AgeClasses output.
-
-glimpse(Raws_AgeClass)#58,313 rows after removing plus counts (length of 0).
-
-glimpse(Raw_AgeClass) #149,168 rows and 52 columns after removing plus counts and joining data with age classes. I get every possible age class here for each fish.
-
-glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
-
-str(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count fish. Why did I gain 9 rows? I think there is a problem with the age class table - overlapping min/max perhaps?
-
-#WOO! DEBUGGED!
 
 ```
 
@@ -87,10 +46,15 @@ str(Raw_AgeClasses) #58,638 rows and 52 columns of measured fish with plus count
 
 ```{r}
 #Make a histogram of all the water quality observed in the data.
-WaQua<-Raw_AgeClasses %>% group_by(TrawlRowID) %>% summarize(WaterTemperature = WaterTemperature, Salinity = Salinity, DO = DO, PctSaturation=PctSaturation, Secchi=Secchi, SpecificConductance=SpecificConductance, Month=Month, Year=Year, TowDuration=TowDuration, StationCode=StationCode) %>% distinct() #Creating a df of water quality for each unique trawl
+WaQua<-Raw_AgeClasses %>% group_by(TrawlRowID) %>% 
+  summarize(WaterTemperature = WaterTemperature, Salinity = Salinity, DO = DO, PctSaturation=PctSaturation, Secchi=Secchi, SpecificConductance=SpecificConductance, Month=Month, Year=Year, TowDuration=TowDuration, StationCode=StationCode) %>% distinct() #Creating a df of water quality for each unique trawl
+
 DOplot<-WaQua %>% ggplot()+geom_freqpoly(aes(DO)) + xlab("Dissolved Oxygen (mg/L)")
+
 Templot<-WaQua %>% ggplot()+geom_freqpoly(aes(WaterTemperature)) + xlab("Water Temperature (Celcius)")
+
 SecchiPlot<-WaQua %>% ggplot()+geom_freqpoly(aes(Secchi)) + xlab("Secchi (cm)")
+
 SalPlot<-WaQua %>% ggplot()+geom_freqpoly(aes(Salinity)) + xlab("Salinity (psu)")
 
 WaQuaPlots<-plot_grid(Templot, DOplot, SalPlot, SecchiPlot, ncol = 2, labels = "AUTO")
@@ -110,18 +74,97 @@ WaQua %>% ggplot() + geom_bar(aes(StationCode))+geom_hline(aes(yintercept=30), c
  #adding a cutoff of 30 to be included in the study.
 #Remove the following: c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2")
 
-BetterData<-Raw_AgeClasses %>% filter(!StationCode%in% c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2"))
+#Remove the sites in the Thesis data.
+```
+
+### Matching Levi's Alviso Dynamics Plot
+
+I want to make Levi's plots! I need a three by four grid of boxplots as follows: By year By Month By Site
+
+DO (%sat) Sal (psu) Temp (degC) SEC (cm)
+
+```{r}
+SMFS_Integrate$Year<-as.factor(SMFS_Integrate$Year)
+SMFS_Integrate$Month<-as.factor(SMFS_Integrate$Month)
+#need cowplot
+Year_DO<-SMFS_Integrate %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Sal<-SMFS_Integrate %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Temp<-SMFS_Integrate %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_SEC<- SMFS_Integrate %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+Month_DO<-SMFS_Integrate %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Sal<-SMFS_Integrate %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Temp<-SMFS_Integrate %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_SEC<- SMFS_Integrate %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+sort(unique(SMFS_Integrate$StationCode)) #gives list in alphabetical order!
+StationCode_DO<-SMFS_Integrate %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Sal<-SMFS_Integrate %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Temp<-SMFS_Integrate %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_SEC<- SMFS_Integrate %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sal, Year_Temp, Month_Temp, StationCode_Temp, Year_SEC, Month_SEC, StationCode_SEC, nrow=4) #wait could I do this with facet wraps??? facet_grid? No, because each plot has different x,y combo... 
+
+#Make y-axis match levi's
 ```
 
 ## Catch of lengths for each water quality by year
 
 Species of interest: LFS, ASH, ISS, SCP, STBK, SKG
 
-If we see different age classes popping up in different areas of wq (for instance most age 1 to the left, age 2 to the right, we may expect differences in sensitivity to water quality by age). If there is a lot of overlap with no clear segregation across years I imagine that means there isn't substantial support for modelling the ages separately. 
+If we see different age classes popping up in different areas of wq (for instance most age 1 to the left, age 2 to the right, we may expect differences in sensitivity to water quality by age). If there is a lot of overlap with no clear segregation across years I imagine that means there isn't substantial support for modelling the ages separately.
 
 *NOTE: These plots are only for visual assessment of age class differences in responses to water quality variables. No effort represented in these plots.*
 
 ### Longfin Smelt
+
 ```{r}
 test<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) #Adds new column that round water temperature to nearest 0.5
@@ -233,9 +276,8 @@ Secchi.Year.Plot
 plot_grid(WT_LFS, DO_LFS, PPT_LFS, Secchi_LFS, ncol = 2, labels = "AUTO")
 ```
 
-
-
 ### American Shad
+
 ```{r}
 WT_ASH<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -341,8 +383,9 @@ Secchi.Year.Plot
 # Arrange plots into a single image
 plot_grid(WT_ASH, DO_ASH, PPT_ASH, Secchi_ASH, ncol = 2, labels = "AUTO")
 ```
- 
+
 ### ISS
+
 ```{r}
 
 WT_ISS<-Raw_AgeClasses %>% 
@@ -452,6 +495,7 @@ plot_grid(WT_ISS, DO_ISS, PPT_ISS, Secchi_ISS, ncol = 2, labels = "AUTO")
 ```
 
 ### SCP
+
 ```{r}
 
 WT_SCP<-Raw_AgeClasses %>% 
@@ -561,6 +605,7 @@ plot_grid(WT_SCP, DO_SCP, PPT_SCP, Secchi_SCP, ncol = 2, labels = "AUTO")
 ```
 
 ### STBK
+
 ```{r}
 
 WT_STBK<-Raw_AgeClasses %>% 
@@ -670,6 +715,7 @@ plot_grid(WT_STBK, DO_STBK, PPT_STBK, Secchi_STBK, ncol = 2, labels = "AUTO")
 ```
 
 ### SKG
+
 ```{r}
 WT_SKG<-Raw_AgeClasses %>% 
   mutate(water_temp_bin = round(WaterTemperature * 2) / 2) %>%
@@ -777,13 +823,12 @@ Secchi.Year.Plot
 plot_grid(WT_SKG, DO_SKG, PPT_SKG, Secchi_SKG, ncol = 2, labels = "AUTO")
 ```
 
-
-
 Doesnt seem important to parse out age classes. Check with big group for confirmation.
 
 Note: put responses from different species in a grid for visual comparison.
 
 ### All together now
+
 ```{r}
 plot_grid(WT_LFS, WT_ASH, WT_ISS, WT_SCP, WT_STBK, WT_SKG, ncol = 2, labels = "AUTO")
 
@@ -797,9 +842,9 @@ plot_grid(Secchi_LFS, Secchi_ASH, Secchi_ISS, Secchi_SCP, Secchi_STBK, Secchi_SK
 
 ```
 
-
 ### Stickleback had weird differences between normal and plus counted individuals. Want to investigate
-First I will subset to trawl ids and sum rows for catch then divide by number of minutes spent trawling then join to environmental data. 
+
+First I will subset to trawl ids and sum rows for catch then divide by number of minutes spent trawling then join to environmental data.
 
 ```{r}
 Stick<- Raw_AgeClasses %>% filter(CommonName == "Threespine Stickleback") %>% group_by(TrawlRowID) %>% summarize(StickleSum = sum(Count)) #Creating a table of stickleback catch which sums counts.
@@ -860,46 +905,59 @@ PlusStickles<-Raw_AgeClasses %>% filter(CommonName == "Threespine Stickleback", 
 PlusStickles$TrawlRowID
 ```
 
-
 ## Seasonality
+
 First need to convert date to day of year for simpler look at when species are present or not. I also want to make a dataframe that gives 0 or 1 for each day of year for each species across all years as well as for each year...
+
 ```{r}
 Seasonal<-Raw_AgeClasses %>% mutate(DOY=yday(SampleDate)) #adds a column with day of year using yday from lubridate
 Seasonal_All<-Seasonal %>% group_by(CommonName, DOY, Year) %>% summarize(Count=sum(Count)) %>% distinct() #Only have presence in the dataset. Add zeros for each sampling event... Do for species and then run code to see if accuracy improves..
 Seasonal_All$Year<-as.factor(Seasonal_All$Year)
 unique(Seasonal_All$CommonName)
 ```
+
 ### Longfin smelt
+
 ```{r}
 l<-Seasonal_All %>% filter(CommonName == "Longfin Smelt") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Longfin smelt catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 l
 l+facet_wrap(~Year)
 ```
+
 ### American shad
+
 ```{r}
 a<-Seasonal_All %>% filter(CommonName == "American Shad") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="American shad catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 a
 a+facet_wrap(~Year)
 ```
+
 ### Inland Mississippi silverside
+
 ```{r}
 I<-Seasonal_All %>% filter(CommonName == "Inland Silverside") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Inland Silverside catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 I
 I+facet_wrap(~Year)
 ```
+
 ### Prickly Sculpin
+
 ```{r}
 P<-Seasonal_All %>% filter(CommonName == "Prickly Sculpin") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Prickly Sculpin catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 P
 P+facet_wrap(~Year)
 ```
+
 ### Three-spine stickleback
+
 ```{r}
 Three<-Seasonal_All %>% filter(CommonName == "Threespine Stickleback") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Threespine Stickleback catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 Three
 Three+facet_wrap(~Year)
 ```
+
 ### Shokihaze goby
+
 ```{r}
 S<-Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=Count)) + geom_col(aes(fill=Year)) +theme_bw()+ labs(title="Shokihaze Goby catch through years", caption = "Grouped by common name, day of year, and year to get sum of counts, geom_col filling color by year.")
 S
@@ -911,92 +969,8 @@ Seasonal_All %>% filter(CommonName == "Shokihaze Goby") %>% ggplot(aes(x=DOY, y=
 
 Better to do heat map through years instead...
 
-
-
-## Matching Levi's Alviso Dynamics Plot
-I want to make Levi's plots!
-I need a three by four grid of boxplots as follows: 
-By year    By Month   By Site
-
-DO (%sat)
-Sal (psu)
-Temp (degC)
-SEC (cm)
-## SMFS Dynamics
-```{r}
-SMFS_Thesis$Year<-as.factor(SMFS_Thesis$Year)
-SMFS_Thesis$Month<-as.factor(SMFS_Thesis$Month)
-#need cowplot
-Year_DO<-SMFS_Thesis %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Year_Sal<-SMFS_Thesis %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Year_Temp<-SMFS_Thesis %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Year_SEC<- SMFS_Thesis %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-
-Month_DO<-SMFS_Thesis %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Month_Sal<-SMFS_Thesis %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Month_Temp<-SMFS_Thesis %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-Month_SEC<- SMFS_Thesis %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-sort(unique(SMFS_Thesis$StationCode)) #gives list in alphabetical order!
-StationCode_DO<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-StationCode_Sal<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-StationCode_Temp<-SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-StationCode_SEC<- SMFS_Thesis %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
-  stat_summary(fun = median,
-               geom = "line",
-               aes(group = 1),
-               col = "red")
-
-plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sal, Year_Temp, Month_Temp, StationCode_Temp, Year_SEC, Month_SEC, StationCode_SEC, nrow=4) #wait could I do this with facet wraps??? facet_grid? No, because each plot has different x,y combo... 
-
-#Make y-axis match levi's
-```
-
-
 ## Frequency Distribution Plots
+
 I want to produce histograms/frequency distribution plots showing how data for species is represented over water quality, time, and demographics.
 
 Species of interest: Threespine stickleback, striped bass, prickly sculpin, mississippi silversides, longfin smelt, shimofuri goby, american shad, yellowfin goby, threadfin shad, pacific staghorn sculpin, shokihazi goby, starry flounder.
@@ -1007,6 +981,7 @@ FishList<- c("STBK", "SB", "SCP", "ISS", "LFS", "SG", "ASH", "YFG", "TFS", "STAG
 ```
 
 ### Water Quality
+
 ```{r}
 # Create a function to generate histograms
 generate_histograms <- function(data, fish_species, variables) {
@@ -1105,6 +1080,7 @@ SalinityFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>%
 ```
 
 ### Temporal
+
 ```{r}
 YearFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList) %>% 
         ggplot(aes(x = Year, y = Count)) +
@@ -1126,6 +1102,7 @@ SizeFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList & StandardLength
 ```
 
 ### Demographics
+
 ```{r Demographics}
 SizeFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList & StandardLength>0) %>% 
         ggplot(aes(x = StandardLength, y = Count)) +
@@ -1135,6 +1112,7 @@ SizeFacet<-Raw_AgeClasses %>% filter(OrganismCode %in% FishList & StandardLength
 ```
 
 ## Other plots
+
 ```{r}
 Raw_AgeClasses %>% 
   filter(OrganismCode %in% "TP") %>% 
@@ -1144,7 +1122,6 @@ Raw_AgeClasses %>%
   theme_minimal() 
 
 ```
-
 
 ```{r}
 

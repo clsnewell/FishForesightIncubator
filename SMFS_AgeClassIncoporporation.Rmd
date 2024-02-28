@@ -6,6 +6,18 @@ output: word_document
 editor_options: 
   chunk_output_type: console
 ---
+In this rmd, I take SMFS_05202023 created in SMFSDataTableMerging and complete the following objectives:
+1. Wrangle
+- Create columns for Year, Month, and Water Year
+- Filter to only keep otter trawls and samples after 2010
+2. Add age class information
+- Get info from comments to fix plus counts
+- Proportionally assign age classes to plus counts
+- Adding zeros for non-catches of species
+
+No output created. Work in progress.
+
+# Load and wrangle
 ```{r}
 library(fuzzyjoin)
 library(tidyverse)
@@ -28,7 +40,10 @@ str(SMFS_OTR_05202023)
 SMFS_OTR_05202023$WaterYear<-as.character(SMFS_OTR_05202023$WaterYear)#when converting the factor to a number, need to first make it a character and THEN numeric. Otherwise, the number gets changedfor some reason.
 SMFS_OTR_05202023$WaterYear<-as.numeric(SMFS_OTR_05202023$WaterYear) #need to make water year numeric so I can filter out years easily.
 SMFS_OTR_Thesis<-SMFS_OTR_05202023 %>% filter(WaterYear > 2010) #Filtering out water years which overlap with South Bay Otter Trawl Survey for my thesis work.
+```
 
+# Age Class Information Inclusion
+```{r}
 
 library(readxl)
 SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")

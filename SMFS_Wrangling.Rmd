@@ -7,6 +7,37 @@ editor_options:
   chunk_output_type: console
 ---
 
+In this rmd, I start with the output from SMFSDataTableMerging (SMFS_09192023) to complete the following objectives:
+
+1. Create SMFS_Integrate dataframe by
+- Create columns for Year, Month, and Water Year
+- Filter to only keep otter trawls and samples after 2010
+- Add a column for Organism Code scientific names to match SBOTS (gensp)
+- Add age class info
+- Add zeros for when fish aren't caught (each species, each size class)
+- Save those changes as SMFS_Integrate
+
+2. Create SMFS_OneFishOneRow by taking SMFS_Integrate and giving each fish its own row (aside from plus counted fish)
+
+3. Investigate NA's in the dataset to evaluate the need to interpolate missing environmental data. I create a dataframe of missing environmental data samples called SMFS_NA_WaterQuality and find that there are 46 sampling events with missing wq data. Of these:
+> 8 have NA Tow Duration (not real tows)
+> 2 from Boynton in July 2013 missing DO and PctSat (BY1, 3)
+> 2 from Cutoff in July 2013 missing DO and PctSat (CO1, 2)
+> 4 from Denverton (July '13 DV2 NA DO & PctSat; August '13 DV2 NA Secchi; June '12 DV3 NA DO & PctSat; July '13 DV3 NA DO & PctSat)
+> 3 from Good Year missing DO & PctSat from July 2013 (GY1,2,3)
+> 1 from HL(2) in May 2018 missing Temp, Salinity, DO, PctSat, SpecificCond 
+> 1 from Luco (LU1) July 2013 missing DO & PctSat
+> 5 from Montezuma slough (MZ1 July 2013 NA DO & PctSat; MZ1 Jan 2015 NA DO & PctSat; MZ2 July 2013 NA DO & PctSat; MZ2 Jan 2015 NA DO & PctSat; MZ6 July 2013 NA DO & PctSat)
+> 2 from MZN 3 (July 2013 NA DO & PctSat; Dec 2013 NA Temp, Salinity, DO, PctSat, SpecificCond)
+> 3 from Nurse (NS2 July 2013 NA DO & PctSat; NS3 July 2013 NA DO & PctSat; NS3 August 2014 NA Secchi)
+> 5 from Peytonia (PT1 August 2022 NA DO & PctSat; PT1 July 2013 NA DO & PctSat; PT2 May 2018 NA Temp, Salinity, DO, PctSat, SpecificCond; PT2 July 2013 NA DO & PctSat; PT2 August 2022NA DO & PctSat)
+> 3 from SB (SB1 July '13 NA DO & PctSat; SB2 May 2018 NA Temp, Salinity, DO, PctSat, SpecCond; SB2 July 2013 NA DO & PctSat)
+> 1 from Shelldrake (SD2) May 2018 NA Temp, Salinity, DO, PctSat, SpecificCond
+> 6 from Suisun (SU1 July 2013 NA DO & PctSat; SU2 July 2013 NA Secchi, DO, PctSat; SU2 August 2013 NA salinity & SpecCond; SU3 July 2013 NA DO & PctSat; SU3 Oct 2013 NA DO & PctSat; SU4 July 2013 NA DO & PctSat)
+
+4. I make an attempt to add zeros and calculate CPUE
+
+# Loading Data
 ```{r}
 #Wrangling SMFS 
 library(tidyverse)
@@ -21,7 +52,8 @@ library(lfstat)
 SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
 
-
+# 1. Create SMFS_Integrate dataframe
+## Filtering
 ```{r}
 #Now I just want otter trawl data
 SMFS_OTR_09192023<-SMFS_09192023 %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
@@ -32,34 +64,169 @@ SMFS_OTR_09192023$WaterYear<-as.character(SMFS_OTR_09192023$WaterYear)#when conv
 SMFS_OTR_09192023$WaterYear<-as.numeric(SMFS_OTR_09192023$WaterYear) #need to make water year numeric so I can filter out years easily.
 SMFS_OTR_09192023$Year<-as.numeric(SMFS_OTR_09192023$Year) #need to make water year numeric so I can filter out years easily.
 
-SMFS_OTR_Thesis<-SMFS_OTR_09192023 %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
+SMFS_Integrate<-SMFS_OTR_09192023 %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
+```
+
+## Adding species name information
+
+```{r}
 
 library(readxl)
 SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
 
-SMFS_Thesis<-left_join(SMFS_OTR_Thesis, SMFS_OrganismsLookUp, by = "OrganismCode")
+SMFS_Integrate<-left_join(SMFS_Integrate, SMFS_OrganismsLookUp, by = "OrganismCode")
 
-SMFS_Thesis<-mutate(SMFS_Thesis, gensp = paste(Genus, Species, sep=" "))
+SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" "))
+```
 
+## Adding Age Class Info
+```{r}
+#Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
+SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+#Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
+SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == "HCH" & Month == 1 ~ 267,
+                          OrganismCode == "BF" & Month == 10  ~ 451,
+                          OrganismCode == "ASH" & Class == "Age-1+" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
 
+#ggplot(SMFS_AgesBySizeMo, aes(x=Month, color=Class))+
+ # geom_linerange(ymin=SMFS_AgesBySizeMo$Min, ymax=SMFS_AgesBySizeMo$Max)+
+ # facet_wrap(~OrganismCode) #I want to double check these are right with no overlap by plotting them but it is hard :(
+
+#Filtering out just fish that we have age class info for...
+AgedFish<-SMFS_Integrate %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) 
+
+#filter out instances where there is 0 standard length, I'll rbind them back later.
+PlusCounts<-AgedFish %>% filter(StandardLength==0)
+AgedFish_AgeClass<-AgedFish %>% filter(StandardLength!=0)
+
+#before I add age class, I have to rename a duplicated column name "class"
+AgesBySizeMo<-SMFS_AgesBySizeMo %>% rename("AgeClass"="Class")
+#adding age class info
+AgedFish_Class<- left_join(AgedFish_AgeClass, AgesBySizeMo, join_by("OrganismCode", "Month"))#left join because I don't want age classes for fish we did not catch.
+glimpse(AgedFish_Class) #148,341 rows, 52 columns.
+
+# Create a boolean condition based on the size range
+condition <- between(AgedFish_Class$StandardLength, AgedFish_Class$Min, AgedFish_Class$Max)
+
+# Update the 'Class' column in 'AgedFish_Class'
+AgedFish_Class$AgeClass <- ifelse(condition, AgedFish_Class$AgeClass, "Delete") #Keeping age class assignments if condition is met, otherwise assigning "delete" value to the row.
+unique(AgedFish_Class$AgeClass)
+
+AgedFish_Class <- filter(AgedFish_Class, AgeClass != "Delete") #deleting the rows that did not match the condition
+unique(AgedFish_Class$AgeClass)
+glimpse(AgedFish_Class) #58,320 rows
+
+#Now adding plus counts back in
+PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = "PLUS")
+AgedFish_AgeClasses<-rbind(AgedFish_Class, PlusCounts)
+
+glimpse(AgedFish) #58,638 rows and 50 columns before adding age class information. Number of rows should match AgedFish_AgeClasses output.
+
+glimpse(AgedFish_Class)#58,313 rows after removing plus counts (length of 0).
+
+glimpse(AgesBySizeMo) #663 rows (should be 149,168 rows and 52 columns?) after removing plus counts and joining data with age classes. I get every possible age class here for each fish.
+
+glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
+
+glimpse(AgedFish_AgeClasses) #58,638 rows and 53 columns of measured fish with plus count fish.
+
+#Now need to add back in the species we lost when making AgedFish. They matter too.
+BringEmBack<-SMFS_Integrate %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = NA)
+
+DataWithAges<-rbind(AgedFish_AgeClasses, BringEmBack) #80063 rows, 53 columns. Back to the start! Bon.
+```
+
+Plus counts unaltered but may want to update them so that I can create a filter to remove non-targeted fish sizes.
+### Fixing plus counts
+```{r}
+unique(DataWithAges$CatchComments) # I thought there were catch comments before that detailed what size the plus counted fish were.
+#Attempt lives in SMFS_AgeClassIncorporation. Proportional assignment of plus counts my idea. Lewis proposes creating a distribution of sizes and then sampling randomly from that which would be better in cases of plus counts being low. But I'll move forward with my own attempt to fix plus counts.
+
+# Step 1: Filter rows where Class is not "NA_Class" and Counted is greater than 0
+df_filtered <- DataWithAges %>%
+  filter(!is.na(Class), Class != "NA_Class", Counted > 0)
+
+# Step 2: Calculate the total count for each SampleRowID and OrganismCode
+df_total_counts <- df_filtered %>%
+  group_by(SampleRowID, OrganismCode) %>%
+  summarize(TotalCount = sum(Counted), .groups = "drop")
+
+# Step 3: Calculate the proportion for each age class
+df_proportions <- df_Class_NA %>%
+  left_join(df_total_counts, by = c("SampleRowID", "OrganismCode")) %>%
+  mutate(
+    Proportion = ifelse(
+      Class != "NA_Class",
+      Counted / TotalCount,
+      0
+    )
+  )
+
+# Step 4: Calculate the total "NA" counts for each SampleRowID
+df_na_counts <- df_proportions %>%
+  filter(is.na(Class)) %>%
+  group_by(SampleRowID) %>%
+  summarize(NA_Count = sum(Counted), .groups = "drop")
+
+# Step 5: Distribute the "NA" counts proportionally to other age classes
+df_final <- df_proportions %>%
+  left_join(df_na_counts, by = "SampleRowID") %>%
+  mutate(
+    Counted = ifelse(
+      !is.na(Class),
+      round(Counted + Proportion * NA_Count),
+      0
+    )
+  ) %>%
+  select(-TotalCount, -Proportion, -NA_Count)
+
+#Now add zeros!
+SMFS_OTR_Thesis_AgeClassWithZeros<-merged_data %>% 
+  complete(nesting(SampleRowID, 
+                   WaterTemperature, 
+                   Secchi, 
+                   DO, 
+                   Salinity, 
+                   MethodCode, 
+                   StationCode, 
+                   SampleDate, 
+                   SampleTime, 
+                   PctSaturation, 
+                   SpecificConductance, 
+                   TideCode, 
+                   ElecCond, 
+                   TowDuration, 
+                   TrawlComments, 
+                   Year,
+                   Month,
+                   WaterYear), 
+           OrganismCode, Class,
+           fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
+
+SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0
+#NOW it has zeros
+```
+
+# Save
+```{r}
 #Save New DF
-#write.csv(SMFS_Thesis, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis.csv")
+write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
 
 ```
 
 ### One fish one row
 I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
 ```{r}
-SMFS_Thesis_Expand <- SMFS_Thesis %>%
+SMFS_Integrate_Expand <- SMFS_Integrate %>%
   filter(StandardLength > 0) %>% #only keeping measured fish
   uncount(Count, .remove = FALSE) #keeps number of rows that corresponds to the Count value
-SMFS_Thesis_Expand$Count<-1 #assigns value of 1
+SMFS_Integrate_Expand$Count<-1 #assigns value of 1
 
-Bind<-SMFS_Thesis %>%
+Bind<-SMFS_Integrate %>%
   filter(!StandardLength > 0)
-SMFS_Thesis_Expand2<-rbind(SMFS_Thesis_Expand, Bind)
+SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, Bind)
 #Save New DF
-write.csv(SMFS_Thesis_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
+write.csv(SMFS_Integrate_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
 
 ```
 
@@ -67,12 +234,12 @@ write.csv(SMFS_Thesis_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code
 ### Investigating NA's in dataset
 ```{r}
 #How many rows will we lose if we remove NAs?
-sum(is.na(SMFS_Thesis$WaterTemperature)) #44
-sum(is.na(SMFS_Thesis$DO)) #495
-sum(is.na(SMFS_Thesis$Salinity)) #47
-sum(is.na(SMFS_Thesis$Secchi)) #100
+sum(is.na(SMFS_Integrate$WaterTemperature)) #44
+sum(is.na(SMFS_Integrate$DO)) #495
+sum(is.na(SMFS_Integrate$Salinity)) #47
+sum(is.na(SMFS_Integrate$Secchi)) #100
 #This isn't super helpful... We have multiple rows for one 
-Na_Assessment<-SMFS_Thesis %>% 
+Na_Assessment<-SMFS_Integrate %>% 
   group_by(SampleRowID) %>% 
   summarize(WaterTemp_NA=sum(is.na(WaterTemperature)),
             DO_NA =  sum(is.na(DO)),
@@ -83,29 +250,29 @@ Na_Assessment<- Na_Assessment %>% filter(WaterTemp_NA>0 | DO_NA>0 | Sal_NA>0 | S
 #let's find out more about these.
 NaSamples<-Na_Assessment$SampleRowID
 
-SMFS_OTR_Thesis_WQNA<-SMFS_Thesis %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
+SMFS_OTR_Thesis_WQNA<-SMFS_Integrate %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
 SMFS_OTR_Thesis_WQNA<-as.data.frame(SMFS_OTR_Thesis_WQNA)
 SMFS_OTR_Thesis_WQNA<-SMFS_OTR_Thesis_WQNA %>% distinct()
 #Save New DF
-write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv")
+write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv") #This holds the information with samples that have NA wq data
 
 
 #Visualizing fish counts by year for each species
-FishCountTable<-SMFS_Thesis %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
 
-FishCountTable<-SMFS_Thesis %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
 
 FishCountTable %>% spread(key = Year, value = Total)
 
 #Adding zeros for sampling events with no fish caught
 #https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
-length(unique(SMFS_Thesis$SampleRowID)) 
-length(unique(SMFS_Thesis$TrawlRowID)) 
-length(unique(SMFS_Thesis$OrganismCode))
+length(unique(SMFS_Integrate$SampleRowID)) 
+length(unique(SMFS_Integrate$TrawlRowID)) 
+length(unique(SMFS_Integrate$OrganismCode))
 3702*79
 
 
-Nas_<-SMFS_Thesis %>% filter(TowDuration %in% NA)
+Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
 NA_SampleRowIDs<-unique(Nas_$SampleRowID)
 NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
 unique(NA_Tow_Info$SampleRowID)
@@ -114,37 +281,34 @@ unique(NA_Tow_Info$SampleRowID)
 
 
 #Why NA DO?
-NoDO<-SMFS_Thesis %>% filter(DO %in% NA)
+NoDO<-SMFS_Integrate %>% filter(DO %in% NA)
 #Reasons for missing DO: 
 #Row 81, 232, 253,  - just didn't record DO or PctSat
 #Is it missing for other organisms from the same trawl?
 
 NoDOTrawlID<-unique(NoDO$TrawlRowID)
 length(NoDOTrawlID) #35 trawls
-NoDOTrawls<-SMFS_Thesis %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
+NoDOTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
 
 
 #Now checking salinity
-NoSal<-SMFS_Thesis %>% filter(Salinity %in% NA)
+NoSal<-SMFS_Integrate %>% filter(Salinity %in% NA)
 NoSalTrawlID<-unique(NoSal$TrawlRowID)
 length(NoSalTrawlID) #6 trawls
-NoSalTrawls<-SMFS_Thesis %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
+NoSalTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
 
 #Now checking Secchi
-NoSecchi<-SMFS_Thesis %>% filter(Secchi %in% NA)
+NoSecchi<-SMFS_Integrate %>% filter(Secchi %in% NA)
 NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
 length(NoSecchiTrawlID) #3 trawls
-NoSecchiTrawls<-SMFS_Thesis %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
+NoSecchiTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
 
 #Now checking Water Temp
-NoWT<-SMFS_Thesis %>% filter(WaterTemperature %in% NA)
+NoWT<-SMFS_Integrate %>% filter(WaterTemperature %in% NA)
 NoWTTrawlID<-unique(NoWT$TrawlRowID) 
 length(NoWTTrawlID) #5 trawls
-NoWTTrawls<-SMFS_Thesis %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
-
-#NOTE: There is info for other wq variables. So I am losing some amount of good info here... 
-SMFS_Thesis<-SMFS_Thesis %>% filter(!TowDuration %in% NA, !DO %in% NA, !Salinity %in% NA, !Secchi %in% NA, !WaterTemperature %in% NA, !TideCode %in% NA, !StationCode %in% NA) #Remove NA rows for Tow Duration, DO, Salinity, Secchi, and Water Temp (Important WQ). Also removed NA's for other variables of interest for good measure. 
-which(is.na(SMFS_Thesis$TowDuration)) #Tow Duration NAs removed.
+NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
+#I remove these NAs in the SMFS_WranglingForThesis rmd
 ```
 
 ### Adding zeros, calculating cpue (dead code)

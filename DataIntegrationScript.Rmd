@@ -6,6 +6,8 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+In this rmd, I take SMFS data developed in the SMFSDataTableMerging and SMFS_Wrangling rmds and integrate with SBOTS data wrangled and checked by Lewis. 
+The goal of this rmd is to create a combined dataset that can be used for incubator projects and beyond. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -21,7 +23,7 @@ library(tidyverse)
 library(readr)
 
 SBOTS2019 <- read_excel("Data/SBOTS2019.xlsx")
-SMFS <- read_csv("Data/SMFS.csv")
+SMFS <- read_csv("Data/SMFS_Integrate.csv")
 ```
 
 Wrangling

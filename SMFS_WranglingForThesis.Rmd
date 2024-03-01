@@ -130,6 +130,7 @@ glimpse(AgedFish_AgeClasses) #55,681 rows and 52 columns of measured fish with p
 BringEmBack<-SMFS_gensp %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = NA)
 
 DataWithAges<-rbind(AgedFish_AgeClasses, BringEmBack) #75807 rows, 53 columns. Back to the start! Bon.
+Question<-unique(DataWithAges$SampleRowID)
 ```
 
 ## Selecting species of interest
@@ -159,7 +160,7 @@ NoBigs<-NoDead %>% filter(AgeClass %in% c("Age-0", "N/A")) #6169 rows
 unique(NoBigs$AgeClass)
 summary(NoBigs$StandardLength) #max length dropped from 460 to 135 mm. 
 
-AllCombinations<-expand.grid(SampleRowID = NumberSamples, gensp=  species) #grid of combinations of species and sample row IDs
+AllCombinations<-expand.grid(SampleRowID = NumberSamples3, gensp=  species) #grid of combinations of species and sample row IDs
 
 SampleTable<-SMFS_Thesis %>% group_by(SampleRowID) %>% summarize(StationCode = StationCode, SampleDate = SampleDate, SampleTime=SampleTime, WaterTemperature=WaterTemperature, Salinity=Salinity, DO=DO, PctSaturation=PctSaturation, Secchi=Secchi, SpecificConductance=SpecificConductance, TideCode=TideCode, TrawlRowID=TrawlRowID, TowDuration=TowDuration, TrawlComments=TrawlComments, Year=Year, Month=Month, WaterYear=WaterYear) %>% distinct() #Isolating all of the independent variable information for each tow. Will join it back later.
 SpeciesTable<-Inquiry %>% group_by(gensp) %>% summarize(gensp, OrganismCode, Native, Resident, Active, CommonName, Phylum, Class, Order, Family, Genus, Species) %>% distinct()
@@ -176,8 +177,8 @@ merger_fishinfo<-rows_patch(merger_reduced, SpeciesTable, by="gensp") #PERFECT!!
 
 merger_presabs<-merger_fishinfo %>% mutate(PresAbs = if_else(Sum > 0, "present", "absent"), Binary=if_else(Sum > 0, 1, 0))
 
-PresAbs<-merge(merger_presabs, SampleTable, all.x=TRUE)#22056 BUT I WANT 3433 samples * 6 species to yield 20,598 
-
+PresAbs<-merge(merger_presabs, SampleTable, all.x=TRUE)# 20,598 !!
+WieLang<-unique(PresAbs$SampleRowID) #3676
 ```
 
 Plus counts unaltered but may want to update them so that I can create a filter to remove non-targeted fish sizes.

@@ -134,9 +134,16 @@ glimpse(AgedFish_AgeClasses) #58,638 rows and 53 columns of measured fish with p
 BringEmBack<-SMFS_Integrate %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = NA)
 
 DataWithAges<-rbind(AgedFish_AgeClasses, BringEmBack) #80063 rows, 53 columns. Back to the start! Bon.
+
+#Do I have instances of catching only large fish not well sampled?
+Inquiry<- DataWithAges %>% filter(gensp %in% c("Alosa sapidissima", "Spirinchus thaleichthys", "Cottus asper", "Gasterosteus aculeatus", "Menidia beryllina"))
+
 ```
 
 Plus counts unaltered but may want to update them so that I can create a filter to remove non-targeted fish sizes.
+
+For presence/absence model, filter on tows that measured big fish. Remove those fish/observations. And then for all tows, label each tow as 'presence' or 'absent'. If there was a tow that only measured big fish, it will look like no fish were captured because you removed all instances of big fish measurements. This avoids dealing with plus count, which we don't need for the presence/absent model. I
+
 ### Fixing plus counts
 ```{r}
 unique(DataWithAges$CatchComments) # I thought there were catch comments before that detailed what size the plus counted fish were.
@@ -179,9 +186,12 @@ df_final <- df_proportions %>%
     )
   ) %>%
   select(-TotalCount, -Proportion, -NA_Count)
+```
 
+### Adding zeros
+```{r}
 #Now add zeros!
-SMFS_OTR_Thesis_AgeClassWithZeros<-merged_data %>% 
+SMFS_OTR_Thesis_AgeClassWithZeros<-DataWithAges %>% 
   complete(nesting(SampleRowID, 
                    WaterTemperature, 
                    Secchi, 
@@ -200,7 +210,7 @@ SMFS_OTR_Thesis_AgeClassWithZeros<-merged_data %>%
                    Year,
                    Month,
                    WaterYear), 
-           OrganismCode, Class,
+           OrganismCode, AgeClass,
            fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
 
 SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0

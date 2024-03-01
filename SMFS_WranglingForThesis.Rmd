@@ -1,0 +1,193 @@
+---
+title: "SMFS_WranglingForThesis"
+author: "Caroline Newell"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+Summary:
+Take the output from SMFS_DataTableMerging and wrangle a bit for thesis modeling purposes (presence absence data). I completely ignore plus count data thought it should be dealt with if modeling count data.Steps taken are as follows:
+
+1. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading Data
+```{r}
+#Wrangling SMFS 
+library(tidyverse)
+library(rlang)
+library(readr)
+library(lubridate)
+library(lfstat)
+library(readxl)
+
+SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_09192023.csv")
+SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
+SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+
+```
+
+# 1. Create big dataframe
+
+## Adding Columns
+```{r}
+SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
+SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
+SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
+```
+
+## Filtering
+```{r}
+#Now I just want otter trawl data
+SMFS_OTR_09192023<-SMFS_09192023 %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
+
+#Now I want to constrain the data to the years of interest (2011 to now)
+str(SMFS_OTR_09192023)
+SMFS_OTR_09192023$WaterYear<-as.character(SMFS_OTR_09192023$WaterYear)#when converting the factor to a number, need to first make it a character and THEN numeric. Otherwise, the number gets changedfor some reason.
+SMFS_OTR_09192023$WaterYear<-as.numeric(SMFS_OTR_09192023$WaterYear) #need to make water year numeric so I can filter out years easily.
+SMFS_OTR_09192023$Year<-as.numeric(SMFS_OTR_09192023$Year) #need to make water year numeric so I can filter out years easily.
+
+SMFS_Afer2010<-SMFS_OTR_09192023 %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
+NumberSamples1<-unique(SMFS_Afer2010$SampleRowID) #3736. This is the number of unique samples.
+NumberTows<-unique(SMFS_Afer2010$TrawlRowID) #Same
+#Removing NAs
+#NOTE: There is info for other wq variables. So I am losing some amount of good info here... 
+SMFS_NoNA<-SMFS_Afer2010 %>% filter(!TowDuration %in% NA, !DO %in% NA, !Salinity %in% NA, !Secchi %in% NA, !WaterTemperature %in% NA, !TideCode %in% NA, !StationCode %in% NA) #Remove NA rows for Tow Duration, DO, Salinity, Secchi, and Water Temp (Important WQ). Also removed NA's for other variables of interest for good measure. 
+which(is.na(SMFS_Thesis$TowDuration)) #Tow Duration NAs removed.
+NumberSamples2<-unique(SMFS_NoNA$SampleRowID) #3676
+
+#Which sites to keep?
+SMFS_Thesis %>% ggplot() + geom_bar(aes(StationCode))+geom_hline(aes(yintercept=1000), color="red") +theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+ #adding a cutoff of 1000 to be included in the study.
+
+SMFS_Thesis<-SMFS_NoNA %>% filter(!StationCode%in% c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2", "MWB1", "MWB2", "MWS1", "MWS2", "MZN3", "SB0_5"))
+
+
+NumberSamples3<-unique(SMFS_Thesis$SampleRowID) #3736 reduced to 3433 after removing NAs and undersampled locations. This is the number of unique samples. Expect 3433 samples * 6 species to yield 20,598 rows to have fish shown for each sample.
+
+```
+
+## Adding species name information
+
+```{r}
+SMFS_LookUp<-left_join(SMFS_Thesis, SMFS_OrganismsLookUp, by = "OrganismCode")
+
+SMFS_gensp<-mutate(SMFS_LookUp, gensp = paste(Genus, Species, sep=" ")) #75807
+```
+
+## Adding Age Class Info
+```{r}
+#Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
+
+#Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
+SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == "HCH" & Month == 1 ~ 267,
+                          OrganismCode == "BF" & Month == 10  ~ 451,
+                          OrganismCode == "ASH" & Class == "Age-1+" & Month == 8  ~ 461, TRUE~Max)) #This code ups the maxes for the 3 fish previously being deleted.
+
+#Filtering out just fish that we have age class info for...
+AgedFish<-SMFS_gensp %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) 
+
+#filter out instances where there is 0 standard length, I'll rbind them back later.
+PlusCounts<-AgedFish %>% filter(StandardLength==0)
+AgedFish_AgeClass<-AgedFish %>% filter(StandardLength!=0)
+
+#before I add age class, I have to rename a duplicated column name "class"
+AgesBySizeMo<-SMFS_AgesBySizeMo %>% rename("AgeClass"="Class")
+#adding age class info
+AgedFish_Class<- left_join(AgedFish_AgeClass, AgesBySizeMo, join_by("OrganismCode", "Month"))#left join because I don't want age classes for fish we did not catch.
+glimpse(AgedFish_Class) #148,341 rows, 52 columns.
+
+# Create a boolean condition based on the size range
+condition <- between(AgedFish_Class$StandardLength, AgedFish_Class$Min, AgedFish_Class$Max)
+
+# Update the 'Class' column in 'AgedFish_Class'
+AgedFish_Class$AgeClass <- ifelse(condition, AgedFish_Class$AgeClass, "Delete") #Keeping age class assignments if condition is met, otherwise assigning "delete" value to the row.
+unique(AgedFish_Class$AgeClass)
+
+AgedFish_Class <- filter(AgedFish_Class, AgeClass != "Delete") #deleting the rows that did not match the condition
+unique(AgedFish_Class$AgeClass)
+glimpse(AgedFish_Class) #58,320 rows
+
+#Now adding plus counts back in
+PlusCounts<-PlusCounts %>% mutate(Min = NA, Max = NA, AgeClass = "PLUS")
+AgedFish_AgeClasses<-rbind(AgedFish_Class, PlusCounts)
+
+glimpse(AgedFish) #55,681 rows and 49 columns before adding age class information. Number of rows should match AgedFish_AgeClasses output.
+
+glimpse(AgedFish_Class)#55,378 rows after removing plus counts (length of 0).
+
+glimpse(AgesBySizeMo) #663 rows (should be 149,168 rows and 52 columns?) after removing plus counts and joining data with age classes. I get every possible age class here for each fish.
+
+glimpse(PlusCounts)#303 rows and 52 columns of plus counts.
+
+glimpse(AgedFish_AgeClasses) #55,681 rows and 52 columns of measured fish with plus count fish.
+
+#Now need to add back in the species we lost when making AgedFish. They matter too.
+BringEmBack<-SMFS_gensp %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = NA)
+
+DataWithAges<-rbind(AgedFish_AgeClasses, BringEmBack) #75807 rows, 53 columns. Back to the start! Bon.
+```
+
+## Selecting species of interest
+```{r}
+#Do I have instances of catching only large fish not well sampled?
+Inquiry<- DataWithAges %>% filter(gensp %in% c("Alosa sapidissima", "Spirinchus thaleichthys", "Cottus asper", "Gasterosteus aculeatus", "Menidia beryllina", "Tridentiger barbatus")) #7479
+species<-c("Alosa sapidissima", "Spirinchus thaleichthys", "Cottus asper", "Gasterosteus aculeatus", "Menidia beryllina", "Tridentiger barbatus")
+```
+
+For presence absence models, I can get rid of plus counts AND I can remove large fish.
+Based on plots of wq responses by age class, large fish are as folows:
+LFS Age 1+
+ASH Age-1+
+ISS Age-1
+SCP Age-1+
+SKG Age-1+
+STBK have no age classes.
+
+
+# 2. Add zeros and presence/absence info
+```{r}
+NoPlus<-Inquiry %>% filter(StandardLength != 0) #7417 rows
+summary(NoPlus$StandardLength)
+unique(NoPlus$AgeClass)
+NoDead<-NoPlus %>% filter(Dead!="Yes")
+NoBigs<-NoDead %>% filter(AgeClass %in% c("Age-0", "N/A")) #6169 rows
+unique(NoBigs$AgeClass)
+summary(NoBigs$StandardLength) #max length dropped from 460 to 135 mm. 
+
+AllCombinations<-expand.grid(SampleRowID = NumberSamples, gensp=  species) #grid of combinations of species and sample row IDs
+
+SampleTable<-SMFS_Thesis %>% group_by(SampleRowID) %>% summarize(StationCode = StationCode, SampleDate = SampleDate, SampleTime=SampleTime, WaterTemperature=WaterTemperature, Salinity=Salinity, DO=DO, PctSaturation=PctSaturation, Secchi=Secchi, SpecificConductance=SpecificConductance, TideCode=TideCode, TrawlRowID=TrawlRowID, TowDuration=TowDuration, TrawlComments=TrawlComments, Year=Year, Month=Month, WaterYear=WaterYear) %>% distinct() #Isolating all of the independent variable information for each tow. Will join it back later.
+SpeciesTable<-Inquiry %>% group_by(gensp) %>% summarize(gensp, OrganismCode, Native, Resident, Active, CommonName, Phylum, Class, Order, Family, Genus, Species) %>% distinct()
+
+merger<-merge(AllCombinations, NoBigs, all.x=TRUE)
+
+merger$Count<-ifelse(is.na(merger$Count), 0, merger$Count)
+
+merger_reduced<-merger %>% select(SampleRowID, gensp, OrganismCode, Count, Native, Resident, Active, CommonName, Phylum, Class, Order, Family, Genus, Species)
+
+merger_reduced<-merger_reduced %>% group_by(SampleRowID, gensp, OrganismCode, Native, Resident, Active, CommonName, Phylum, Class, Order, Family, Genus, Species) %>% summarize(Sum=sum(Count)) #22056
+
+merger_fishinfo<-rows_patch(merger_reduced, SpeciesTable, by="gensp") #PERFECT!!
+
+merger_presabs<-merger_fishinfo %>% mutate(PresAbs = if_else(Sum > 0, "present", "absent"), Binary=if_else(Sum > 0, 1, 0))
+
+PresAbs<-merge(merger_presabs, SampleTable, all.x=TRUE)#22056 BUT I WANT 3433 samples * 6 species to yield 20,598 
+
+```
+
+Plus counts unaltered but may want to update them so that I can create a filter to remove non-targeted fish sizes.
+
+Mikaela: For presence/absence model, we don't care about plus counts. Remove all plus count data. Filter on tows that measured big fish. Remove those fish/observations. And then for all tows, label each tow as 'presence' or 'absent'. If there was a tow that only measured big fish, it will look like no fish were captured because you removed all instances of big fish measurements. This avoids dealing with plus count, which we don't need for the presence/absent model. I
+
+
+# Save
+```{r}
+#Save New DF
+write.csv(PresAbs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
+
+```

@@ -37,8 +37,7 @@ I know we are not planning to use "age classes" as they are possibly incorrect b
 
 ```{r}
 SMFS_Integrate <- read_csv("Data/SMFS_Integrate.csv") #this dataset includes all SMFS OT data from 2011-2023 data 
-
-#I'm leaving the NA water quality in for now. 
+PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
 
 ```
 
@@ -84,6 +83,7 @@ I want to make Levi's plots! I need a three by four grid of boxplots as follows:
 DO (%sat) Sal (psu) Temp (degC) SEC (cm)
 
 ```{r}
+#All Data
 SMFS_Integrate$Year<-as.factor(SMFS_Integrate$Year)
 SMFS_Integrate$Month<-as.factor(SMFS_Integrate$Month)
 #need cowplot
@@ -153,6 +153,75 @@ StationCode_SEC<- SMFS_Integrate %>% filter(StationCode %in% c("BY1", "BY2", "CO
 plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sal, Year_Temp, Month_Temp, StationCode_Temp, Year_SEC, Month_SEC, StationCode_SEC, nrow=4) #wait could I do this with facet wraps??? facet_grid? No, because each plot has different x,y combo... 
 
 #Make y-axis match levi's
+
+glimpse(PresAbs)
+PresAbs$Year<-as.factor(PresAbs$Year)
+PresAbs$Month<-as.factor(PresAbs$Month)
+#need cowplot
+Year_DO<-PresAbs %>% ggplot(aes(x=Year, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Sal<-PresAbs %>% ggplot(aes(x=Year, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_Temp<-PresAbs %>% ggplot(aes(x=Year, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Year_SEC<- PresAbs %>% ggplot(aes(x=Year, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+Month_DO<-PresAbs %>% ggplot(aes(x=Month, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() +                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Sal<-PresAbs %>% ggplot(aes(x=Month, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_Temp<-PresAbs %>% ggplot(aes(x=Month, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+Month_SEC<- PresAbs %>% ggplot(aes(x=Month, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw()+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+sort(unique(PresAbs$StationCode)) #gives list in alphabetical order!
+StationCode_DO<-PresAbs %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>%  ggplot(aes(x=StationCode, y=PctSaturation))+geom_boxplot(fill="grey")+ylab("DO (%sat)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Sal<-PresAbs %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Salinity))+geom_boxplot(fill="grey")+ylab("SAL (ppt)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_Temp<-PresAbs %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=WaterTemperature))+geom_boxplot(fill="grey")+ylab("TEMP (degC)")+theme_bw()+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+StationCode_SEC<- PresAbs %>% filter(StationCode %in% c("BY1", "BY2", "CO1", "CO2", "DV1", "DV2", "DV3", "GY1", "GY2", "GY3", "MZ1", "MZ2","MZ6",    "MZN3", "NS1", "NS2", "NS3", "PT1",  "PT2",  "PT3",  "SB1", "SB2", "SD2",    "SU1", "SU2", "SU3", "SU4")) %>% ggplot(aes(x=StationCode, y=Secchi))+geom_boxplot(fill="grey")+ylab("SEC (cm)")+theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+                      # Add median line to boxplot
+  stat_summary(fun = median,
+               geom = "line",
+               aes(group = 1),
+               col = "red")
+
+plot_grid(Year_DO, Month_DO, StationCode_DO, Year_Sal, Month_Sal, StationCode_Sal, Year_Temp, Month_Temp, StationCode_Temp, Year_SEC, Month_SEC, StationCode_SEC, nrow=4) #wait could I do this with facet wraps??? facet_grid? No, because each plot has different x,y combo... 
 ```
 
 ## Catch of lengths for each water quality by year

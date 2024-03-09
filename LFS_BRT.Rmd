@@ -1,0 +1,434 @@
+---
+title: "Modeling Protocol"
+author: "Caroline Newell"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+Constructed so I can search "LongfinSmelt"and replace with Gensp name and have the code run.
+
+### Loading libraries and data
+
+```{r}
+library(tidyverse)
+library(readr)
+library(dismo)
+library(caret)
+library(here)
+library(cowplot)
+library(Hmisc)
+
+PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
+```
+
+# PresenceAbsence
+
+## Step 1: Data visualization, Quality Check
+
+Before modeling, we will ensure the data is up to snuff.
+
+First things first, we need to get the data for the LongfinSmelt of interest we want to model.
+
+```{r}
+LongfinSmeltData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys")
+LongfinSmeltData<-as.data.frame(LongfinSmeltData)
+```
+
+Now lets check the dataset.
+
+```{r}
+glimpse(LongfinSmeltData)
+summary(LongfinSmeltData)
+```
+
+Let's make a couple of plots for making predictions.
+
+```{r}
+Plot_Water<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)")
+
+Plot_DO<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=DO, color = TowDuration)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)")
+
+Plot_Secchi<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=Secchi, color = TowDuration)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)")
+
+Plot_Salinity<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=Salinity, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity")
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Longfin smelt presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+```
+
+Plot analysis 
+
+## Step 2: Use caret package to set hyperparameters
+
+Thanks Nima! "Rather than just randomly choosing numbers that work and seeing how well the model predicts over and over again, the caret package has built in functionality to streamline the tuning of the parameters to help you evaluate the effect of tuning the hyperparameters on predictive performance and choose the “optimal” model across these hyperparameters.
+
+What the caret package does is create a grid of all the parameters and values you want to test. It will then some sort of validation method (e.g. k-fold cross validation), calculate the performance for each iteration of the validation, determine the optimal parameter set.
+
+FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs which is what the dismo packages is using inherently as well."
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
+                       n.trees = 2000, #number of trees. This will be updated after running gbm which will tell us the optimal number of trees.
+                       shrinkage = seq(0.01, 0.5, length.out =5), #learning rate
+                       bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this.
+                       )
+
+gbmGrid %>% head() #take a look at what we just made
+```
+
+```{r}
+#specify type of resampling
+fitControl <- trainControl(## 2-fold CV
+                           method = "cv",
+                           number = 2, #Can increase! Either the number of folds or number of resampling iterations
+                           classProbs = TRUE, ## Estimate class probabilities for classification models
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+```
+
+Here we do a 2 fold cross validation (again to decrease time but feel free to increase it). Specifying ‘twoClassSummary’ will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance….the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). Nima likes these metrics personally as he finds them intuitive and used widely in the literature. The default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
+
+Now we can use the `train` function to run the analysis.
+
+```{r}
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = LongfinSmeltData, 
+                method = "gbm", 
+                trControl = fitControl, 
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "ROC" 
+                )
+
+gbmFit
+# save the model
+saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+Sensitivity = True positives Specificity = True negatives
+
+Evaluate model performance through predictive deviance. Don't want it too high or too low. As hyper parameters are changed then that may shift optimal options for others.
+
+Nima: "Additionally, I will note that the more folds, parameters, and values you look that the longer this evaluation will take. I usually just look at different learning rate, number of trees, and tree complexity and I look between 3 - 5 values for each. If you end up using gbm.step to build your model, which I will talk about below, you don’t need to look at number of trees because that function will figure that out. My collaborators and I usually keep bag.fraction as 0.6 and I have never touched n.minobsinnode."
+
+## Step 3: Use gbm() from dismo to run model and create outputs
+
+Thanks Nima and Elith!
+
+```{r}
+ set.seed(124) # for reproducibility 
+#gbm.step wants bernoulli response {0, 1} 
+ brt1 <- dismo::gbm.step(data=LongfinSmeltData, 
+                         gbm.x= c(WaterTemperature + Secchi + DO + Salinity + TowDuration), # environmental variables
+                         gbm.y= Binary, # response variable
+                         family = "bernoulli", # for counts this would be "poisson"
+                         tree.complexity = 3, # complexity of the interactions that the model will fit. Based on what caret told us.
+                         learning.rate = 0.1,  # optimized to end up with >1000 trees
+                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
+                         )
+
+# make sure to save the model!
+summary(brt1)
+
+names(brt1) #tells us the components of output
+
+# To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
+
+ # reponse curves
+par(mar=c(2, 2, 1, 1))
+
+dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
+
+# save the model
+saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
+
+```
+
+Firstly, the things you can see: The R console will show some results (see the Word Working Guide of the Elith tutorial for an example). It reports a brief model summary & all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
+
+There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
+
+## Validation
+
+Below are 2 validation schemes that we typically use to assess how well the model is predicting. The first is a K-fold cross-validation where the data is split in k number of equal sections (i.e. folds). A model is the trained on one fold and then its predicts to the rest of the folds. It then iterates this process through all the folds. Most studies do 10 folds as this has shown to be a good number. Too low or too high has shown to potentially bias / cause variability in results.
+
+Performance metrics that are calculated are deviance explained, AUC, and TSS. Deviance explained is a metric for how much variance did our model explain (you can think of is as R squared) and AUC and TSS are assessing predictive skill. Since you are using abundance data you may need to change that to RMSE or MAE (I’d suggest taking a look at the Metrics package for that)
+
+NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will have to make a slight change to this function below. I’ve commented lines out since I made the model above using gbm.fixed but if used gbm.step I would used the code on those lines instead.
+
+```{r}
+#k fold cross validation function
+
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.05, k_folds = 5, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+  dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
+  Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
+  colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
+  counter=1
+  for (k in 1:k_folds){
+    print(k)
+    train <- dataInput[dataInput$Kset!=k,]
+    test <- dataInput[dataInput$Kset==k,]
+    
+    brt.k <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
+                             gbm.y = gbm.y, 
+                             family="bernoulli", 
+                             tree.complexity = tree.complexity,
+                             learning.rate = learning.rate, 
+                             bag.fraction = bag.fraction,
+                             n.trees = n.trees)
+    
+    # brt.k <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+    #                          gbm.y = gbm.y, 
+    #                          family="bernoulli", 
+    #                          tree.complexity = tree.complexity,
+    #                          learning.rate = learning.rate, 
+    #                          bag.fraction = bag.fraction)
+    
+    preds <- gbm::predict.gbm(brt.k, test,
+                              n.trees=brt.k$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$null.deviance #use with gbm.fixed
+      res <- x$self.statistics$resid.deviance #use with gbm.fixed
+      #null <- x$self.statistics$mean.null #use with gbm.step
+      #res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.k)
+    d <- cbind(test[gbm.y], preds)
+    pres <- as.numeric(d[d[,1]==1,2])
+    abs <- as.numeric(d[d[,1]==0,2])
+    e <- dismo::evaluate(p=pres, a=abs)
+    Evaluations_kfold_BRT[counter,1] <- k
+    Evaluations_kfold_BRT[counter,2] <- dev
+    Evaluations_kfold_BRT[counter,3] <- e@auc
+    Evaluations_kfold_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    counter=counter+1 
+  }
+  return(Evaluations_kfold_BRT)
+}
+  
+  
+brt_SDM_k <- eval_kfold_brt(dataInput = NWA_PLL,
+                        gbm.x = c(3:11),
+                        gbm.y=2, learning.rate = 0.15,
+                        bag.fraction = 0.6, tree.complexity = 3,
+                        k_folds = 10,
+                        n.trees = 2000)
+brt_SDM_k
+```
+
+The other validation secheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
+
+NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.step
+
+```{r}
+#leave one year out function
+
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+  
+  pres$year <- lubridate::year(pres$date)
+  abs$year <- lubridate::year(abs$date)
+  
+  ## setup output df
+  Evaluations_LOO_BRT <- as.data.frame(matrix(data = 0, nrow = 1, ncol = 5))
+  colnames(Evaluations_LOO_BRT) <- c("k","Deviance","AUC","TSS","n_pres")
+  counter=1
+  
+  u_years <- unique(pres$year)
+  for (y in u_years){
+    
+    print(paste('Running ', which(u_years == y), ' of ', length(u_years), sep=''), sep='')
+    
+    pres_train <- pres[which(pres$year != y),]
+    ## absences are sampled from the full input absence df
+    abs_train <- abs[sample(which(abs$year != y), size = nrow(pres_train), replace=F),]
+    train <- rbind(pres_train, abs_train)
+    
+    pres_test <- pres[which(pres$year == y),]
+    abs_test <- abs[sample(which(abs$year == y), size = nrow(pres_test), replace=F),]
+    test <- rbind(pres_test, abs_test)
+    
+    brt.loo <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
+                           gbm.y = gbm.y, 
+                           family="bernoulli", 
+                           tree.complexity = tree.complexity,
+                           learning.rate = learning.rate, 
+                           bag.fraction = bag.fraction,
+                           n.trees = n.trees)
+    
+    # brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+    #                            gbm.y = gbm.y, 
+    #                            family="bernoulli", 
+    #                            tree.complexity = tree.complexity,
+    #                            learning.rate = learning.rate, 
+    #                            bag.fraction = bag.fraction)
+    
+    ## make predictions for eval
+    preds <- gbm::predict.gbm(brt.loo, test,
+                              n.trees=brt.loo$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$null.deviance #use with gbm.fixed
+      res <- x$self.statistics$resid.deviance #use with gbm.fixed
+      #null <- x$self.statistics$mean.null #use with gbm.step
+      #res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.loo)
+    d <- cbind(test[,gbm.y], preds)
+    pres_y <- as.numeric(d[d[,1] == 1,2])
+    abs_y <- as.numeric(d[d[,1] == 0,2])
+    e <- dismo::evaluate(p = pres_y, a = abs_y)
+    
+    Evaluations_LOO_BRT[counter,1] <- y
+    Evaluations_LOO_BRT[counter,2] <- dev
+    Evaluations_LOO_BRT[counter,3] <- e@auc
+    Evaluations_LOO_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    Evaluations_LOO_BRT[counter,5] <- length(which(train[,gbm.y] == 1))
+    
+    counter=counter+1 
+  }
+  return(Evaluations_LOO_BRT)
+}
+
+brt_SDM_loo <- eval_loo_brt(pres = NWA_PLL[which(NWA_PLL$pres_abs == 1),],
+                        abs = NWA_PLL[which(NWA_PLL$pres_abs == 0),],
+                        gbm.x = c(3:11),
+                        gbm.y=2, learning.rate = 0.15,
+                        bag.fraction = 0.6, tree.complexity = 3,
+                        n.trees = 2000)
+brt_SDM_loo
+
+#combining the model output, and both validation results into a list to save
+eval <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
+
+#now save it
+
+saveRDS(eval, here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds"))
+```
+
+## Analyzing Response Curves & Variable Importance
+
+Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R>
+
+```{r}
+# Fig. S3. The relative importance of drivers in distribution models
+# Fig. S4. Response curves of each environmental variable from distribution models
+
+
+###----response plots----####
+
+brt_LongfinSmelt <- here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+
+# get the matrix out of the `plot.gbm`
+var<-brt_LongfinSmelt$brt$var.names
+response_data<-data.frame()
+
+for (i in 1:length(var)){
+response_plot_data <- gbm::plot.gbm(brt_LongfinSmelt$brt,
+                                 i.var = var[i],
+                                 return.grid = TRUE)
+
+response_plot_data<-response_plot_data %>% gather("variable","x",-y)
+
+response_data<-rbind(response_data, response_plot_data)
+
+}
+
+response_data
+
+response_data <-response_data %>% 
+  mutate(variable = case_when(variable == "SST" ~ "SST",
+                              variable == "SST_SD" ~ "SST_sd",
+                              variable == "SSH" ~ "SSH",
+                              variable == "SSH_SD" ~ "SSH_sd",
+                              variable == "z.1" ~ "bathy",
+                              variable == "z_SD" ~ "rugosity",
+                              variable == "dist_port" ~ "dis_port",
+                              variable == "dis_seamount" ~ "dis_seamount",
+                              variable == "lunar" ~ "lunar",
+                              variable == "n2" ~ "N2"),
+         Fleet = "Longline") #Need to update...
+
+
+response_data %>%
+  ggplot() + 
+  geom_line(aes(x=x, y=y, color = Fleet), size =1) + 
+  facet_wrap(~variable, scales = "free", nrow = 5) +
+  labs(x = "Variable Values",
+       y = "Marginal Effect")+
+  theme_bw() + 
+  theme(panel.spacing = unit(.30, "lines"),
+        strip.text = element_text(size=10),
+        strip.background = element_blank(),
+        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))+
+  scale_color_manual(values=c("lightseagreen"))
+  
+ggsave(here("Plots","LongfinSmelt_response_plots.png"),
+       width = 7, height = 6, units = "in", dpi = 300)
+ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
+       width = 7, height = 6, units = "in", dpi = 300)
+
+###----variable contribution----####
+rel.inf<-data.frame(Variable = brt_LongfinSmelt$brt$contributions$var,
+                        rel.inf=brt_LongfinSmelt$brt$contributions$rel.inf) %>% 
+  mutate(Variable = case_when(Variable == "SST" ~ "SST",
+                              Variable == "SST_SD" ~ "SST_sd",
+                              Variable == "SSH" ~ "SSH",
+                              Variable == "SSH_SD" ~ "SSH_sd",
+                              Variable == "z.1" ~ "bathy",
+                              Variable == "oldname" ~ "newname",
+                              Variable == "dist_port" ~ "dis_port",
+                              Variable == "dis_seamount" ~ "dis_seamount",
+                              Variable == "lunar" ~ "lunar",
+                              Variable == "n2" ~ "N2"),
+         Fleet = "Longline")
+
+
+rel.inf %>% 
+  ggplot()+
+  geom_bar(aes(x = Variable,y=rel.inf, fill = Fleet),
+           stat="identity", position=position_dodge())+
+  scale_fill_manual(values=c("lightseagreen")) +
+  theme_bw() +
+  labs(x = "Environmental Variable",
+       y = "Relative Importance (%)")+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))
+
+ggsave(here("Plots","FS3_relative_importance.png"),
+       width = 7, height = 6, units = "in", dpi = 300)
+ggsave(here("Plots","FS3_relative_importance.svg"),
+       width = 7, height = 6, units = "in", dpi = 300)
+```
+
+# NOTES
+
+-   If number of trees below 1k, need to lower learning rate.
+-   There may be a difference in the caret output and gbm output (5%). To avoid this can use the default grid to optimize parameters and use predict to have the same results... Or don't worry about it.

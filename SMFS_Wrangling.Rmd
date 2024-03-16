@@ -79,6 +79,7 @@ SMFS_Integrate<-left_join(SMFS_Integrate, SMFS_OrganismsLookUp, by = "OrganismCo
 SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" "))
 ```
 
+
 ## Adding Age Class Info
 ```{r}
 #Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
@@ -144,7 +145,7 @@ Plus counts unaltered but may want to update them so that I can create a filter 
 
 For presence/absence model, filter on tows that measured big fish. Remove those fish/observations. And then for all tows, label each tow as 'presence' or 'absent'. If there was a tow that only measured big fish, it will look like no fish were captured because you removed all instances of big fish measurements. This avoids dealing with plus count, which we don't need for the presence/absent model. I
 
-### Fixing plus counts
+### Fixing plus counts -DONT RUN
 ```{r}
 unique(DataWithAges$CatchComments) # I thought there were catch comments before that detailed what size the plus counted fish were.
 #Attempt lives in SMFS_AgeClassIncorporation. Proportional assignment of plus counts my idea. Lewis proposes creating a distribution of sizes and then sampling randomly from that which would be better in cases of plus counts being low. But I'll move forward with my own attempt to fix plus counts.
@@ -188,7 +189,7 @@ df_final <- df_proportions %>%
   select(-TotalCount, -Proportion, -NA_Count)
 ```
 
-### Adding zeros
+### Adding zeros - LAST STEP
 ```{r}
 #Now add zeros!
 SMFS_OTR_Thesis_AgeClassWithZeros<-DataWithAges %>% 
@@ -220,7 +221,7 @@ SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$
 # Save
 ```{r}
 #Save New DF
-write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
+#write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
 
 ```
 
@@ -232,11 +233,11 @@ SMFS_Integrate_Expand <- SMFS_Integrate %>%
   uncount(Count, .remove = FALSE) #keeps number of rows that corresponds to the Count value
 SMFS_Integrate_Expand$Count<-1 #assigns value of 1
 
-Bind<-SMFS_Integrate %>%
+PlusCountDF<-SMFS_Integrate %>%
   filter(!StandardLength > 0)
-SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, Bind)
+SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, PlusCountDF)
 #Save New DF
-write.csv(SMFS_Integrate_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
+#write.csv(SMFS_Integrate_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
 
 ```
 
@@ -382,4 +383,46 @@ NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls
 
 #Save New DF
 #write.csv(SMFS, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Zeros.csv")
+```
+
+
+## Plus Count Expansion
+Levi's code!
+```{r}
+#Doesn't work well with non-fish. Let's isolate the fish and then run the code. 
+PlusCountDF<-PlusCountDF %>% filter(Class %in% c("Osteichthyes","Cephalaspidomorphi")) #bring back the others later: "Malacostraca" "Crustacea"    "Bivalvia"    [4] "many"         "Hydrozoa"     "N/A"   "Insecta"      "Angiosperms" [10] "NA"    
+exp_table <- 
+  # lengths_df  %>%                       # formatted raw catch data
+  SMFS_Integrate_Expand %>%
+  group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
+  summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
+            sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
+            n_sl = length(StandardLength)) %>%      # generate n of length measurements (as a check)
+  full_join(PlusCountDF, c("SampleRowID", "gensp")) %>%  # join with plus counts (number of lengths that require expansion x tow x spp)
+  filter(StandardLength == 0) %>%                   # keep only the plus count data (remove length data)
+  mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA)
+  data.frame %>% print
+
+# generate unique "sp_id" vector for looping
+
+exp_table$id_sp <- paste0(exp_table$SampleRowID, "_", exp_table$gensp) 
+id_sp <- unique(exp_table$id_sp)
+id_sp
+# ...expanded lengths list/table ----
+
+exp_sl_list <- list()   # establish empty expanded lengths list
+for(i in id_sp){        # add expanded lengths to list
+  # i = id_sp[1]
+  temp <- exp_table %>% filter(id_sp ==i)
+  set.seed(1)
+  df <- data.frame(
+    id = rep(temp$id, temp$count),
+    code =  rep(temp$code, temp$count),
+    count = rep(1, temp$count),
+    sl = round(rnorm(temp$count, mean=temp$m_sl, sd=temp$sd_sl)),
+    type = "length")
+  df_list <- list(df)  # convert to list element
+  names(df_list) <- i  # name list element based on id_sp value
+  exp_sl_list <- append(exp_sl_list, df_list) # add new element to master list
+  }
 ```

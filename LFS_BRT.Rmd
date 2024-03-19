@@ -12,13 +12,13 @@ Constructed so I can search "LongfinSmelt"and replace with Gensp name and have t
 ### Loading libraries and data
 
 ```{r}
-library(tidyverse)
 library(readr)
 library(dismo)
 library(caret)
 library(here)
 library(cowplot)
 library(Hmisc)
+library(tidyverse)
 
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
 ```
@@ -68,9 +68,40 @@ plot_grid(title, Plots, ncol = 1,
   # rel_heights values control vertical title margins
   rel_heights = c(0.1, 1))
 
+SummTable <- LongfinSmeltData %>% 
+  group_by(PresAbs) %>% 
+  dplyr::summarize(
+    Mean_WT = mean(WaterTemperature),
+    SD_WT = sd(WaterTemperature),
+    MinWT=min(WaterTemperature),
+    MaxWT=max(WaterTemperature),
+    Mean_DO = mean(DO),
+    SD_DO = sd(DO),
+    MinDO=min(DO),
+    MaxDO=max(DO),
+    Mean_Secchi = mean(Secchi),
+    SD_Secchi = sd(Secchi),
+    MinSecchi=min(Secchi),
+    MaxSecchi=max(Secchi),
+    Mean_Salinity = mean(Salinity),
+    SD_Salinity = sd(Salinity),
+    MinSal=min(Salinity),
+    MaxSal=max(Salinity)
+  ) 
+
+print(SummTable)
 ```
 
-Plot analysis 
+Plot analysis: Average water temperature when LFS absent is 16.37 C (standard deviation is 4.64), present is 17.36 C (standard deviation 3.14). Average dissolved oxygen when LFS absent is 6.95 mg/L (sd 1.64), present is 7.39 (sd 1.18). Average secchi when LFS absent is 30.5 cm (sd 11.55), present is 30.56 cm (sd 10.18). Average salinity when LFS absent is 4.66 psu (sd 3.4) and present is 5.4 (sd 3.24).
+
+Range for presences: 7.6 to 23.8 C; 4.2 to 10.10 mg/L; 11 to 73 cm; 0.2 to 14.2 psu.
+
+Range for absences (other samples): 4.6 to 27 C; 1 to 13.74 mg/L; 7 to 99; 0 to 15 psu.
+
+Most restricted presence compared to absence is dissolved oxygen. High secchi depth (clear water) also lacks presence above 75 cm. 
+
+Do the most influential?
+
 
 ## Step 2: Use caret package to set hyperparameters
 
@@ -82,10 +113,10 @@ FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs w
 
 ```{r}
 gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
-                       n.trees = 2000, #number of trees. This will be updated after running gbm which will tell us the optimal number of trees.
+                       n.trees = c(1000,2000, 3000), #number of trees. This will be updated after running gbm which will tell us the optimal number of trees.
                        shrinkage = seq(0.01, 0.5, length.out =5), #learning rate
-                       bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith
-                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this.
+                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction...
+                       n.minobsinnode = c(10, 20, 30) # the minimum number of observations in trees' terminal nodes. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this.
                        )
 
 gbmGrid %>% head() #take a look at what we just made
@@ -93,22 +124,22 @@ gbmGrid %>% head() #take a look at what we just made
 
 ```{r}
 #specify type of resampling
-fitControl <- trainControl(## 2-fold CV
+fitControl <- trainControl(## 10-fold CV
                            method = "cv",
-                           number = 2, #Can increase! Either the number of folds or number of resampling iterations
+                           number = 10, #Can increase! Either the number of folds or number of resampling iterations
                            classProbs = TRUE, ## Estimate class probabilities for classification models
                            summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
                            )
 ```
 
-Here we do a 2 fold cross validation (again to decrease time but feel free to increase it). Specifying ‘twoClassSummary’ will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance….the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). Nima likes these metrics personally as he finds them intuitive and used widely in the literature. The default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
+Here we do a 10 fold cross validation (again to decrease time but feel free to increase it). Specifying ‘twoClassSummary’ will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance….the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). Nima likes these metrics personally as he finds them intuitive and used widely in the literature. The default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
 
 Now we can use the `train` function to run the analysis.
 
 ```{r}
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
-gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+system.time(gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
                 data = LongfinSmeltData, 
                 method = "gbm", 
                 trControl = fitControl, 
@@ -116,11 +147,12 @@ gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuratio
                 ## Now specify the exact models to evaluate:
                 tuneGrid = gbmGrid, #what we made above
                 metric = "ROC" 
-                )
+                ))
+#run time 10 min
 
-gbmFit
+gbmFit 
 # save the model
-saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+saveRDS(gbmFit, here("data", "LFS_brt_gbm_fit.rds"))
 
 # we can plot the results too which will be easier to interpret
 ggplot(gbmFit)

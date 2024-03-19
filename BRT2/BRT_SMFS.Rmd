@@ -15,11 +15,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(dismo)
-library(tidyverse)
 library(lubridate)
 library(caret)
 library(sf)
 library(readr)
+library(tidyverse)
+
 setwd("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator")
 ```
 

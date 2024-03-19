@@ -98,10 +98,9 @@ Range for presences: 7.6 to 23.8 C; 4.2 to 10.10 mg/L; 11 to 73 cm; 0.2 to 14.2 
 
 Range for absences (other samples): 4.6 to 27 C; 1 to 13.74 mg/L; 7 to 99; 0 to 15 psu.
 
-Most restricted presence compared to absence is dissolved oxygen. High secchi depth (clear water) also lacks presence above 75 cm. 
+Most restricted presence compared to absence is dissolved oxygen. High secchi depth (clear water) also lacks presence above 75 cm.
 
 Do the most influential?
-
 
 ## Step 2: Use caret package to set hyperparameters
 
@@ -112,11 +111,11 @@ What the caret package does is create a grid of all the parameters and values yo
 FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs which is what the dismo packages is using inherently as well."
 
 ```{r}
-gbmGrid <- expand.grid(interaction.depth = c(3,5,7), #tree complexity
-                       n.trees = c(1000,2000, 3000), #number of trees. This will be updated after running gbm which will tell us the optimal number of trees.
-                       shrinkage = seq(0.01, 0.5, length.out =5), #learning rate
-                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction...
-                       n.minobsinnode = c(10, 20, 30) # the minimum number of observations in trees' terminal nodes. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this.
+gbmGrid <- expand.grid(interaction.depth = c(2,3,4,5), #tree complexity. Can't be more complex than total number of predictors (I think?)
+                       n.trees = c(1000,2000, 3000), #number of trees. Minimum is 1,000 according to Elith. May upddate after running gbm.
+                       shrinkage = seq(0.001, 0.01, length.out =5), #learning rate. Slower learning rate (clsoer to 0) is better according to elith.
+                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction... Elith says stochasticity improves model preformance and fractions in the range 0.5-0.75 have given the best results for p-a responses.
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Tells it when to stop. 10 is what gbm function sets it to. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this. https://stats.stackexchange.com/questions/30645/role-of-n-minobsinnode-parameter-of-gbm-in-r
                        )
 
 gbmGrid %>% head() #take a look at what we just made
@@ -148,7 +147,7 @@ system.time(gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity 
                 tuneGrid = gbmGrid, #what we made above
                 metric = "ROC" 
                 ))
-#run time 10 min
+#run time 6 min for first model, 10 for second, 10.25 for third.
 
 gbmFit 
 # save the model
@@ -157,6 +156,66 @@ saveRDS(gbmFit, here("data", "LFS_brt_gbm_fit.rds"))
 # we can plot the results too which will be easier to interpret
 ggplot(gbmFit)
 ```
+
+**1st model run:**
+
+|         | interaction.depth | n.trees | shrinkage                  | n.minobsinnode |
+|-------------|-------------|-------------|--------------------|-------------|
+| Options | 3,5,7             | 2000    | seq(0.01,0.5,length.out=5) | 10             |
+| Best    | 3                 | 2000    | 0.01                       | 10             |
+
+The best model from the first run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8204 | 0.9919      | 0.10303     |
+
+For the second run I played around with adding more options.
+
+**2nd model run:**
+
+|         | interaction.depth | n.trees          | shrinkage                  | n.minobsinnode |
+|--------------|--------------|--------------|------------------|--------------|
+| Options | 3,5,7             | 1000, 2000, 3000 | seq(0.01,0.5,length.out=5) | 10, 20, 30     |
+| Best    | 5                 | 1000             | 0.01                       | 30             |
+
+: The best model from the second run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8271 | 0.9909      | 0.10368     |
+
+: Now I will focus in on those best values of the second run to see if it can get even better.
+
+**3rd model run:**
+
+|         | interaction.depth | n.trees        | shrinkage                    | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 4,5,6             | 500, 700, 1000 | seq(0.001,0.01,length.out=5) | 10, 30, 50     |
+| Best    | 6                 | 500            | 0.0055                       | 50             |
+
+: The best model from the second run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8384 | 0.994       | 0.0935      |
+
+: I'm not trustful of this trend for increasing n.min and decreasing number of trees. Elith et al. recommends at least 1000 trees. The gbm package defaults at using 10 for n.min. A perfect ROC AUC isn't necessarily the best option... So what results do I get if I run the train with defaults suggested by Elith?
+
+**4th model run:**
+
+|         | interaction.depth | n.trees          | shrinkage                    | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 2,3,4,5           | 1000, 2000, 3000 | seq(0.001,0.01,length.out=5) | 10             |
+| Best    | 5                 | 1000             | 0.00325                      | 10             |
+
+: The best model from the second run had the following results:
+
+| ROC       | Sensitivity | Specificity |
+|-----------|-------------|-------------|
+| 0.8274461 | 0.9934773   | 0.10779     |
+
+: Is this good?
 
 Sensitivity = True positives Specificity = True negatives
 

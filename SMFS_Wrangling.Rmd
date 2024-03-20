@@ -395,34 +395,38 @@ exp_table <-
   # lengths_df  %>%                       # formatted raw catch data
   SMFS_Integrate_Expand %>%
   group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
-  summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
+  dplyr::summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
             sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
             n_sl = length(StandardLength)) %>%      # generate n of length measurements (as a check)
   full_join(PlusCountDF, c("SampleRowID", "gensp")) %>%  # join with plus counts (number of lengths that require expansion x tow x spp)
-  filter(StandardLength == 0) %>%                   # keep only the plus count data (remove length data)
-  mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA)
-  data.frame %>% print
+  filter(StandardLength == 0, Count != 0) %>%    #LOOK INTO WHY 0 COUNT!!!               # keep only the plus count data (remove length data)
+  mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length value, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA).
+  select(SampleRowID, gensp, m_sl, sd_sl, n_sl, StandardLength, Count) %>% 
+  data.frame 
 
 # generate unique "sp_id" vector for looping
-
+#exp_table should only have 8 columns: tow id, code, 
 exp_table$id_sp <- paste0(exp_table$SampleRowID, "_", exp_table$gensp) 
 id_sp <- unique(exp_table$id_sp)
 id_sp
 # ...expanded lengths list/table ----
-
+exp_table$id_sp
 exp_sl_list <- list()   # establish empty expanded lengths list
 for(i in id_sp){        # add expanded lengths to list
   # i = id_sp[1]
   temp <- exp_table %>% filter(id_sp ==i)
   set.seed(1)
   df <- data.frame(
-    id = rep(temp$id, temp$count),
-    code =  rep(temp$code, temp$count),
-    count = rep(1, temp$count),
-    sl = round(rnorm(temp$count, mean=temp$m_sl, sd=temp$sd_sl)),
-    type = "length")
+    SampleRowID = rep(temp$SampleRowID, temp$Count), #update with column names.
+    gensp =  rep(temp$gensp, temp$Count),
+    Count = rep(1, temp$Count),
+    sl = round(rnorm(temp$Count, mean=temp$m_sl, sd=temp$sd_sl)),
+    type = "length_plus")
   df_list <- list(df)  # convert to list element
   names(df_list) <- i  # name list element based on id_sp value
   exp_sl_list <- append(exp_sl_list, df_list) # add new element to master list
-  }
+}
+exp_sl_list #Error before because counts of 0 were in there :(
+
+#What to do if no lengths to base new lengths off of. NaN's. 
 ```

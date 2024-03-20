@@ -111,11 +111,11 @@ What the caret package does is create a grid of all the parameters and values yo
 FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs which is what the dismo packages is using inherently as well."
 
 ```{r}
-gbmGrid <- expand.grid(interaction.depth = c(2,3,4,5), #tree complexity. Can't be more complex than total number of predictors (I think?)
+gbmGrid <- expand.grid(interaction.depth = c(1, 2,3,4,5), #tree complexity. interaction.depth = 1 : additive model, interaction.depth = 2 : two-way interactions, etc. As each split increases the total number of nodes by 3 and number of terminal nodes by 2, the total number of nodes in the tree will be 3∗N+1 and the number of terminal nodes 2∗N+1 https://www.listendata.com/2015/07/gbm-boosted-models-tuning-parameters.html
                        n.trees = c(1000,2000, 3000), #number of trees. Minimum is 1,000 according to Elith. May upddate after running gbm.
                        shrinkage = seq(0.001, 0.01, length.out =5), #learning rate. Slower learning rate (clsoer to 0) is better according to elith.
                        #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction... Elith says stochasticity improves model preformance and fractions in the range 0.5-0.75 have given the best results for p-a responses.
-                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Tells it when to stop. 10 is what gbm function sets it to. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this. https://stats.stackexchange.com/questions/30645/role-of-n-minobsinnode-parameter-of-gbm-in-r
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Tells it when to stop. Also, controls the complexity of each tree. Since we tend to use shorter trees this rarely has a large impact on performance. Typical values range from 5–15 where higher values help prevent a model from learning relationships which might be highly specific to the particular sample selected for a tree (overfitting) but smaller values can help with imbalanced target classes in classification problems. https://bradleyboehmke.github.io/HOML/gbm.html 10 is what gbm function sets it to. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this. https://stats.stackexchange.com/questions/30645/role-of-n-minobsinnode-parameter-of-gbm-in-r
                        )
 
 gbmGrid %>% head() #take a look at what we just made
@@ -223,21 +223,24 @@ Evaluate model performance through predictive deviance. Don't want it too high o
 
 Nima: "Additionally, I will note that the more folds, parameters, and values you look that the longer this evaluation will take. I usually just look at different learning rate, number of trees, and tree complexity and I look between 3 - 5 values for each. If you end up using gbm.step to build your model, which I will talk about below, you don’t need to look at number of trees because that function will figure that out. My collaborators and I usually keep bag.fraction as 0.6 and I have never touched n.minobsinnode."
 
+I think I will just use gbm package from dismo and look at predictive deviance instead of ROC.
+
 ## Step 3: Use gbm() from dismo to run model and create outputs
 
 Thanks Nima and Elith!
+Follow https://bradleyboehmke.github.io/HOML/gbm.html for tuning strategy?
 
 ```{r}
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
- brt1 <- dismo::gbm.step(data=LongfinSmeltData, 
-                         gbm.x= c(WaterTemperature + Secchi + DO + Salinity + TowDuration), # environmental variables
-                         gbm.y= Binary, # response variable
+system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltData, 
+                         gbm.x= c(21, 22, 23, 25, 29), # environmental variables
+                         gbm.y= 17, # response variable
                          family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = 3, # complexity of the interactions that the model will fit. Based on what caret told us.
-                         learning.rate = 0.1,  # optimized to end up with >1000 trees
-                         bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
-                         )
+                         tree.complexity = 5, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+                         learning.rate = 0.005,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+                         bag.fraction = 0.75 # default for Elith, amount of input data used each time
+                         ))
 
 # make sure to save the model!
 summary(brt1)
@@ -255,6 +258,60 @@ dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
 
 ```
+
+- tree.complexity = 5, learning.rate = 0.001, bag.fraction = 0.6 (Nima's preference)
+fit final gbm model with a fixed number of 5800 trees for Binary
+mean total deviance = 0.467 
+mean residual deviance = 0.304 
+ 
+estimated cv deviance = 0.377 ; se = 0.008 
+ 
+training data correlation = 0.546 
+cv correlation =  0.359 ; se = 0.024 
+ 
+training data AUC score = 0.921 
+cv AUC score = 0.828 ; se = 0.014 
+ 
+elapsed time -  0.03 minutes 
+   user  system elapsed 
+  92.58    0.03  105.67 
+- Increase bag fraction to the recommendation from Elith et al of 0.75:
+fit final gbm model with a fixed number of 6150 trees for Binary
+
+mean total deviance = 0.467 
+mean residual deviance = 0.302 
+ 
+estimated cv deviance = 0.373 ; se = 0.01 
+ 
+training data correlation = 0.552 
+cv correlation =  0.368 ; se = 0.026 
+ 
+training data AUC score = 0.923 
+cv AUC score = 0.831 ; se = 0.012 
+ 
+elapsed time -  0.03 minutes 
+   user  system elapsed 
+  88.67    0.14  110.60 
+
+- learning rate 0.05 attempted but too big. Has to be smaller to reach minimum 
+
+- learning rate 0.005:
+fit final gbm model with a fixed number of 1500 trees for Binary
+
+mean total deviance = 0.467 
+mean residual deviance = 0.291 
+ 
+estimated cv deviance = 0.377 ; se = 0.014 
+ 
+training data correlation = 0.574 
+cv correlation =  0.36 ; se = 0.04 
+ 
+training data AUC score = 0.93 
+cv AUC score = 0.835 ; se = 0.015 
+ 
+elapsed time -  0.46 minutes 
+   user  system elapsed 
+  20.75    0.05   27.56 
 
 Firstly, the things you can see: The R console will show some results (see the Word Working Guide of the Elith tutorial for an example). It reports a brief model summary & all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
 

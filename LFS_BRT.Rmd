@@ -160,7 +160,7 @@ ggplot(gbmFit)
 **1st model run:**
 
 |         | interaction.depth | n.trees | shrinkage                  | n.minobsinnode |
-|--------------|--------------|--------------|----------------|--------------|
+|---------------|---------------|---------------|---------------|---------------|
 | Options | 3,5,7             | 2000    | seq(0.01,0.5,length.out=5) | 10             |
 | Best    | 3                 | 2000    | 0.01                       | 10             |
 
@@ -190,7 +190,7 @@ For the second run I played around with adding more options.
 **3rd model run:**
 
 |         | interaction.depth | n.trees        | shrinkage                    | n.minobsinnode |
-|--------------|---------------|---------------|---------------|---------------|
+|---------------|---------------|---------------|---------------|---------------|
 | Options | 4,5,6             | 500, 700, 1000 | seq(0.001,0.01,length.out=5) | 10, 30, 50     |
 | Best    | 6                 | 500            | 0.0055                       | 50             |
 
@@ -253,6 +253,17 @@ par(mar=c(2, 2, 1, 1))
 
 dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
 
+dismo::gbm.plot.fits(brt1)
+# This code assesses the extent to which pairwise interactions exist in the data.
+
+find.int <- gbm.interactions(brt1)
+find.int
+# The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+
+# You can plot pairwise interactions like this:
+
+gbm.perspec(brt1,1, 5) #3D PLOT
+
 # save the model
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
 
@@ -292,9 +303,40 @@ training data AUC score = 0.93 cv AUC score = 0.835 ; se = 0.015
 
 elapsed time - 0.46 minutes user system elapsed 20.75 0.05 27.56
 
+-   changed bag fraction to 0.6 fitting final gbm model with a fixed number of 1600 trees for Binary
+
+mean total deviance = 0.467 mean residual deviance = 0.285
+
+estimated cv deviance = 0.373 ; se = 0.01
+
+training data correlation = 0.582 cv correlation = 0.383 ; se = 0.019
+
+training data AUC score = 0.934 cv AUC score = 0.829 ; se = 0.014
+
 Firstly, the things you can see: The R console will show some results (see the Word Working Guide of the Elith tutorial for an example). It reports a brief model summary & all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
 
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
+
+For the final model (lr = 0.005, tc = 5, bag fraction = 0.75)
+
+Interaction report:
+
+find.int \$rank.list
+
+| var1.index | var1.names | var2.index | var2.names       | int.size |
+|------------|------------|------------|------------------|----------|
+| 2          | Salinity   | 1          | WaterTemperature | 182.61   |
+| 3          | DO         | 2          | Salinity         | 102.45   |
+
+\
+
+|             | Water Temp | Salinity | DO     | Secchi | TowDuration |
+|-------------|------------|----------|--------|--------|-------------|
+| Water Temp  | 0          | 182.61   | 48.99  | 23.34  | 0.6         |
+| Salinity    | 0          | 0        | 102.45 | 22.85  | 7.2         |
+| DO          | 0          | 0        | 0      | 15.12  | 11.64       |
+| Secchi      | 0          | 0        | 0      | 0      | 2.98        |
+| TowDuration | 0          | 0        | 0      | 0      | 0           |
 
 ## Validation
 
@@ -307,7 +349,7 @@ NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will hav
 ```{r}
 #k fold cross validation function
 
-eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 5, bag.fraction = 0.75){
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 5, bag.fraction = 0.6){
   dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
   Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
   colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
@@ -362,7 +404,7 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_fol
 brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltData,
                         gbm.x = c(21, 22, 23, 25, 29),
                         gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.75, tree.complexity = 5,
+                        bag.fraction = 0.6, tree.complexity = 5,
                         k_folds = 10)
 brt_SDM_k
 ```
@@ -374,7 +416,7 @@ NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.
 ```{r}
 #leave one year out function
 
-eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 5, bag.fraction = 0.75){
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 5, bag.fraction = 0.6){
   
   pres$year <- pres$Year
   abs$year <- abs$Year
@@ -447,16 +489,29 @@ brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltData[which(LongfinSmeltData$Binar
                         abs = LongfinSmeltData[which(LongfinSmeltData$Binary == 0),],
                         gbm.x = c(21, 22, 23, 25, 29),
                         gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.75, tree.complexity = 5)
+                        bag.fraction = 0.6, tree.complexity = 5)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
 eval <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 
+eval
 #now save it
 
 saveRDS(eval, here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds"))
 ```
+
+-   learning.rate = 0.005, bag.fraction = 0.75, tree.complexity = 5: \$brt
+
+A gradient boosted model with bernoulli loss function. 1700 iterations were performed. There were 5 predictors of which 5 had non-zero influence.
+
+\$brt_k k Deviance AUC TSS 1 1 39.28567 0.660442 0.4690653 2 2 41.62835 0.7488567 0.4283537 3 3 40.37159 0.8390805 0.5609979 4 4 40.14176 0.7623641 0.4362772 5 5 33.89985 0.8547767 0.6200828 6 6 36.50092 0.8283688 0.5440729 7 7 37.60592 0.8617647 0.6368421 8 8 34.83711 0.9014946 0.7039402 9 9 35.42474 0.8515509 0.5520791 10 10 36.62672 0.8634146 0.6380081
+
+\$brt_loo k Deviance AUC TSS n_pres 1 2013 42.18586 0.7363281 0.4687500 182 2 2021 39.57273 0.8402778 0.6388889 178 3 2017 46.13577 0.6388889 0.5000000 208 4 2014 60.69164 0.7396694 0.4545455 192 5 2022 36.61205 0.8592593 0.6000000 169 6 2015 46.60470 0.7142857 0.4285714 207 7 2011 42.22235 0.5739645 0.2307692 201 8 2020 41.28407 0.9318182 0.7727273 192 9 2012 52.62661 0.9387755 0.8571429 207 10 2023 47.37607 0.9218750 0.7500000 206 11 2018 45.84699 0.8055556 0.5833333 202 12 2019 45.00243 0.7500000 0.5000000 212 13 2016 46.18059 0.7500000 0.5000000 212
+
+-   bag fraction = 0.6 A gradient boosted model with bernoulli loss function. 1600 iterations were performed. There were 5 predictors of which 5 had non-zero influence. \$brt_k k Deviance AUC TSS 1 1 33.73731 0.8855978 0.7383152 2 2 39.09204 0.8116568 0.5367872 3 3 34.86225 0.8910326 0.6425272 4 4 38.39483 0.7958204 0.4708978 5 5 37.40607 0.8377709 0.5851393 6 6 34.76156 0.8281326 0.5079826 7 7 36.93593 0.7928128 0.4803313 8 8 42.00954 0.8098272 0.5533843 9 9 35.63471 0.8245614 0.5630252 10 10 38.26671 0.8130731 0.5434783
+
+\$brt_loo k Deviance AUC TSS n_pres 1 2013 49.84132 0.7978516 0.5000000 182 2 2021 48.63107 0.8796296 0.6944444 178 3 2017 41.58266 0.7777778 0.5000000 208 4 2014 50.67953 0.7706612 0.5000000 192 5 2022 44.32915 0.8567901 0.5111111 169 6 2015 44.56914 0.8163265 0.5714286 207 7 2011 41.00288 0.7159763 0.3846154 201 8 2020 51.86176 0.9256198 0.7727273 192 9 2012 47.24728 0.7959184 0.5714286 207 10 2023 34.93258 0.6250000 0.3750000 206 11 2018 46.10166 0.7777778 0.5000000 202 12 2019 46.26296 1.0000000 1.0000000 212 13 2016 52.58324 0.7500000 0.5000000 212
 
 ## Analyzing Response Curves & Variable Importance
 
@@ -489,23 +544,10 @@ response_data<-rbind(response_data, response_plot_data)
 
 response_data
 
-response_data <-response_data %>% 
-  mutate(variable = case_when(variable == "SST" ~ "SST",
-                              variable == "SST_SD" ~ "SST_sd",
-                              variable == "SSH" ~ "SSH",
-                              variable == "SSH_SD" ~ "SSH_sd",
-                              variable == "z.1" ~ "bathy",
-                              variable == "z_SD" ~ "rugosity",
-                              variable == "dist_port" ~ "dis_port",
-                              variable == "dis_seamount" ~ "dis_seamount",
-                              variable == "lunar" ~ "lunar",
-                              variable == "n2" ~ "N2"),
-         Fleet = "Longline") #Need to update...
-
 
 response_data %>%
   ggplot() + 
-  geom_line(aes(x=x, y=y, color = Fleet), size =1) + 
+  geom_line(aes(x=x, y=y), color = "lightseagreen", size =1) + 
   facet_wrap(~variable, scales = "free", nrow = 5) +
   labs(x = "Variable Values",
        y = "Marginal Effect")+
@@ -513,44 +555,32 @@ response_data %>%
   theme(panel.spacing = unit(.30, "lines"),
         strip.text = element_text(size=10),
         strip.background = element_blank(),
-        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))+
-  scale_color_manual(values=c("lightseagreen"))
+        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))
   
 ggsave(here("Plots","LongfinSmelt_response_plots.png"),
        width = 7, height = 6, units = "in", dpi = 300)
-ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
-       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
 
 ###----variable contribution----####
 rel.inf<-data.frame(Variable = brt_LongfinSmelt$brt$contributions$var,
-                        rel.inf=brt_LongfinSmelt$brt$contributions$rel.inf) %>% 
-  mutate(Variable = case_when(Variable == "SST" ~ "SST",
-                              Variable == "SST_SD" ~ "SST_sd",
-                              Variable == "SSH" ~ "SSH",
-                              Variable == "SSH_SD" ~ "SSH_sd",
-                              Variable == "z.1" ~ "bathy",
-                              Variable == "oldname" ~ "newname",
-                              Variable == "dist_port" ~ "dis_port",
-                              Variable == "dis_seamount" ~ "dis_seamount",
-                              Variable == "lunar" ~ "lunar",
-                              Variable == "n2" ~ "N2"),
-         Fleet = "Longline")
+                        rel.inf=brt_LongfinSmelt$brt$contributions$rel.inf)# %>% 
+
 
 
 rel.inf %>% 
   ggplot()+
-  geom_bar(aes(x = Variable,y=rel.inf, fill = Fleet),
+  geom_bar(aes(x = Variable,y=rel.inf), fill = "lightseagreen",
            stat="identity", position=position_dodge())+
-  scale_fill_manual(values=c("lightseagreen")) +
   theme_bw() +
   labs(x = "Environmental Variable",
        y = "Relative Importance (%)")+
   theme(axis.text.x = element_text(angle = 45,hjust=1))
 
-ggsave(here("Plots","FS3_relative_importance.png"),
+ggsave(here("Plots","LongfinSmelt_relative_importance.png"),
        width = 7, height = 6, units = "in", dpi = 300)
-ggsave(here("Plots","FS3_relative_importance.svg"),
-       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","FS3_relative_importance.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
 ```
 
 # NOTES

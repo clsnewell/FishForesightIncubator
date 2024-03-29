@@ -1,0 +1,146 @@
+---
+title: "Why Not Caret"
+author: "Caroline Newell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+This rmd walks through why I don't want to use caret for my models. In summary, the dataset is not large enough to make gbm.step prohibitive to use. Caret's functions trend toward extreme values of hyperparameters with nonsensical preferences. 
+
+Using longfin smelt data.
+
+# Loading libraries and data
+
+```{r}
+library(readr)
+library(dismo)
+library(caret)
+library(here)
+library(cowplot)
+library(Hmisc)
+library(tidyverse)
+
+PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
+LongfinSmeltData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys")
+LongfinSmeltData<-as.data.frame(LongfinSmeltData)
+```
+
+Thanks Nima! "Rather than just randomly choosing numbers that work and seeing how well the model predicts over and over again, the caret package has built in functionality to streamline the tuning of the parameters to help you evaluate the effect of tuning the hyperparameters on predictive performance and choose the “optimal” model across these hyperparameters.
+
+What the caret package does is create a grid of all the parameters and values you want to test. It will then some sort of validation method (e.g. k-fold cross validation), calculate the performance for each iteration of the validation, determine the optimal parameter set.
+
+FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs which is what the dismo packages is using inherently as well."
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = c(1, 2,3,4,5), #tree complexity. interaction.depth = 1 : additive model, interaction.depth = 2 : two-way interactions, etc. As each split increases the total number of nodes by 3 and number of terminal nodes by 2, the total number of nodes in the tree will be 3∗N+1 and the number of terminal nodes 2∗N+1 https://www.listendata.com/2015/07/gbm-boosted-models-tuning-parameters.html
+                       n.trees = c(1000,2000, 3000), #number of trees. Minimum is 1,000 according to Elith. May upddate after running gbm.
+                       shrinkage = seq(0.001, 0.01, length.out =5), #learning rate. Slower learning rate (clsoer to 0) is better according to elith.
+                       #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction... Elith says stochasticity improves model preformance and fractions in the range 0.5-0.75 have given the best results for p-a responses.
+                       n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Tells it when to stop. Also, controls the complexity of each tree. Since we tend to use shorter trees this rarely has a large impact on performance. Typical values range from 5–15 where higher values help prevent a model from learning relationships which might be highly specific to the particular sample selected for a tree (overfitting) but smaller values can help with imbalanced target classes in classification problems. https://bradleyboehmke.github.io/HOML/gbm.html 10 is what gbm function sets it to. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this. https://stats.stackexchange.com/questions/30645/role-of-n-minobsinnode-parameter-of-gbm-in-r
+                       )
+
+gbmGrid %>% head() #take a look at what we just made
+```
+
+```{r}
+#specify type of resampling
+fitControl <- trainControl(## 10-fold CV
+                           method = "cv",
+                           number = 10, #Can increase! Either the number of folds or number of resampling iterations
+                           classProbs = TRUE, ## Estimate class probabilities for classification models
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+```
+
+Here we do a 10 fold cross validation (again to decrease time but feel free to increase it). Specifying ‘twoClassSummary’ will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance….the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). Nima likes these metrics personally as he finds them intuitive and used widely in the literature. The default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
+
+Now we can use the `train` function to run the analysis.
+
+```{r}
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+system.time(gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = LongfinSmeltData, 
+                method = "gbm", 
+                trControl = fitControl, 
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "ROC" 
+                ))
+#run time 6 min for first model, 10 for second, 10.25 for third.
+
+gbmFit 
+# save the model
+saveRDS(gbmFit, here("data", "LFS_brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+**1st model run:**
+
+|         | interaction.depth | n.trees | shrinkage                  | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 3,5,7             | 2000    | seq(0.01,0.5,length.out=5) | 10             |
+| Best    | 3                 | 2000    | 0.01                       | 10             |
+
+The best model from the first run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8204 | 0.9919      | 0.10303     |
+
+For the second run I played around with adding more options.
+
+**2nd model run:**
+
+|         | interaction.depth | n.trees          | shrinkage                  | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 3,5,7             | 1000, 2000, 3000 | seq(0.01,0.5,length.out=5) | 10, 20, 30     |
+| Best    | 5                 | 1000             | 0.01                       | 30             |
+
+: The best model from the second run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8271 | 0.9909      | 0.10368     |
+
+: Now I will focus in on those best values of the second run to see if it can get even better.
+
+**3rd model run:**
+
+|         | interaction.depth | n.trees        | shrinkage                    | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 4,5,6             | 500, 700, 1000 | seq(0.001,0.01,length.out=5) | 10, 30, 50     |
+| Best    | 6                 | 500            | 0.0055                       | 50             |
+
+: The best model from the third run had the following results:
+
+| ROC    | Sensitivity | Specificity |
+|--------|-------------|-------------|
+| 0.8384 | 0.994       | 0.0935      |
+
+: I'm not trustful of this trend for increasing n.min and decreasing number of trees. Elith et al. recommends at least 1000 trees. The gbm package defaults at using 10 for n.min. A perfect ROC AUC isn't necessarily the best option... So what results do I get if I run the train with defaults suggested by Elith?
+
+**4th model run:**
+
+|         | interaction.depth | n.trees          | shrinkage                    | n.minobsinnode |
+|---------------|---------------|---------------|---------------|---------------|
+| Options | 2,3,4,5           | 1000, 2000, 3000 | seq(0.001,0.01,length.out=5) | 10             |
+| Best    | 5                 | 1000             | 0.00325                      | 10             |
+
+: The best model from the fourth run had the following results:
+
+| ROC       | Sensitivity | Specificity |
+|-----------|-------------|-------------|
+| 0.8274461 | 0.9934773   | 0.10779     |
+
+: Is this good?
+
+Sensitivity = True positives Specificity = True negatives
+
+Evaluate model performance through predictive deviance. Don't want it too high or too low. As hyper parameters are changed then that may shift optimal options for others.
+
+Nima: "Additionally, I will note that the more folds, parameters, and values you look that the longer this evaluation will take. I usually just look at different learning rate, number of trees, and tree complexity and I look between 3 - 5 values for each. If you end up using gbm.step to build your model, which I will talk about below, you don’t need to look at number of trees because that function will figure that out. My collaborators and I usually keep bag.fraction as 0.6 and I have never touched n.minobsinnode."
+
+I think I will just use gbm package from dismo and look at predictive deviance instead of ROC.

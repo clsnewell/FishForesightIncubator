@@ -30,10 +30,12 @@ What the caret package does is create a grid of all the parameters and values yo
 
 FYI: caret doesn’t using the dismo package but uses the gbm package for BRTs which is what the dismo packages is using inherently as well."
 
+gbm package for gbm function sets bag fraction to 0.5. This follows Ridgeway's advice. caret package doesn't allow that to be changed.
+
 ```{r}
-gbmGrid <- expand.grid(interaction.depth = c(1, 2,3,4,5), #tree complexity. interaction.depth = 1 : additive model, interaction.depth = 2 : two-way interactions, etc. As each split increases the total number of nodes by 3 and number of terminal nodes by 2, the total number of nodes in the tree will be 3∗N+1 and the number of terminal nodes 2∗N+1 https://www.listendata.com/2015/07/gbm-boosted-models-tuning-parameters.html
-                       n.trees = c(1000,2000, 3000), #number of trees. Minimum is 1,000 according to Elith. May upddate after running gbm.
-                       shrinkage = seq(0.001, 0.01, length.out =5), #learning rate. Slower learning rate (clsoer to 0) is better according to elith.
+gbmGrid <- expand.grid(interaction.depth = c(2,3,4,5), #tree complexity. interaction.depth = 1 : additive model, interaction.depth = 2 : two-way interactions, etc. As each split increases the total number of nodes by 3 and number of terminal nodes by 2, the total number of nodes in the tree will be 3∗N+1 and the number of terminal nodes 2∗N+1 https://www.listendata.com/2015/07/gbm-boosted-models-tuning-parameters.html
+                       n.trees = c(1500,1300, 1600), #number of trees. Minimum is 1,000 according to Elith. May upddate after running gbm.
+                       shrinkage = seq(0.005, 0.009, length.out =5), #learning rate. Slower learning rate (clsoer to 0) is better according to elith.
                        #bag.fraction = 0.6, #bag fraction (proportion of observations used in selecting variables) and recommended by Elith. function won't run if I uncomment bagfraction... Elith says stochasticity improves model preformance and fractions in the range 0.5-0.75 have given the best results for p-a responses.
                        n.minobsinnode = 10 # the minimum number of observations in trees' terminal nodes. Tells it when to stop. Also, controls the complexity of each tree. Since we tend to use shorter trees this rarely has a large impact on performance. Typical values range from 5–15 where higher values help prevent a model from learning relationships which might be highly specific to the particular sample selected for a tree (overfitting) but smaller values can help with imbalanced target classes in classification problems. https://bradleyboehmke.github.io/HOML/gbm.html 10 is what gbm function sets it to. Ie the minimum number of training set samples in a node to commence splitting . honestly dont worry about this. https://stats.stackexchange.com/questions/30645/role-of-n-minobsinnode-parameter-of-gbm-in-r
                        )
@@ -54,6 +56,8 @@ fitControl <- trainControl(## 10-fold CV
 Here we do a 10 fold cross validation (again to decrease time but feel free to increase it). Specifying ‘twoClassSummary’ will compute the sensitivity (true positive rate), specificity (true negative rate), and the area under the ROC curve (also called AUC which is a metric of predictive performance….the closer to 1 the better, 0.5 no better than random, closer to 0 poor at predicting). Nima likes these metrics personally as he finds them intuitive and used widely in the literature. The default metrics are kappa and accurate for presence/absence data and for more numerical responses, like counts or abundance, it will be root mean squared error.
 
 Now we can use the `train` function to run the analysis.
+Start with 1000, 2000, 3000.
+
 
 ```{r}
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed

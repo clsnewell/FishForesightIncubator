@@ -46,15 +46,15 @@ summary(LongfinSmeltData)
 Let's make a couple of plots for making predictions.
 
 ```{r}
-Plot_Water<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)")
+Plot_Water<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
 Plot_DO<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=DO, color = TowDuration)) + 
-  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)")
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
 Plot_Secchi<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=Secchi, color = TowDuration)) + 
-  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)")
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=Salinity, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity")
+Plot_Salinity<-LongfinSmeltData %>% ggplot(aes(y=PresAb, x=Salinity, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -69,7 +69,7 @@ plot_grid(title, Plots, ncol = 1,
   rel_heights = c(0.1, 1))
 
 SummTable <- LongfinSmeltData %>% 
-  group_by(PresAbs) %>% 
+  group_by(PresAbs, Year) %>% 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature),
     SD_WT = sd(WaterTemperature),
@@ -110,12 +110,12 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltData, 
-                         gbm.x= c(21, 22, 23, 25, 29), # environmental variables
+                         gbm.x= c(21, 22, 23, 25), # environmental variables. 29 is tow duration if you want to add that back in.
                          gbm.y= 17, # response variable
                          family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = 5, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+                         tree.complexity = 3, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
                          learning.rate = 0.005,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = 0.75 # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+                         bag.fraction = 0.6 # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
                          ))
 
 # make sure to save the model!
@@ -140,10 +140,11 @@ dismo::gbm.plot.fits(brt1)
 
 find.int <- gbm.interactions(brt1)
 find.int
+brt1$self.statistics$correlation[[1]]
 # The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
 
 # You can plot pairwise interactions like this:
-
+par(mfrow=c(1,2))
 gbm.perspec(brt1,1, 2) #3D PLOT of Water Temp and Salinity
 gbm.perspec(brt1,3, 2) #salinity and DO
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
@@ -200,7 +201,7 @@ Firstly, the things you can see: The R console will show some results (see the W
 
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
 
-For the final model (lr = 0.005, tc = 5, bag fraction = 0.75)
+For the final model (lr = 0.005, tc = 5, bag fraction = 0.6)
 
 Interaction report:
 
@@ -208,17 +209,17 @@ find.int \$rank.list
 
 | var1.index | var1.names | var2.index | var2.names       | int.size |
 |------------|------------|------------|------------------|----------|
-| 2          | Salinity   | 1          | WaterTemperature | 182.61   |
-| 3          | DO         | 2          | Salinity         | 102.45   |
+| 2          | Salinity   | 1          | WaterTemperature | 169.93   |
+| 3          | DO         | 2          | Salinity         | 111.24   |
 
 \
 
 |             | Water Temp | Salinity | DO     | Secchi | TowDuration |
 |-------------|------------|----------|--------|--------|-------------|
-| Water Temp  | 0          | 182.61   | 48.99  | 23.34  | 0.6         |
-| Salinity    | 0          | 0        | 102.45 | 22.85  | 7.2         |
-| DO          | 0          | 0        | 0      | 15.12  | 11.64       |
-| Secchi      | 0          | 0        | 0      | 0      | 2.98        |
+| Water Temp  | 0          | 169.93   | 44.64  | 23.68  | 0.63         |
+| Salinity    | 0          | 0        | 111.24 | 30.97  | 7.6         |
+| DO          | 0          | 0        | 0      | 14.93  | 13.83       |
+| Secchi      | 0          | 0        | 0      | 0      | 3.61        |
 | TowDuration | 0          | 0        | 0      | 0      | 0           |
 
 ## Validation
@@ -232,7 +233,7 @@ NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will hav
 ```{r}
 #k fold cross validation function
 
-eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 5, bag.fraction = 0.6){
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 3, bag.fraction = 0.6){
   dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
   Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
   colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
@@ -275,21 +276,21 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_fol
   
   
 brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltData,
-                        gbm.x = c(21, 22, 23, 25, 29),
+                        gbm.x = c(21, 22, 23, 25),
                         gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.6, tree.complexity = 5,
+                        bag.fraction = 0.6, tree.complexity = 3,
                         k_folds = 10)
 brt_SDM_k
 ```
 
-The other validation secheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
+The other validation scheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
 
 NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.step
 
 ```{r}
 #leave one year out function
 
-eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 5, bag.fraction = 0.6){
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 3, bag.fraction = 0.6){
   
   pres$year <- pres$Year
   abs$year <- abs$Year
@@ -351,9 +352,9 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.co
 
 brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltData[which(LongfinSmeltData$Binary == 1),],
                         abs = LongfinSmeltData[which(LongfinSmeltData$Binary == 0),],
-                        gbm.x = c(21, 22, 23, 25, 29),
+                        gbm.x = c(21, 22, 23, 25),
                         gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.6, tree.complexity = 5)
+                        bag.fraction = 0.6, tree.complexity = 3)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
@@ -365,17 +366,67 @@ eval
 saveRDS(eval, here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds"))
 ```
 
--   learning.rate = 0.005, bag.fraction = 0.75, tree.complexity = 5: \$brt
+-   learning.rate = 0.005, bag.fraction = 0.75, tree.complexity = 5: 
+\$brt
 
 A gradient boosted model with bernoulli loss function. 1700 iterations were performed. There were 5 predictors of which 5 had non-zero influence.
 
-\$brt_k k Deviance AUC TSS 1 1 39.28567 0.660442 0.4690653 2 2 41.62835 0.7488567 0.4283537 3 3 40.37159 0.8390805 0.5609979 4 4 40.14176 0.7623641 0.4362772 5 5 33.89985 0.8547767 0.6200828 6 6 36.50092 0.8283688 0.5440729 7 7 37.60592 0.8617647 0.6368421 8 8 34.83711 0.9014946 0.7039402 9 9 35.42474 0.8515509 0.5520791 10 10 36.62672 0.8634146 0.6380081
+\$brt_k 
+k Deviance AUC TSS 
+1 39.28567 0.660442 0.4690653 
+2 41.62835 0.7488567 0.4283537 
+3 40.37159 0.8390805 0.5609979 
+4 40.14176 0.7623641 0.4362772 
+5 33.89985 0.8547767 0.6200828 
+6 36.50092 0.8283688 0.5440729 
+7 37.60592 0.8617647 0.6368421 
+8 34.83711 0.9014946 0.7039402 
+9 35.42474 0.8515509 0.5520791 
+10 36.62672 0.8634146 0.6380081
 
-\$brt_loo k Deviance AUC TSS n_pres 1 2013 42.18586 0.7363281 0.4687500 182 2 2021 39.57273 0.8402778 0.6388889 178 3 2017 46.13577 0.6388889 0.5000000 208 4 2014 60.69164 0.7396694 0.4545455 192 5 2022 36.61205 0.8592593 0.6000000 169 6 2015 46.60470 0.7142857 0.4285714 207 7 2011 42.22235 0.5739645 0.2307692 201 8 2020 41.28407 0.9318182 0.7727273 192 9 2012 52.62661 0.9387755 0.8571429 207 10 2023 47.37607 0.9218750 0.7500000 206 11 2018 45.84699 0.8055556 0.5833333 202 12 2019 45.00243 0.7500000 0.5000000 212 13 2016 46.18059 0.7500000 0.5000000 212
+\$brt_loo k Deviance AUC TSS n_pres 
+2013 42.18586 0.7363281 0.4687500 182 
+2021 39.57273 0.8402778 0.6388889 178 
+2017 46.13577 0.6388889 0.5000000 208 
+2014 60.69164 0.7396694 0.4545455 192 
+2022 36.61205 0.8592593 0.6000000 169 
+2015 46.60470 0.7142857 0.4285714 207 
+2011 42.22235 0.5739645 0.2307692 201 
+2020 41.28407 0.9318182 0.7727273 192 
+2012 52.62661 0.9387755 0.8571429 207 
+2023 47.37607 0.9218750 0.7500000 206 
+2018 45.84699 0.8055556 0.5833333 202 
+2019 45.00243 0.7500000 0.5000000 212 
+2016 46.18059 0.7500000 0.5000000 212
 
--   bag fraction = 0.6 A gradient boosted model with bernoulli loss function. 1600 iterations were performed. There were 5 predictors of which 5 had non-zero influence. \$brt_k k Deviance AUC TSS 1 1 33.73731 0.8855978 0.7383152 2 2 39.09204 0.8116568 0.5367872 3 3 34.86225 0.8910326 0.6425272 4 4 38.39483 0.7958204 0.4708978 5 5 37.40607 0.8377709 0.5851393 6 6 34.76156 0.8281326 0.5079826 7 7 36.93593 0.7928128 0.4803313 8 8 42.00954 0.8098272 0.5533843 9 9 35.63471 0.8245614 0.5630252 10 10 38.26671 0.8130731 0.5434783
+-   bag fraction = 0.6 A gradient boosted model with bernoulli loss function. 1600 iterations were performed. There were 5 predictors of which 5 had non-zero influence. 
+\$brt_k 
+k Deviance AUC TSS 
+1 1 33.73731 0.8855978 0.7383152 
+2 2 39.09204 0.8116568 0.5367872 
+3 3 34.86225 0.8910326 0.6425272 
+4 4 38.39483 0.7958204 0.4708978 
+5 5 37.40607 0.8377709 0.5851393 
+6 6 34.76156 0.8281326 0.5079826 
+7 7 36.93593 0.7928128 0.4803313 
+8 8 42.00954 0.8098272 0.5533843 
+9 9 35.63471 0.8245614 0.5630252 
+10 10 38.26671 0.8130731 0.5434783
 
-\$brt_loo k Deviance AUC TSS n_pres 1 2013 49.84132 0.7978516 0.5000000 182 2 2021 48.63107 0.8796296 0.6944444 178 3 2017 41.58266 0.7777778 0.5000000 208 4 2014 50.67953 0.7706612 0.5000000 192 5 2022 44.32915 0.8567901 0.5111111 169 6 2015 44.56914 0.8163265 0.5714286 207 7 2011 41.00288 0.7159763 0.3846154 201 8 2020 51.86176 0.9256198 0.7727273 192 9 2012 47.24728 0.7959184 0.5714286 207 10 2023 34.93258 0.6250000 0.3750000 206 11 2018 46.10166 0.7777778 0.5000000 202 12 2019 46.26296 1.0000000 1.0000000 212 13 2016 52.58324 0.7500000 0.5000000 212
+\$brt_loo k Deviance AUC TSS n_pres 
+1 2013 49.84132 0.7978516 0.5000000 182 
+2 2021 48.63107 0.8796296 0.6944444 178 
+3 2017 41.58266 0.7777778 0.5000000 208 
+4 2014 50.67953 0.7706612 0.5000000 192 
+5 2022 44.32915 0.8567901 0.5111111 169 
+6 2015 44.56914 0.8163265 0.5714286 207 
+7 2011 41.00288 0.7159763 0.3846154 201 
+8 2020 51.86176 0.9256198 0.7727273 192 
+9 2012 47.24728 0.7959184 0.5714286 207 
+10 2023 34.93258 0.6250000 0.3750000 206 
+11 2018 46.10166 0.7777778 0.5000000 202 
+12 2019 46.26296 1.0000000 1.0000000 212 
+13 2016 52.58324 0.7500000 0.5000000 212
 
 ## Analyzing Response Curves & Variable Importance
 

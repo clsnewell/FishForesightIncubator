@@ -6,8 +6,8 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-In this rmd, I take SMFS data developed in the SMFSDataTableMerging and SMFS_Wrangling rmds and integrate with SBOTS data wrangled and checked by Lewis. 
-The goal of this rmd is to create a combined dataset that can be used for incubator projects and beyond. 
+
+In this rmd, I take SMFS data developed in the SMFSDataTableMerging and SMFS_Wrangling rmds and integrate with SBOTS data wrangled and checked by Lewis. The goal of this rmd is to create a combined dataset that can be used for incubator projects and beyond.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -43,7 +43,7 @@ SBOTS2019<-mutate(SBOTS2019, Study = "SBOTS")
 Left is SMFS, right is SBOTS. All water quality taken by SMFS is done for the surface of the water column so all water quality from SBOTS will start with "es" indicating it was taken at the end of the trawl at the surface of the water, matching SMFS methodology.
 
 |                     |                                        |           |                           |                                                                                                                                                                                                                                    |
-|---------------|---------------|---------------|---------------|---------------|
+|---------------------|----------------------------------------|-----------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **SMFS**            | **SMFS_Example**                       | **SBOTS** | **SBOT_Example**          | **Notes**                                                                                                                                                                                                                          |
 | TrawlRowID          | {00002451-7B5A-47A8-8D9F-486D054DC257} | id        | 3654                      | Unique identification number assigned  to each tow when entered into the database. Not all data entered in order of date, so id \# may be out of order with date. Multiple rows have same id for each species/length combination.  |
 | WaterTemperature    | 11.8                                   | estemp    | 12.46                     | Water temperature in degrees C.                                                                                                                                                                                                    |

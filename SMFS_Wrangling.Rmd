@@ -67,6 +67,87 @@ SMFS_OTR_09192023$Year<-as.numeric(SMFS_OTR_09192023$Year) #need to make water y
 SMFS_Integrate<-SMFS_OTR_09192023 %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
 ```
 
+
+### Investigating NA's in dataset (Maybe run later)
+```{r}
+#How many rows will we lose if we remove NAs?
+sum(is.na(SMFS_Integrate$WaterTemperature)) #44
+sum(is.na(SMFS_Integrate$DO)) #495
+sum(is.na(SMFS_Integrate$Salinity)) #47
+sum(is.na(SMFS_Integrate$Secchi)) #100
+#This isn't super helpful... We have multiple rows for one 
+Na_Assessment<-SMFS_Integrate %>% 
+  group_by(SampleRowID) %>% 
+  summarize(WaterTemp_NA=sum(is.na(WaterTemperature)),
+            DO_NA =  sum(is.na(DO)),
+            Sal_NA = sum(is.na(Salinity)),
+            Secchi_NA=sum(is.na(Secchi)))
+Na_Assessment<- Na_Assessment %>% filter(WaterTemp_NA>0 | DO_NA>0 | Sal_NA>0 | Secchi_NA>0)
+#Overall, there are 46 sampling events with missing wq data.
+#let's find out more about these.
+NaSamples<-Na_Assessment$SampleRowID
+
+SMFS_OTR_Thesis_WQNA<-SMFS_Integrate %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
+SMFS_OTR_Thesis_WQNA<-as.data.frame(SMFS_OTR_Thesis_WQNA)
+SMFS_OTR_Thesis_WQNA<-SMFS_OTR_Thesis_WQNA %>% distinct()
+#Save New DF
+#write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv") #This holds the information with samples that have NA wq data
+
+
+#Visualizing fish counts by year for each species
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
+
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
+
+FishCountTable %>% spread(key = Year, value = Total)
+
+#Adding zeros for sampling events with no fish caught
+#https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
+length(unique(SMFS_Integrate$SampleRowID)) 
+length(unique(SMFS_Integrate$TrawlRowID)) 
+length(unique(SMFS_Integrate$OrganismCode))
+3702*79
+
+
+Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
+NA_SampleRowIDs<-unique(Nas_$SampleRowID)
+NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
+unique(NA_Tow_Info$SampleRowID)
+#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
+#Removing all NA Trawl Duration (below)
+
+
+#Why NA DO?
+NoDO<-SMFS_Integrate %>% filter(DO %in% NA)
+#Reasons for missing DO: 
+#Row 81, 232, 253,  - just didn't record DO or PctSat
+#Is it missing for other organisms from the same trawl?
+
+NoDOTrawlID<-unique(NoDO$TrawlRowID)
+length(NoDOTrawlID) #35 trawls
+NoDOTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
+
+
+#Now checking salinity
+NoSal<-SMFS_Integrate %>% filter(Salinity %in% NA)
+NoSalTrawlID<-unique(NoSal$TrawlRowID)
+length(NoSalTrawlID) #6 trawls
+NoSalTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Secchi
+NoSecchi<-SMFS_Integrate %>% filter(Secchi %in% NA)
+NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
+length(NoSecchiTrawlID) #3 trawls
+NoSecchiTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Water Temp
+NoWT<-SMFS_Integrate %>% filter(WaterTemperature %in% NA)
+NoWTTrawlID<-unique(NoWT$TrawlRowID) 
+length(NoWTTrawlID) #5 trawls
+NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
+#I remove these NAs in the SMFS_WranglingForThesis rmd
+```
+
 ## Adding species name information
 
 ```{r}
@@ -77,6 +158,11 @@ SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
 SMFS_Integrate<-left_join(SMFS_Integrate, SMFS_OrganismsLookUp, by = "OrganismCode")
 
 SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" "))
+#Many rows of NA NA for gensp.
+na_gensp_rows <- subset(SMFS_Integrate, gensp == "NA NA")
+unique(na_gensp_rows$CommonName)
+na_gensp <-na_gensp_rows %>% group_by(CommonName) %>% summarise(nrows= n(), CountTotal = sum(Count)) #unknown fish IDs. Remove. Losing "Goby Unknown"        "Herring Unknown"     "Unknown Larval Fish" "Heel Splitter"  "Catfish Unknown"     "Water quality only"
+SMFS_Integrate<-SMFS_Integrate %>% filter(!gensp == "NA NA")
 ```
 
 
@@ -98,6 +184,8 @@ AgedFish<-SMFS_Integrate %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG",
 
 #filter out instances where there is 0 standard length, I'll rbind them back later.
 PlusCounts<-AgedFish %>% filter(StandardLength==0)
+SummPlusCounts<-PlusCounts %>% group_by(CommonName) %>% summarize(nrows= n(), CountTotal = sum(Count))
+
 AgedFish_AgeClass<-AgedFish %>% filter(StandardLength!=0)
 
 #before I add age class, I have to rename a duplicated column name "class"
@@ -189,43 +277,11 @@ df_final <- df_proportions %>%
   select(-TotalCount, -Proportion, -NA_Count)
 ```
 
-### Adding zeros - LAST STEP
-```{r}
-#Now add zeros!
-SMFS_OTR_Thesis_AgeClassWithZeros<-DataWithAges %>% 
-  complete(nesting(SampleRowID, 
-                   WaterTemperature, 
-                   Secchi, 
-                   DO, 
-                   Salinity, 
-                   MethodCode, 
-                   StationCode, 
-                   SampleDate, 
-                   SampleTime, 
-                   PctSaturation, 
-                   SpecificConductance, 
-                   TideCode, 
-                   ElecCond, 
-                   TowDuration, 
-                   TrawlComments, 
-                   Year,
-                   Month,
-                   WaterYear), 
-           OrganismCode, AgeClass,
-           fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
 
-SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0
-#NOW it has zeros
-```
 
-# Save
-```{r}
-#Save New DF
-#write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
 
-```
 
-### One fish one row
+### One fish one row (MUST RUN)
 I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
 ```{r}
 SMFS_Integrate_Expand <- SMFS_Integrate %>%
@@ -242,85 +298,6 @@ SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, PlusCountDF)
 ```
 
 
-### Investigating NA's in dataset
-```{r}
-#How many rows will we lose if we remove NAs?
-sum(is.na(SMFS_Integrate$WaterTemperature)) #44
-sum(is.na(SMFS_Integrate$DO)) #495
-sum(is.na(SMFS_Integrate$Salinity)) #47
-sum(is.na(SMFS_Integrate$Secchi)) #100
-#This isn't super helpful... We have multiple rows for one 
-Na_Assessment<-SMFS_Integrate %>% 
-  group_by(SampleRowID) %>% 
-  summarize(WaterTemp_NA=sum(is.na(WaterTemperature)),
-            DO_NA =  sum(is.na(DO)),
-            Sal_NA = sum(is.na(Salinity)),
-            Secchi_NA=sum(is.na(Secchi)))
-Na_Assessment<- Na_Assessment %>% filter(WaterTemp_NA>0 | DO_NA>0 | Sal_NA>0 | Secchi_NA>0)
-#Overall, there are 46 sampling events with missing wq data.
-#let's find out more about these.
-NaSamples<-Na_Assessment$SampleRowID
-
-SMFS_OTR_Thesis_WQNA<-SMFS_Integrate %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
-SMFS_OTR_Thesis_WQNA<-as.data.frame(SMFS_OTR_Thesis_WQNA)
-SMFS_OTR_Thesis_WQNA<-SMFS_OTR_Thesis_WQNA %>% distinct()
-#Save New DF
-write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv") #This holds the information with samples that have NA wq data
-
-
-#Visualizing fish counts by year for each species
-FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
-
-FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
-
-FishCountTable %>% spread(key = Year, value = Total)
-
-#Adding zeros for sampling events with no fish caught
-#https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
-length(unique(SMFS_Integrate$SampleRowID)) 
-length(unique(SMFS_Integrate$TrawlRowID)) 
-length(unique(SMFS_Integrate$OrganismCode))
-3702*79
-
-
-Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
-NA_SampleRowIDs<-unique(Nas_$SampleRowID)
-NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
-unique(NA_Tow_Info$SampleRowID)
-#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
-#Removing all NA Trawl Duration (below)
-
-
-#Why NA DO?
-NoDO<-SMFS_Integrate %>% filter(DO %in% NA)
-#Reasons for missing DO: 
-#Row 81, 232, 253,  - just didn't record DO or PctSat
-#Is it missing for other organisms from the same trawl?
-
-NoDOTrawlID<-unique(NoDO$TrawlRowID)
-length(NoDOTrawlID) #35 trawls
-NoDOTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
-
-
-#Now checking salinity
-NoSal<-SMFS_Integrate %>% filter(Salinity %in% NA)
-NoSalTrawlID<-unique(NoSal$TrawlRowID)
-length(NoSalTrawlID) #6 trawls
-NoSalTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
-
-#Now checking Secchi
-NoSecchi<-SMFS_Integrate %>% filter(Secchi %in% NA)
-NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
-length(NoSecchiTrawlID) #3 trawls
-NoSecchiTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
-
-#Now checking Water Temp
-NoWT<-SMFS_Integrate %>% filter(WaterTemperature %in% NA)
-NoWTTrawlID<-unique(NoWT$TrawlRowID) 
-length(NoWTTrawlID) #5 trawls
-NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
-#I remove these NAs in the SMFS_WranglingForThesis rmd
-```
 
 ### Adding zeros, calculating cpue (dead code)
 ```{r}
@@ -426,7 +403,61 @@ for(i in id_sp){        # add expanded lengths to list
   names(df_list) <- i  # name list element based on id_sp value
   exp_sl_list <- append(exp_sl_list, df_list) # add new element to master list
 }
-exp_sl_list #Error before because counts of 0 were in there :(
+exp_sl_list 
 
-#What to do if no lengths to base new lengths off of. NaN's. 
+#Okay, now take those lengths and assign them to fish in the SMFS dataset.
+
+#First make this list something I can work with by turning it into a dataframe.
+
+PlusAssigned<-do.call(rbind.data.frame, exp_sl_list) #creates a dataframe from the list (though strange identifier for rows)
+#Showing negative values for sl! All the same ID... Flag these negative values...
+negative_sl_rows <- PlusAssigned[PlusAssigned$sl < 0, ]
+Unique_slrows<-as.list(unique(negative_sl_rows$SampleRowID))
+Collapsed_Negatives<-negative_sl_rows %>% select(SampleRowID, gensp) %>% distinct()
+
+#Use this list of SampleRowIds to look at the fish size distributions for that same day...
+
+ViewDist<-SMFS_Integrate %>% filter(SampleRowID %in% "{001EFF22-FE47-4468-92F6-6F1531090921}", gensp %in% "Morone saxatilis")
+
+for(i in Unique_slrows) 
+{
+  SMFS_Integrate %>% filter(SampleRowID %in% i) 
+}
+```
+357 plus counts given lengths. how many were there before?
+
+### Adding zeros - LAST STEP
+```{r}
+#Now add zeros!
+SMFS_OTR_Thesis_AgeClassWithZeros<-DataWithAges %>% 
+  complete(nesting(SampleRowID, 
+                   WaterTemperature, 
+                   Secchi, 
+                   DO, 
+                   Salinity, 
+                   MethodCode, 
+                   StationCode, 
+                   SampleDate, 
+                   SampleTime, 
+                   PctSaturation, 
+                   SpecificConductance, 
+                   TideCode, 
+                   ElecCond, 
+                   TowDuration, 
+                   TrawlComments, 
+                   Year,
+                   Month,
+                   WaterYear), 
+           OrganismCode, AgeClass,
+           fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
+
+SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0
+#NOW it has zeros
+```
+
+# Save
+```{r}
+#Save New DF
+#write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
+
 ```

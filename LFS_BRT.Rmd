@@ -34,6 +34,7 @@ First things first, we need to get the data for the LongfinSmelt of interest we 
 ```{r}
 LongfinSmeltData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys")
 LongfinSmeltData<-as.data.frame(LongfinSmeltData)
+summary(LongfinSmeltData$TowDuration)
 ```
 
 Now lets check the dataset.
@@ -46,6 +47,8 @@ summary(LongfinSmeltData)
 Let's make a couple of plots for making predictions.
 
 ```{r}
+# I want to show presences vs. all samples.
+
 Plot_Water<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
 Plot_DO<-LongfinSmeltData %>% ggplot(aes(y=PresAbs, x=DO, color = TowDuration)) + 
@@ -69,7 +72,7 @@ plot_grid(title, Plots, ncol = 1,
   rel_heights = c(0.1, 1))
 
 SummTable <- LongfinSmeltData %>% 
-  group_by(PresAbs, Year) %>% 
+  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature),
     SD_WT = sd(WaterTemperature),
@@ -90,7 +93,21 @@ SummTable <- LongfinSmeltData %>%
   ) 
 
 print(SummTable)
+write.csv(SummTable, here("data", "LongfinSmelt_SummTable.csv"))
+
+#Seasonality
+LongfinSmeltData$Year<-as.factor(LongfinSmeltData$Year)
+
+LongfinSmeltData$Month<-as.factor(LongfinSmeltData$Month)
+
+LongfinSmeltData$StationCode<-as.factor(LongfinSmeltData$StationCode)
+
+LongfinSmeltData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
+
+LongfinSmeltData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+LongfinSmeltData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
+
 
 Plot analysis: Average water temperature when LFS absent is 16.37 C (standard deviation is 4.64), present is 17.36 C (standard deviation 3.14). Average dissolved oxygen when LFS absent is 6.95 mg/L (sd 1.64), present is 7.39 (sd 1.18). Average secchi when LFS absent is 30.5 cm (sd 11.55), present is 30.56 cm (sd 10.18). Average salinity when LFS absent is 4.66 psu (sd 3.4) and present is 5.4 (sd 3.24).
 

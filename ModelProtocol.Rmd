@@ -10,12 +10,13 @@ Constructed so I can search "Species"and replace with Gensp name and have the co
 ### Loading libraries and data
 
 ```{r}
-library(tidyverse)
 library(readr)
 library(dismo)
 library(caret)
 library(here)
 library(cowplot)
+library(Hmisc)
+library(tidyverse)
 
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_PresAbs.csv")
 ```
@@ -26,10 +27,10 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 
 Before modeling, we will ensure the data is up to snuff.
 
-First things first, we need to get the data for the species of interest we want to model.
+First things first, we need to get the data.
 
 ```{r}
-SpeciesData<-PresAbs %>% filter(gensp %in% "Species")
+SpeciesData<-PresAbs %>% filter(gensp %in% "Genus species")
 SpeciesData<-as.data.frame(SpeciesData)
 ```
 
@@ -56,7 +57,71 @@ Plot_Salinity<-SpeciesData %>% ggplot(aes(y=Binary, x=Salinity, color = TowDurat
   geom_point() + theme_bw()
 
 plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# I want to show presences vs. all samples.
+
+Plot_Water<-SpeciesData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+
+Plot_DO<-SpeciesData %>% ggplot(aes(y=PresAbs, x=DO, color = TowDuration)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
+
+Plot_Secchi<-SpeciesData %>% ggplot(aes(y=PresAbs, x=Secchi, color = TowDuration)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+
+Plot_Salinity<-SpeciesData %>% ggplot(aes(y=PresAb, x=Salinity, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Species presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+SummTable <- SpeciesData %>% 
+  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
+  dplyr::summarize(
+    Mean_WT = mean(WaterTemperature),
+    SD_WT = sd(WaterTemperature),
+    MinWT=min(WaterTemperature),
+    MaxWT=max(WaterTemperature),
+    Mean_DO = mean(DO),
+    SD_DO = sd(DO),
+    MinDO=min(DO),
+    MaxDO=max(DO),
+    Mean_Secchi = mean(Secchi),
+    SD_Secchi = sd(Secchi),
+    MinSecchi=min(Secchi),
+    MaxSecchi=max(Secchi),
+    Mean_Salinity = mean(Salinity),
+    SD_Salinity = sd(Salinity),
+    MinSal=min(Salinity),
+    MaxSal=max(Salinity)
+  ) 
+
+print(SummTable)
+write.csv(SummTable, here("data", "Species_SummTable.csv"))
+
+#Seasonality
+SpeciesData$Year<-as.factor(SpeciesData$Year)
+
+SpeciesData$Month<-as.factor(SpeciesData$Month)
+
+SpeciesData$StationCode<-as.factor(SpeciesData$StationCode)
+
+SpeciesData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
+
+SpeciesData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch Species") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+SpeciesData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch Species") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
+
+Plot analysis:
+
+
 
 ## Step 2: Use caret package to set hyperparameters
 
@@ -94,7 +159,7 @@ Now we can use the `train` function to run the analysis.
 ```{r}
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
-gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity + TowDuration, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+gbmFit <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
                 data = SpeciesData, 
                 method = "gbm", 
                 trControl = fitControl, 
@@ -126,8 +191,8 @@ Thanks Nima and Elith!
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
  brt1 <- dismo::gbm.step(data=SpeciesData, 
-                         gbm.x= c(WaterTemperature + Secchi + DO + Salinity + TowDuration), # environmental variables
-                         gbm.y= Binary, # response variable
+                         gbm.x= c(21, 22, 23, 25), # environmental variables
+                         gbm.y= 17, # response variable
                          family = "bernoulli", # for counts this would be "poisson"
                          tree.complexity = 3, # complexity of the interactions that the model will fit. Based on what caret told us.
                          learning.rate = 0.1,  # optimized to end up with >1000 trees
@@ -142,9 +207,28 @@ names(brt1) #tells us the components of output
 # To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
 
  # reponse curves
-par(mar=c(2, 2, 1, 1))
+par(mfrow=c(3,2))
 
 dismo::gbm.plot(brt1, n.plots = 5, write.title= T, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T)
+
+gbm::plot.gbm(brt1, n.plots=5, return.grid=TRUE)
+
+dismo::gbm.plot.fits(brt1)
+#I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
+
+
+# This code assesses the extent to which pairwise interactions exist in the data.
+
+find.int <- gbm.interactions(brt1)
+find.int
+brt1$self.statistics$correlation[[1]]
+# The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+
+# You can plot pairwise interactions like this:
+par(mfrow=c(1,2))
+gbm.perspec(brt1,1, 2) #3D PLOT of Water Temp and Salinity
+gbm.perspec(brt1,3, 2) #salinity and DO
+#5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 
 # save the model
 saveRDS(brt1, here("data", "Species_brt_gbm_step.rds"))
@@ -166,7 +250,7 @@ NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will hav
 ```{r}
 #k fold cross validation function
 
-eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.05, k_folds = 5, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 3, bag.fraction = 0.6){
   dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
   Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
   colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
@@ -176,30 +260,20 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.05, k_fold
     train <- dataInput[dataInput$Kset!=k,]
     test <- dataInput[dataInput$Kset==k,]
     
-    brt.k <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
+     brt.k <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
                              gbm.y = gbm.y, 
-                             family="bernoulli", 
+                              family="bernoulli", 
                              tree.complexity = tree.complexity,
                              learning.rate = learning.rate, 
-                             bag.fraction = bag.fraction,
-                             n.trees = n.trees)
-    
-    # brt.k <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
-    #                          gbm.y = gbm.y, 
-    #                          family="bernoulli", 
-    #                          tree.complexity = tree.complexity,
-    #                          learning.rate = learning.rate, 
-    #                          bag.fraction = bag.fraction)
+                             bag.fraction = bag.fraction)
     
     preds <- gbm::predict.gbm(brt.k, test,
                               n.trees=brt.k$gbm.call$best.trees, 
                               type="response")
     
     dev_eval3<-function(x){
-      null <- x$self.statistics$null.deviance #use with gbm.fixed
-      res <- x$self.statistics$resid.deviance #use with gbm.fixed
-      #null <- x$self.statistics$mean.null #use with gbm.step
-      #res <- x$self.statistics$mean.resid #use with gbm.step
+      null <- x$self.statistics$mean.null #use with gbm.step
+      res <- x$self.statistics$mean.resid #use with gbm.step
       dev=((null - res)/null)*100
       return(dev)
     }
@@ -218,26 +292,25 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.05, k_fold
 }
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = NWA_PLL,
-                        gbm.x = c(3:11),
-                        gbm.y=2, learning.rate = 0.15,
+brt_SDM_k <- eval_kfold_brt(dataInput = SpeciesData,
+                        gbm.x = c(21, 22, 23, 25),
+                        gbm.y=17, learning.rate = 0.005,
                         bag.fraction = 0.6, tree.complexity = 3,
-                        k_folds = 10,
-                        n.trees = 2000)
+                        k_folds = 10)
 brt_SDM_k
 ```
 
-The other validation secheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
+The other validation scheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
 
 NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.step
 
 ```{r}
 #leave one year out function
 
-eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.complexity = 3, bag.fraction = 0.6, n.trees = 2000){
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 3, bag.fraction = 0.6){
   
-  pres$year <- lubridate::year(pres$date)
-  abs$year <- lubridate::year(abs$date)
+  pres$year <- pres$Year
+  abs$year <- abs$Year
   
   ## setup output df
   Evaluations_LOO_BRT <- as.data.frame(matrix(data = 0, nrow = 1, ncol = 5))
@@ -258,20 +331,13 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.com
     abs_test <- abs[sample(which(abs$year == y), size = nrow(pres_test), replace=F),]
     test <- rbind(pres_test, abs_test)
     
-    brt.loo <- dismo::gbm.fixed(data=train, gbm.x= gbm.x, 
-                           gbm.y = gbm.y, 
-                           family="bernoulli", 
-                           tree.complexity = tree.complexity,
-                           learning.rate = learning.rate, 
-                           bag.fraction = bag.fraction,
-                           n.trees = n.trees)
     
-    # brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
-    #                            gbm.y = gbm.y, 
-    #                            family="bernoulli", 
-    #                            tree.complexity = tree.complexity,
-    #                            learning.rate = learning.rate, 
-    #                            bag.fraction = bag.fraction)
+     brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+                                gbm.y = gbm.y, 
+                                family="bernoulli", 
+                                tree.complexity = tree.complexity,
+                               learning.rate = learning.rate, 
+                               bag.fraction = bag.fraction)
     
     ## make predictions for eval
     preds <- gbm::predict.gbm(brt.loo, test,
@@ -279,10 +345,8 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.com
                               type="response")
     
     dev_eval3<-function(x){
-      null <- x$self.statistics$null.deviance #use with gbm.fixed
-      res <- x$self.statistics$resid.deviance #use with gbm.fixed
-      #null <- x$self.statistics$mean.null #use with gbm.step
-      #res <- x$self.statistics$mean.resid #use with gbm.step
+      null <- x$self.statistics$mean.null #use with gbm.step
+      res <- x$self.statistics$mean.resid #use with gbm.step
       dev=((null - res)/null)*100
       return(dev)
     }
@@ -303,17 +367,17 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.05, tree.com
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = NWA_PLL[which(NWA_PLL$pres_abs == 1),],
-                        abs = NWA_PLL[which(NWA_PLL$pres_abs == 0),],
-                        gbm.x = c(3:11),
-                        gbm.y=2, learning.rate = 0.15,
-                        bag.fraction = 0.6, tree.complexity = 3,
-                        n.trees = 2000)
+brt_SDM_loo <- eval_loo_brt(pres = SpeciesData[which(SpeciesData$Binary == 1),],
+                        abs = SpeciesData[which(SpeciesData$Binary == 0),],
+                        gbm.x = c(21, 22, 23, 25),
+                        gbm.y=17, learning.rate = 0.005,
+                        bag.fraction = 0.6, tree.complexity = 3)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
 eval <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 
+eval
 #now save it
 
 saveRDS(eval, here("data","Species_brt_SDM_eval_gbm_step.rds"))
@@ -330,7 +394,7 @@ Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_imp
 
 ###----response plots----####
 
-brt_Species <- here("data","Species_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+brt_Species <- here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds") %>% readRDS()
 
 
 # get the matrix out of the `plot.gbm`
@@ -348,25 +412,18 @@ response_data<-rbind(response_data, response_plot_data)
 
 }
 
-response_data
+#Get it on the same scale as elith
+#response_data$y <- response_data[,2] - mean(response_data[,2])
+#response_data$y<-1/(1+exp(-response_data$y))
 
-response_data <-response_data %>% 
-  mutate(variable = case_when(variable == "SST" ~ "SST",
-                              variable == "SST_SD" ~ "SST_sd",
-                              variable == "SSH" ~ "SSH",
-                              variable == "SSH_SD" ~ "SSH_sd",
-                              variable == "z.1" ~ "bathy",
-                              variable == "z_SD" ~ "rugosity",
-                              variable == "dist_port" ~ "dis_port",
-                              variable == "dis_seamount" ~ "dis_seamount",
-                              variable == "lunar" ~ "lunar",
-                              variable == "n2" ~ "N2"),
-         Fleet = "Longline") #Need to update...
+#response_data$y<-scale(response_data$y, scale = FALSE)
 
+#Add a smoothed line to an active plot
+#loess(y ~ x, span = 0.3)
 
 response_data %>%
   ggplot() + 
-  geom_line(aes(x=x, y=y, color = Fleet), size =1) + 
+  geom_line(aes(x=x, y=y), color = "lightseagreen", size =1) + 
   facet_wrap(~variable, scales = "free", nrow = 5) +
   labs(x = "Variable Values",
        y = "Marginal Effect")+
@@ -374,44 +431,32 @@ response_data %>%
   theme(panel.spacing = unit(.30, "lines"),
         strip.text = element_text(size=10),
         strip.background = element_blank(),
-        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))+
-  scale_color_manual(values=c("lightseagreen"))
+        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))
   
-ggsave(here("Plots","Species_response_plots.png"),
+ggsave(here("Plots","LongfinSmelt_response_plots.png"),
        width = 7, height = 6, units = "in", dpi = 300)
-ggsave(here("Plots","Species_response_plots.svg"),
-       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
 
 ###----variable contribution----####
 rel.inf<-data.frame(Variable = brt_Species$brt$contributions$var,
-                        rel.inf=brt_Species$brt$contributions$rel.inf) %>% 
-  mutate(Variable = case_when(Variable == "SST" ~ "SST",
-                              Variable == "SST_SD" ~ "SST_sd",
-                              Variable == "SSH" ~ "SSH",
-                              Variable == "SSH_SD" ~ "SSH_sd",
-                              Variable == "z.1" ~ "bathy",
-                              Variable == "oldname" ~ "newname",
-                              Variable == "dist_port" ~ "dis_port",
-                              Variable == "dis_seamount" ~ "dis_seamount",
-                              Variable == "lunar" ~ "lunar",
-                              Variable == "n2" ~ "N2"),
-         Fleet = "Longline")
+                        rel.inf=brt_Species$brt$contributions$rel.inf)# %>% 
+
 
 
 rel.inf %>% 
   ggplot()+
-  geom_bar(aes(x = Variable,y=rel.inf, fill = Fleet),
+  geom_bar(aes(x = reorder(Variable, -rel.inf),y=rel.inf), fill = "lightseagreen",
            stat="identity", position=position_dodge())+
-  scale_fill_manual(values=c("lightseagreen")) +
   theme_bw() +
   labs(x = "Environmental Variable",
        y = "Relative Importance (%)")+
   theme(axis.text.x = element_text(angle = 45,hjust=1))
 
-ggsave(here("Plots","FS3_relative_importance.png"),
+ggsave(here("Plots","Species_relative_importance.png"),
        width = 7, height = 6, units = "in", dpi = 300)
-ggsave(here("Plots","FS3_relative_importance.svg"),
-       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","FS3_relative_importance.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
 ```
 
 # NOTES

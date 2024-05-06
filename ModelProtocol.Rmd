@@ -194,7 +194,7 @@ Thanks Nima and Elith!
                          gbm.x= c(21, 22, 23, 25), # environmental variables
                          gbm.y= 17, # response variable
                          family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = 3, # complexity of the interactions that the model will fit. Based on what caret told us.
+                         tree.complexity = 4, # complexity of the interactions that the model will fit. Based on what caret told us.
                          learning.rate = 0.1,  # optimized to end up with >1000 trees
                          bag.fraction = 0.6 # recommended by Elith, amount of input data used each time
                          )
@@ -307,7 +307,7 @@ NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.
 ```{r}
 #leave one year out function
 
-eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 3, bag.fraction = 0.6){
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.1, tree.complexity = 4, bag.fraction = 0.6){
   
   pres$year <- pres$Year
   abs$year <- abs$Year
@@ -394,7 +394,7 @@ Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_imp
 
 ###----response plots----####
 
-brt_Species <- here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+brt_Species <- here("data","Species_brt_SDM_eval_gbm_step.rds") %>% readRDS()
 
 
 # get the matrix out of the `plot.gbm`

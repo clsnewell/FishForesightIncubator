@@ -40,7 +40,6 @@ In this rmd, I start with the output from SMFSDataTableMerging (SMFS_09192023) t
 # Loading Data
 ```{r}
 #Wrangling SMFS 
-library(tidyverse)
 library(rlang)
 library(readr)
 SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_09192023.csv")
@@ -49,6 +48,7 @@ library(lubridate)
 SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
 SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
 library(lfstat)
+library(tidyverse)
 SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
 
@@ -184,7 +184,7 @@ AgedFish<-SMFS_Integrate %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG",
 
 #filter out instances where there is 0 standard length, I'll rbind them back later.
 PlusCounts<-AgedFish %>% filter(StandardLength==0)
-SummPlusCounts<-PlusCounts %>% group_by(CommonName) %>% summarize(nrows= n(), CountTotal = sum(Count))
+SummPlusCounts<-PlusCounts %>% dplyr::group_by(CommonName) %>% dplyr::summarize(nrows= n(), CountTotal = sum(Count))
 
 AgedFish_AgeClass<-AgedFish %>% filter(StandardLength!=0)
 
@@ -364,13 +364,72 @@ SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, PlusCountDF)
 
 
 ## Plus Count Expansion
-Levi's code!
+Trawls have a range of measured fish for plus counts. Some of these have a wide range (one 625mm fish and the rest under 200mm for example). 
+1. Pull from comments. Or use the comments to ground-truth.
+2.Identify and remove outliers from trawls when doing this calculation.
+3. Either random assignment or proportional (Levi doing random). Poisson distribution? 
+4. Give each fish own row and ID.  
+
+Built with Levi and Kyle.
 ```{r}
 #Doesn't work well with non-fish. Let's isolate the fish and then run the code. 
 PlusCountDF<-PlusCountDF %>% filter(Class %in% c("Osteichthyes","Cephalaspidomorphi")) #bring back the others later: "Malacostraca" "Crustacea"    "Bivalvia"    [4] "many"         "Hydrozoa"     "N/A"   "Insecta"      "Angiosperms" [10] "NA"    
+
+#Remove outliers (temporarily)
+#out<-boxplot.stats(dat$hwy)$out
+#outliers_ind<-which(dat$hwy %in% c(out))
+out<-SMFS_Integrate_Expand %>%
+  dplyr::group_by(SampleRowID, gensp) %>%
+  dplyr::summarize(outliers = list(boxplot.stats(StandardLength)$out)) %>% filter(!outliers %in% "numeric(0)") %>% tidyr::unnest(outliers)  #3060 outliers identified. 
+out$StandardLength<-out$outliers
+  
+result <- dplyr::right_join(SMFS_Integrate_Expand, out, join_by(SampleRowID, gensp, StandardLength)) #3236
+
+#now I want to isolate rows where the outlier == standard length
+#result %>% ifelse(StandardLength == outliers,  )
+
+# Suppose we want to create a new column indicating whether the StandardLength is an outlier
+
+OutlierList<-result$CatchRowID
+
+SMFS_Integrate_Expanded_OutliersRemoved<-SMFS_Integrate_Expand %>% filter(CatchRowID %in% OutlierList)
+
+#prep_exp_table <- 
+  # lengths_df  %>%                       # formatted raw catch data
+#  SMFS_Integrate_Expand %>%
+#  group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
+#  dplyr::summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
+#            sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
+#            n_sl = length(StandardLength)) %>%      # generate n of length measurements (as a check)
+#  full_join(PlusCountDF, c("SampleRowID", "gensp")) %>%  # join with plus counts (number of lengths that require expansion x tow x spp)
+#  filter(StandardLength == 0, Count != 0) %>%    #LOOK INTO WHY 0 COUNT!!!               # keep only the plus count data (remove length data)
+#  mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length value, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA).
+#  dplyr::select(SampleRowID, gensp, m_sl, sd_sl, n_sl, StandardLength, Count) %>% 
+#  data.frame 
+
+#Zscoreprep<-prep_exp_table %>% dplyr::select(SampleRowID, gensp, m_sl, sd_sl, n_sl)
+
+#Zscoredf<-right_join(SMFS_Integrate_Expand, Zscoreprep) #only keep rows with plus counts
+#Zscoredf$z<-(Zscoredf$StandardLength - Zscoredf$m_sl)/Zscoredf$sd_sl #greater than 3.5 is outlier. Can also check the out table produced by chat.gpt code
+
+#OutZ<-Zscoredf %>% filter(z > 0.5 | z < -0.5)
+
+#106 fish are outliers according to this z score... Way less than what was identified by above out code.
+
+#Try to be conservative. For now, remove the z score fish and then run the plus count expansion, look for negative values and compare to comments. If not, then change threshold.
+
+#After trying 3.5 threshold still resulting in values assigned to plus counts below 10 mm. 
+
+#thanks Kyle!!
+
+
+#OutZList<-unique(OutZ$CatchRowID)
+
+#SMFS_Integrate_Expanded_OutliersRemoved<-SMFS_Integrate_Expand %>% filter(!CatchRowID %in% OutZList) #removing outliers from plus count expansion 
+
 exp_table <- 
   # lengths_df  %>%                       # formatted raw catch data
-  SMFS_Integrate_Expand %>%
+  SMFS_Integrate_Expanded_OutliersRemoved %>%
   group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
   dplyr::summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
             sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
@@ -378,9 +437,8 @@ exp_table <-
   full_join(PlusCountDF, c("SampleRowID", "gensp")) %>%  # join with plus counts (number of lengths that require expansion x tow x spp)
   filter(StandardLength == 0, Count != 0) %>%    #LOOK INTO WHY 0 COUNT!!!               # keep only the plus count data (remove length data)
   mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length value, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA).
-  select(SampleRowID, gensp, m_sl, sd_sl, n_sl, StandardLength, Count) %>% 
+  dplyr::select(SampleRowID, gensp, m_sl, sd_sl, n_sl, StandardLength, Count) %>% 
   data.frame 
-
 # generate unique "sp_id" vector for looping
 #exp_table should only have 8 columns: tow id, code, 
 exp_table$id_sp <- paste0(exp_table$SampleRowID, "_", exp_table$gensp) 
@@ -409,9 +467,17 @@ exp_sl_list
 
 #First make this list something I can work with by turning it into a dataframe.
 
-PlusAssigned<-do.call(rbind.data.frame, exp_sl_list) #creates a dataframe from the list (though strange identifier for rows)
+PlusAssigned<-do.call(rbind.data.frame, exp_sl_list) #creates a dataframe from the list (though strange identifier for rows). 
+
 #Showing negative values for sl! All the same ID... Flag these negative values...
-negative_sl_rows <- PlusAssigned[PlusAssigned$sl < 0, ]
+negative_sl_rows <- PlusAssigned %>% filter(sl<0) #311 with nothing removed. 135 after threshold of 3.5 set and outliers removed. 112 after threshold of 3 set and outliers removed. 50 after threshold of 2.39 after 1.5 threshold set. 35 after 1 set. 567 after 0.5 set. 78 after 0.5 threshold set.
+
+#141 outliers below 5 after removing all outliers identified with boxplot method. 113 below 0. 
+#I AM STUCK.
+
+
+
+#conclusion: z-scores not useful for removing outliers. 
 Unique_slrows<-as.list(unique(negative_sl_rows$SampleRowID))
 Collapsed_Negatives<-negative_sl_rows %>% select(SampleRowID, gensp) %>% distinct()
 

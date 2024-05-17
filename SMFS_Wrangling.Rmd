@@ -48,6 +48,7 @@ library(lubridate)
 SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
 SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
 library(lfstat)
+library(tibble)
 library(tidyverse)
 SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
@@ -68,7 +69,7 @@ SMFS_Integrate<-SMFS_OTR_09192023 %>% filter(Year > 2010) #Filtering out years w
 ```
 
 
-### Investigating NA's in dataset (Maybe run later)
+### Investigating NA's in dataset 
 ```{r}
 #How many rows will we lose if we remove NAs?
 sum(is.na(SMFS_Integrate$WaterTemperature)) #44
@@ -246,53 +247,6 @@ Plus counts unaltered but may want to update them so that I can create a filter 
 
 For presence/absence model, filter on tows that measured big fish. Remove those fish/observations. And then for all tows, label each tow as 'presence' or 'absent'. If there was a tow that only measured big fish, it will look like no fish were captured because you removed all instances of big fish measurements. This avoids dealing with plus count, which we don't need for the presence/absent model. I
 
-### Fixing plus counts -DONT RUN
-```{r}
-unique(DataWithAges$CatchComments) # I thought there were catch comments before that detailed what size the plus counted fish were.
-#Attempt lives in SMFS_AgeClassIncorporation. Proportional assignment of plus counts my idea. Lewis proposes creating a distribution of sizes and then sampling randomly from that which would be better in cases of plus counts being low. But I'll move forward with my own attempt to fix plus counts.
-
-# Step 1: Filter rows where Class is not "NA_Class" and Counted is greater than 0
-df_filtered <- DataWithAges %>%
-  filter(!is.na(Class), Class != "NA_Class", Counted > 0)
-
-# Step 2: Calculate the total count for each SampleRowID and OrganismCode
-df_total_counts <- df_filtered %>%
-  group_by(SampleRowID, OrganismCode) %>%
-  summarize(TotalCount = sum(Counted), .groups = "drop")
-
-# Step 3: Calculate the proportion for each age class
-df_proportions <- df_Class_NA %>%
-  left_join(df_total_counts, by = c("SampleRowID", "OrganismCode")) %>%
-  mutate(
-    Proportion = ifelse(
-      Class != "NA_Class",
-      Counted / TotalCount,
-      0
-    )
-  )
-
-# Step 4: Calculate the total "NA" counts for each SampleRowID
-df_na_counts <- df_proportions %>%
-  filter(is.na(Class)) %>%
-  group_by(SampleRowID) %>%
-  summarize(NA_Count = sum(Counted), .groups = "drop")
-
-# Step 5: Distribute the "NA" counts proportionally to other age classes
-df_final <- df_proportions %>%
-  left_join(df_na_counts, by = "SampleRowID") %>%
-  mutate(
-    Counted = ifelse(
-      !is.na(Class),
-      round(Counted + Proportion * NA_Count),
-      0
-    )
-  ) %>%
-  select(-TotalCount, -Proportion, -NA_Count)
-```
-
-
-
-
 
 ### One fish one row (MUST RUN)
 I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
@@ -315,71 +269,6 @@ PlusTable<-PlusCountDF %>% filter(OrganismCode %in% c("ASH", "SKG", "ISS", "STBK
 ```
 
 
-
-### Adding zeros, calculating cpue (dead code)
-```{r}
-#Now we add zeros! For every sampling event (unique sample row ID) there should be catch data for each species (unique organism code). 
-
-#SMFS_OTR_Thesis_WithZeros<-SMFS_OTR_Thesis %>% 
- # complete(nesting(SampleRowID, 
-  #                 WaterTemperature, 
-  #                 Secchi, 
-  #                 DO, 
-  #                 Salinity, 
-  #                 MethodCode, 
-  #                 StationCode, 
-  #                 SampleDate, 
-  #                 SampleTime, 
-  #                 PctSaturation, 
-  #                 SpecificConductance, 
-   #                TideCode, 
-   #                ElecCond, 
-   #                TowDuration, 
-  #                 TrawlComments, 
-   #                Year, 
-  #                 WaterYear), 
-   #        OrganismCode, 
-   #        fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
-
-#SMFS_OTR_Thesis_WithZeros$Count[is.na(SMFS_OTR_Thesis_WithZeros$Count)] <- 0
-#NOW it has zeros
-
-#Check to see if it worked by counting number of rows for each sampling event (unique tow ID) and make sure it has a minimum of 79 accounts (79 unique organism codes in SMFS_OTR_Thesis)
-#Check<-SMFS_OTR_Thesis_WithZeros %>% group_by(SampleDate, StationCode) %>% summarize(n=n())
-#unique(Check$n) #We have 3693 trawls! We have at least 79 accounts per trawl (but that also doesn't make sense if we have at least one row with non-zero counts yeah?)
-#How to check that we didn't make up trawls?
-#CheckCheck<- SMFS_OTR_Thesis %>% group_by(SampleDate, StationCode) %>% summarize(n=n()) #Same number of rows so that is good.
-
-#you can also use spread(..... fill = 0) to add zeros to every sample x spp combo that doesn't exist or have data and then gather() it back up.
-
-#Now I want to look at fish and their frequencies of catch over water quality parameters. 
-
-#which(is.na(SMFS_OTR_Thesis$WaterTemperature)) #THIS IS A PROBLEM (for later). Use this link to fix: https://www.tutorialspoint.com/dealing-with-missing-data-in-r#:~:text=Finding%20Missing%20Data%20in%20R&text=We%20can%20use%20the%20is,otherwise%20it%20should%20be%20False.
-
-#adding month real quick
-#SMFS_OTR_Thesis_WithZeros$Month<-month(SMFS_OTR_Thesis_WithZeros$SampleDate)
-
-#Tester<-SMFS_OTR_Thesis[SMFS_OTR_Thesis$SampleRowID %in% "{E4889AE1-DD10-4A96-A1C2-E0BFFEB6FCBF}",]
-#Tester2<-SMFS_OTR_Thesis_WithZeros[SMFS_OTR_Thesis_WithZeros$SampleRowID %in% "{E4889AE1-DD10-4A96-A1C2-E0BFFEB6FCBF}",]
-
-#SMFS_OTR_Thesis_WithZeros$CPUE<-SMFS_OTR_Thesis_WithZeros$Count / SMFS_OTR_Thesis_WithZeros$TowDuration
-
-#summary(SMFS_OTR_Thesis_WithZeros)
-
-#Matching fish names
-#library(readxl)
-#SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
-
-#SMFS<-left_join(SMFS_OTR_Thesis_WithZeros, SMFS_OrganismsLookUp, by = "OrganismCode")
-
-#SMFS<-mutate(SMFS, gensp = paste(Genus, Species, sep=" "))
-
-
-#Save New DF
-#write.csv(SMFS, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Zeros.csv")
-```
-
-
 ## Plus Count Expansion
 Trawls have a range of measured fish for plus counts. Some of these have a wide range (one 625mm fish and the rest under 200mm for example). 
 1. Pull from comments. Or use the comments to ground-truth.
@@ -394,58 +283,6 @@ Built with Levi and Kyle.
 PlusCountDF<-PlusCountDF %>% filter(Class %in% c("Osteichthyes","Cephalaspidomorphi")) #bring back the others later: "Malacostraca" "Crustacea"    "Bivalvia"    [4] "many"         "Hydrozoa"     "N/A"   "Insecta"      "Angiosperms" [10] "NA"    
 unique(PlusCountDF$OrganismCode)
 
-
-#Remove outliers (temporarily)
-#out<-boxplot.stats(dat$hwy)$out
-#outliers_ind<-which(dat$hwy %in% c(out))
-#out<-SMFS_Integrate_Expand %>%
-#  dplyr::group_by(SampleRowID, gensp) %>%
-#  dplyr::summarize(outliers = list(boxplot.stats(StandardLength)$out)) %>% filter(!outliers %in% "numeric(0)") %>% tidyr::unnest(outliers)  #3060 outliers identified. 
-#out$StandardLength<-out$outliers
-  
-#result <- dplyr::right_join(SMFS_Integrate_Expand, out, join_by(SampleRowID, gensp, StandardLength)) #3236
-
-#now I want to isolate rows where the outlier == standard length
-#result %>% ifelse(StandardLength == outliers,  )
-
-# Suppose we want to create a new column indicating whether the StandardLength is an outlier
-
-#OutlierList<-result$CatchRowID
-
-#SMFS_Integrate_Expanded_OutliersRemoved<-SMFS_Integrate_Expand %>% filter(CatchRowID %in% OutlierList)
-
-#prep_exp_table <- 
-  # lengths_df  %>%                       # formatted raw catch data
-#  SMFS_Integrate_Expand %>%
-#  group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
-#  dplyr::summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
-#            sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
-#            n_sl = length(StandardLength)) %>%      # generate n of length measurements (as a check)
-#  full_join(PlusCountDF, c("SampleRowID", "gensp")) %>%  # join with plus counts (number of lengths that require expansion x tow x spp)
-#  filter(StandardLength == 0, Count != 0) %>%    #LOOK INTO WHY 0 COUNT!!!               # keep only the plus count data (remove length data)
-#  mutate(sd_sl = if_else(Count==1, 0.2*m_sl, sd_sl)) %>%  # if only 1 length value, assume sd = 0.2*SL (if no lengths, then expanded lengths will be NA).
-#  dplyr::select(SampleRowID, gensp, m_sl, sd_sl, n_sl, StandardLength, Count) %>% 
-#  data.frame 
-
-#Zscoreprep<-prep_exp_table %>% dplyr::select(SampleRowID, gensp, m_sl, sd_sl, n_sl)
-
-#Zscoredf<-right_join(SMFS_Integrate_Expand, Zscoreprep) #only keep rows with plus counts
-#Zscoredf$z<-(Zscoredf$StandardLength - Zscoredf$m_sl)/Zscoredf$sd_sl #greater than 3.5 is outlier. Can also check the out table produced by chat.gpt code
-
-#OutZ<-Zscoredf %>% filter(z > 0.5 | z < -0.5)
-
-#106 fish are outliers according to this z score... Way less than what was identified by above out code.
-
-#Try to be conservative. For now, remove the z score fish and then run the plus count expansion, look for negative values and compare to comments. If not, then change threshold.
-
-#After trying 3.5 threshold still resulting in values assigned to plus counts below 10 mm. 
-
-#thanks Kyle!!
-
-
-#OutZList<-unique(OutZ$CatchRowID)
-
-#SMFS_Integrate_Expanded_OutliersRemoved<-SMFS_Integrate_Expand %>% filter(!CatchRowID %in% OutZList) #removing outliers from plus count expansion 
 
 exp_table <- 
   # lengths_df  %>%                       # formatted raw catch data
@@ -489,17 +326,83 @@ exp_sl_list
 
 PlusAssigned<-do.call(rbind.data.frame, exp_sl_list) #creates a dataframe from the list (though strange identifier for rows). 
 
-#Showing negative values for sl! All the same ID... Flag these negative values...
-negative_sl_rows <- PlusAssigned %>% filter(sl<0) #311 with nothing removed. 135 after threshold of 3.5 set and outliers removed. 112 after threshold of 3 set and outliers removed. 50 after threshold of 2.39 after 1.5 threshold set. 35 after 1 set. 567 after 0.5 set. 78 after 0.5 threshold set.
+PlusAssigned <-  PlusAssigned %>% 
+    rownames_to_column('id_sp')#fixing column name for id_sp
+PlusAssigned$PlusID<-1:9523
+negative_sl_rows <- PlusAssigned %>% filter(sl<0) #No negative assigned lengths :)
 
-#141 outliers below 5 after removing all outliers identified with boxplot method. 113 below 0. 
-#I AM STUCK.
+#How do these turn into size bins when I join with the size by month approach. 
+
+#Need to put month and organism code back in. 
+joindf<-SMFS_Integrate %>% select(OrganismCode, SampleRowID, Month, gensp)
+
+PlusJoined<-left_join(PlusAssigned, joindf) %>% distinct() #Okay I've now added month and organism code so I should be able to give ages #9523 fish. 
+
+#adding age class info
+
+#need to do some sort of wrangling that identifies which ID's I'm losing in the process.
 
 
+Aged_Plus<- left_join(PlusJoined, AgesBySizeMo, join_by("OrganismCode", "Month"))#left join because I don't want age classes for fish we did not catch.
+# Create a boolean condition based on the size range
+conditionPlus <- between(Aged_Plus$sl, Aged_Plus$Min, Aged_Plus$Max)
 
-#conclusion: z-scores not useful for removing outliers. 
-Unique_slrows<-as.list(unique(negative_sl_rows$SampleRowID))
-Collapsed_Negatives<-negative_sl_rows %>% select(SampleRowID, gensp) %>% distinct()
+# Update the 'Class' column in 'Aged_Plus'
+Aged_Plus$AgeClass <- ifelse(conditionPlus, Aged_Plus$AgeClass, "Delete") #Keeping age class assignments if condition is met, otherwise assigning "delete" value to the row.
+Aged_Plus$AgeClass[is.na(Aged_Plus$AgeClass)] <- "N/A"
+
+#DELETED<-Aged_Plus %>% filter(AgeClass%in%"Delete")
+Aged_Plus <- filter(Aged_Plus, AgeClass != "Delete") #deleting the rows that did not match the condition
+unique(Aged_Plus$AgeClass)
+Aged_Plus$PlusID #I need to delete the min and max columns and then keep distinct rows. When I gave "N/A" as an age class I then kept each possible max/min combo. 
+Aged_Plus_Final<-Aged_Plus %>% select(!c(Min, Max)) %>% distinct() #Fixed it!
+
+ 
+
+NoMeasured<-PlusAssigned %>% filter(sl%in%NA) #These are the plus counted fish with no measured fish in the same sample / species to draw from. Levi says we can assign them separately using the same day or month... 
+
+#Compare to comments. How often is yoy correctly assigned?
+
+#Which samples_ids have comments providing info on sizes?
+DataWithAges$id_sp <- paste0(DataWithAges$SampleRowID, "_", DataWithAges$gensp) 
+unique(DataWithAges$CatchComments)
+AllYOY<-DataWithAges %>% filter(CatchComments%in%c("YOY <40 mm SL", "YOY", "young of year", "yoy","all YOY (<30  mm)","all YOY (<40 mm SL)","all YOY (<40 mmSL)", "all YOY (<35 mm)", "YOY-sized fish (~45 mm SL)", "age 0","all young of year", "YOY (<135 mm SL)", "YOY (<40 mm SL)","YOY (<50 mm SL)", "age 0 (<40 mmm)", "YOY (<30 mm)", "(YOY - all less than 100 mm SL)", "age-o fish (<30 mm SL)", "young of year;young of year", "YOY (<60 mm SL)", "age-0 fish","YOY (<50 mmSL)", "all YOY (<100 mm SL)", "all YOY")) #Only fix the young of year. 
+#Create for_loop that filters for each of these samples and create a new column with adjusted standard lengths and bins...
+YoyList<-AllYOY$id_sp
+
+
+#There are some fish with no length assignment because they have no measured fish to be based off of. They were one-offs that length measurements were missed on, 
+
+
+#Trying to see how the poisson distribution compares to the original distribution of lengths for the same samples/species.
+id_sp2 <- unique(SMFS_Integrate_Expand$id_sp)
+
+tSample<-sample(id_sp2, 30, replace=FALSE)
+
+PlusAssigned_random <-PlusAssigned %>% filter(id_sp %in% tSample)
+
+SMFS_Integrate_Expand %>%
+  group_by(SampleRowID,gensp) %>% ggplot(aes(x=StandardLength))+geom_density()
+SMFS_Integrate_Expand$id_sp <- paste0(SMFS_Integrate_Expand$SampleRowID, "_", SMFS_Integrate_Expand$gensp) 
+glimpse(SMFS_Integrate_Expand)
+#Randomly sample these id's because doing all of them takes too long...
+SMFS_Integrate_Expand_random<- SMFS_Integrate_Expand%>% filter(id_sp %in% tSample)
+
+for(i in tSample){
+  # Filter your data based on the current ID
+  subset_data <- SMFS_Integrate_Expand %>%
+    filter(id_sp == i)
+  
+  p<-ggplot(subset_data, aes(x=StandardLength))+geom_histogram(binwidth = 1)+labs(title = paste("ID:", i))
+  
+  print(p)
+}
+
+  
+p<-SMFS_Integrate_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=mean(StandardLength), SD = sd(StandardLength))
+p
+
+
 ```
 
 ### Proportional assignments by age class to plus counts
@@ -538,7 +441,8 @@ exp_table$id_sp <- paste0(exp_table$SampleRowID, "_", exp_table$gensp)  #Gives e
 #Which samples_ids have comments providing info on sizes?
 DataWithAges$id_sp <- paste0(DataWithAges$SampleRowID, "_", DataWithAges$gensp) 
 unique(DataWithAges$CatchComments)
-AllYOY<-DataWithAges %>% filter(CatchComments%in%c("YOY <40 mm SL", "YOY", "young of year", "yoy","all YOY (<30  mm)","all YOY (<40 mm SL)","all YOY (<40 mmSL)", "all YOY (<35 mm)", "YOY-sized fish (~45 mm SL)", "age 0","all young of year", "YOY (<135 mm SL)", "YOY (<40 mm SL)","YOY (<50 mm SL)", "age 0 (<40 mmm)", "YOY (<30 mm)", "(YOY - all less than 100 mm SL)", "age-o fish (<30 mm SL)", "young of year;young of year", "YOY (<60 mm SL)", "age-0 fish","YOY (<50 mmSL)", "all YOY (<100 mm SL)", "all YOY"))
+AllYOY<-DataWithAges %>% filter(CatchComments%in%c("YOY <40 mm SL", "YOY", "young of year", "yoy","all YOY (<30  mm)","all YOY (<40 mm SL)","all YOY (<40 mmSL)", "all YOY (<35 mm)", "YOY-sized fish (~45 mm SL)", "age 0","all young of year", "YOY (<135 mm SL)", "YOY (<40 mm SL)","YOY (<50 mm SL)", "age 0 (<40 mmm)", "YOY (<30 mm)", "(YOY - all less than 100 mm SL)", "age-o fish (<30 mm SL)", "young of year;young of year", "YOY (<60 mm SL)", "age-0 fish","YOY (<50 mmSL)", "all YOY (<100 mm SL)", "all YOY")) #Only fix the young of year. 
+#Create for_loop that filters for each of these samples and create a new column with adjusted standard lengths and bins...
 YoyList<-AllYOY$id_sp
 
 #DKS

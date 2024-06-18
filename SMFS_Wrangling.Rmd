@@ -51,6 +51,7 @@ There are some fish with no length assignment because they have no measured fish
 ```{r}
 #Wrangling SMFS 
 library(rlang)
+library(readxl)
 library(readr)
 SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_09192023.csv")
 str(SMFS_09192023)
@@ -162,39 +163,45 @@ NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls
 ## Adding species name information
 
 ```{r}
-
-library(readxl)
 SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
 
 SMFS_Integrate<-left_join(SMFS_Integrate, SMFS_OrganismsLookUp, by = "OrganismCode")
 
-SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" "))
+SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" ")) #making column gensp to match levi. 
+
 #Many rows of NA NA for gensp.
 na_gensp_rows <- subset(SMFS_Integrate, gensp == "NA NA")
+unkgobs<-na_gensp_rows %>% filter(OrganismCode %in% "GBU")
+GobyIdNeed<-SMFS_Integrate %>% filter(SampleRowID %in% unkgobs$SampleRowID)
+#write.csv(GobyIdNeed, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/MissingGobyIDs.csv")
+
 unique(na_gensp_rows$CommonName)
 na_gensp <-na_gensp_rows %>% group_by(CommonName) %>% summarise(nrows= n(), CountTotal = sum(Count)) #unknown fish IDs. Remove. Losing "Goby Unknown"        "Herring Unknown"     "Unknown Larval Fish" "Heel Splitter"  "Catfish Unknown"     "Water quality only"
-SMFS_Integrate<-SMFS_Integrate %>% filter(!gensp == "NA NA")
+SMFS_Integrate_NoNAFish<-SMFS_Integrate %>% filter(!gensp == "NA NA")
 ```
 
 ## One fish one row (MUST RUN)
 I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
 ```{r}
-SMFS_Integrate_Expand <- SMFS_Integrate %>%
+SMFS_Integrate_NoNAFish_Expand <- SMFS_Integrate_NoNAFish %>%
   filter(StandardLength > 0) %>% #only keeping measured fish
   uncount(Count, .remove = FALSE) #keeps number of rows that corresponds to the Count value
-SMFS_Integrate_Expand$Count<-1 #assigns value of 1
-unique(SMFS_Integrate_Expand$Class)
-SMFS_Integrate_Expand$FishID<-1:69998
-
-PlusCountDF<-SMFS_Integrate %>%
-  filter(!StandardLength > 0)
-SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_Expand, PlusCountDF)
+SMFS_Integrate_NoNAFish_Expand$Count<-1 #assigns value of 1
+unique(SMFS_Integrate_NoNAFish_Expand$Class)
+nrow(SMFS_Integrate_NoNAFish_Expand)
+SMFS_Integrate_NoNAFish_Expand <- SMFS_Integrate_NoNAFish_Expand %>%
+  dplyr::mutate(FishID = row_number()) #df becomes size 0. Hopefully that is okay?
+PlusCountDF<-SMFS_Integrate_NoNAFish %>%
+  dplyr::filter(!StandardLength > 0)
+PlusCountDF <- PlusCountDF %>%
+  dplyr::mutate(FishID = NA)
+SMFS_Integrate_NoNAFish_Expand2<-rbind(SMFS_Integrate_NoNAFish_Expand, PlusCountDF)
 unique(PlusCountDF$Class)
 
 OtherPlus<-PlusCountDF %>% filter(Class %in% c("Malacostraca", "Crustacea", "Bivalvia", "many", "Hydrozoa", "N/A",  "Insecta", "Angiosperms",  "NA"))
 
 #Save New DF
-#write.csv(SMFS_Integrate_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
+#write.csv(SMFS_Integrate_NoNAFish_Expand2, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
 
 PlusTable<-PlusCountDF %>% filter(OrganismCode %in% c("ASH", "SKG", "ISS", "STBK", "LFS", "SCP")) %>% group_by(OrganismCode) %>% dplyr::summarise(CountSum = sum(Count))
 ```
@@ -214,17 +221,17 @@ SMFS_AgesBySizeMo<-SMFS_AgesBySizeMo %>% mutate(Max = case_when(OrganismCode == 
 
 #If a fish is given no age class I want to assign NA to them
 unique(SMFS_AgesBySizeMo$OrganismCode) #33 species
-unique(SMFS_Integrate_Expand$OrganismCode) #77 including non-fish
-SMFS_Integrate_t<- SMFS_Integrate_Expand %>% 
+unique(SMFS_Integrate_NoNAFish_Expand$OrganismCode) #77 including non-fish
+SMFS_Integrate_NoNAFish_t<- SMFS_Integrate_NoNAFish_Expand %>% 
   dplyr::filter(Class %in% c("Osteichthyes","Cephalaspidomorphi")) 
-unique(SMFS_Integrate_t$OrganismCode) #48 fishes. 
+unique(SMFS_Integrate_NoNAFish_t$OrganismCode) #48 fishes. 
 
 #Okay so for the 15 fishes left out I need to add them to the SMFS_AgesBySizeMo dataframe?
 
 
 
 #Filtering out just fish that we have age class info for...
-AgedFish<-SMFS_Integrate_Expand %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) 
+AgedFish<-SMFS_Integrate_NoNAFish_Expand %>% filter(OrganismCode%in%c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) 
 
 #filter out instances where there is 0 standard length, I'll rbind them back later.
 PlusCounts<-AgedFish %>% filter(StandardLength==0)
@@ -265,7 +272,7 @@ glimpse(PlusCounts)#325 rows and 52 columns of plus counts.
 glimpse(AgedFish_AgeClasses) #58,638 rows and 53 columns of measured fish with plus count fish.
 
 #Now need to add back in the species we lost when making AgedFish. They matter too.
-BringEmBack<-SMFS_Integrate_Expand %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = "N/A")
+BringEmBack<-SMFS_Integrate_NoNAFish_Expand %>% filter(!OrganismCode %in% c("LFS", "SB", "TP", "STAG", "SF", "CP", "DS", "ISS", "WCF", "TFS", "ST", "STBK", "SCP", "SKR", "BF", "BLB", "CCF", "CS", "HCH", "MQF", "NAC", "PH", "RWK", "SPM", "WAK", "WC", "WS", "YFG", "ASH", "SG", "SKG", "BC", "GF")) %>% mutate(Max = NA, Min = NA, AgeClass = "N/A")
 
 DataWithAges<-rbind(AgedFish_AgeClasses, BringEmBack) #80063 rows, 53 columns. Back to the start! Bon.
 unique(DataWithAges$OrganismCode) #77 fish (and non-fish)
@@ -301,7 +308,7 @@ unique(PlusCountDF$OrganismCode)
 
 exp_table <- 
   # lengths_df  %>%                       # formatted raw catch data
-  SMFS_Integrate_Expand %>%
+  SMFS_Integrate_NoNAFish_Expand %>%
   group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
   dplyr::summarize(m_sl = mean(StandardLength, na.rm=T),            # generate mean sl (for rnorm expansion)
             sd_sl = sd(StandardLength, na.rm=T),             # generate sd (for rnorm expansion)
@@ -350,7 +357,7 @@ negative_sl_rows <- PlusAssigned %>% filter(sl<0) #No negative assigned lengths 
 #How do these turn into size bins when I join with the size by month approach. 
 
 #Need to put month and organism code back in. 
-joindf<-SMFS_Integrate %>% select(OrganismCode, SampleRowID, Month, gensp)
+joindf<-SMFS_Integrate_NoNAFish %>% select(OrganismCode, SampleRowID, Month, gensp)
 
 PlusJoined<-left_join(PlusAssigned, joindf) %>% distinct() #Okay I've now added month and organism code so I should be able to give ages #9523 fish. 
 
@@ -417,22 +424,22 @@ unique(PlusCountDF$AgeClassforUnmeasuredFish) #this is a pointless column.
 #### How does possion compare to original distribution? (INCOMPLETE CODE)
 ```{r}
 #Trying to see how the poisson distribution compares to the original distribution of lengths for the same samples/species.
-id_sp2 <- unique(SMFS_Integrate_Expand$id_sp)
+id_sp2 <- unique(SMFS_Integrate_NoNAFish_Expand$id_sp)
 
 tSample<-sample(id_sp2, 30, replace=FALSE)
 
 PlusAssigned_random <-PlusAssigned %>% filter(id_sp %in% tSample)
 
-SMFS_Integrate_Expand %>%
+SMFS_Integrate_NoNAFish_Expand %>%
   group_by(SampleRowID,gensp) %>% ggplot(aes(x=StandardLength))+geom_density()
-SMFS_Integrate_Expand$id_sp <- paste0(SMFS_Integrate_Expand$SampleRowID, "_", SMFS_Integrate_Expand$gensp) 
-glimpse(SMFS_Integrate_Expand)
+SMFS_Integrate_NoNAFish_Expand$id_sp <- paste0(SMFS_Integrate_NoNAFish_Expand$SampleRowID, "_", SMFS_Integrate_NoNAFish_Expand$gensp) 
+glimpse(SMFS_Integrate_NoNAFish_Expand)
 #Randomly sample these id's because doing all of them takes too long...
-SMFS_Integrate_Expand_random<- SMFS_Integrate_Expand%>% filter(id_sp %in% tSample)
+SMFS_Integrate_NoNAFish_Expand_random<- SMFS_Integrate_NoNAFish_Expand%>% filter(id_sp %in% tSample)
 
 for(i in tSample){
   # Filter your data based on the current ID
-  subset_data <- SMFS_Integrate_Expand %>%
+  subset_data <- SMFS_Integrate_NoNAFish_Expand %>%
     filter(id_sp == i)
   
   p<-ggplot(subset_data, aes(x=StandardLength))+geom_histogram(binwidth = 1)+labs(title = paste("ID:", i))
@@ -441,7 +448,7 @@ for(i in tSample){
 }
 
   
-p<-SMFS_Integrate_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=mean(StandardLength), SD = sd(StandardLength))
+p<-SMFS_Integrate_NoNAFish_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=mean(StandardLength), SD = sd(StandardLength))
 p
 ```
 
@@ -471,7 +478,7 @@ To accomplish my goal of stitching everything back together, I will aim to get a
 OtherPlus$id_sp <- paste0(OtherPlus$SampleRowID, "_", OtherPlus$gensp) 
 
 #2
-Samples<-SMFS_Integrate %>% select(SampleRowID, StationCode, SampleDate, SampleTime, WaterTemperature, Salinity, DO, PctSaturation, Secchi, SpecificConductance, TideCode, UserName, ElecCond, TrawlRowID, TowDuration, TrawlComments, Year, Month, WaterYear, OrganismRowID, Native, Resident, CommonName, Phylum, Class, Order, Family, Genus,Species, Comments, gensp) %>% distinct()
+Samples<-SMFS_Integrate_NoNAFish %>% select(SampleRowID, StationCode, SampleDate, SampleTime, WaterTemperature, Salinity, DO, PctSaturation, Secchi, SpecificConductance, TideCode, UserName, ElecCond, TrawlRowID, TowDuration, TrawlComments, Year, Month, WaterYear, OrganismRowID, Native, Resident, CommonName, Phylum, Class, Order, Family, Genus,Species, Comments, gensp) %>% distinct()
 
 Aged_Plus_Full<-left_join(Aged_Plus_Final, Samples)
 glimpse(Aged_Plus_Full) #9523 rows, 38 columns
@@ -506,30 +513,32 @@ DataWithAges_ToBind<-DataWithAges %>%  select(FishID, id_sp, SampleRowID, gensp,
 Aged_Plus_Full_ToBind<-Aged_Plus_Full %>%  select(FishID, id_sp, SampleRowID, gensp, OrganismCode, StandardLength, AgeClass, Count, Volume, type, StationCode, SampleDate, SampleTime, WaterTemperature, Salinity, DO, PctSaturation, Secchi, SpecificConductance, ElecCond, TideCode,  UserName, TrawlRowID, TowDuration, TrawlComments, Year, Month, WaterYear, OrganismRowID, Native, Resident, CommonName, Phylum, Class, Order, Family, Genus,Species, Comments, PlusID)
   
 FullyReadyDataWithAge<-bind_rows(DataWithAges_ToBind, Aged_Plus_Full_ToBind, OtherPlus_ToBind)
+sum(FullyReadyDataWithAge$Count)
+sum(SMFS_Integrate_NoNAFish$Count) #Checks out!
 ```
 
 ### Proportional assignments by age class to plus counts (Not used)
 ```{r}
 
-SMFS_Integrate_ExpandAge <- DataWithAges %>%
+SMFS_Integrate_NoNAFish_ExpandAge <- DataWithAges %>%
   filter(StandardLength > 0) %>% #only keeping measured fish
   uncount(Count, .remove = FALSE) #keeps number of rows that corresponds to the Count value
-SMFS_Integrate_ExpandAge$Count<-1 #assigns value of 1
+SMFS_Integrate_NoNAFish_ExpandAge$Count<-1 #assigns value of 1
 
 PlusCountDFAge<-DataWithAges %>%
   filter(!StandardLength > 0)
-SMFS_Integrate_Expand2<-rbind(SMFS_Integrate_ExpandAge, PlusCountDFAge)
+SMFS_Integrate_NoNAFish_Expand2<-rbind(SMFS_Integrate_NoNAFish_ExpandAge, PlusCountDFAge)
 
 PlusCountDFFishAge<-PlusCountDFAge %>% filter(Class %in% c("Osteichthyes","Cephalaspidomorphi"))# %>% 
   #uncount(Count, .remove = FALSE)
 #PlusCountDFFishAge$Count<-1 #assigns value of 1
 
 #bring back the others later: "Malacostraca" "Crustacea"    "Bivalvia"    [4] "many"         "Hydrozoa"     "N/A"   "Insecta"      "Angiosperms" [10] "NA"    
-unique(SMFS_Integrate_ExpandAge$AgeClass)
+unique(SMFS_Integrate_NoNAFish_ExpandAge$AgeClass)
 
 exp_table <- 
   # lengths_df  %>%                       # formatted raw catch data
-  SMFS_Integrate_ExpandAge %>%
+  SMFS_Integrate_NoNAFish_ExpandAge %>%
   mutate(Age0=ifelse(AgeClass == "Age-0", 1, 0), Age1 = ifelse(AgeClass == "Age-1", 1, 0), Age1Plus = ifelse(AgeClass == "Age-1+", 1, 0), Age2Plus = ifelse(AgeClass == "Age-2+", 1, 0), NAClass = ifelse(AgeClass == "N/A", 1, 0)) %>% 
   group_by(SampleRowID,gensp) %>%                 # group x taxon & tow 
   dplyr::summarize(Age0Sum = sum(Age0), Age1Sum = sum(Age1), Age1PlusSum = sum(Age1Plus), Age2PlusSum = sum(Age2Plus), NASum=sum(NAClass), TotalMeasured = n()) %>%      # generate n of length measurements (as a check)
@@ -565,7 +574,7 @@ Wrong$Difference<-Wrong$check-Wrong$Count #10 of 327 sampling events were off by
 
 #Okay, now take those age classes and assign them to fish in the SMFS dataset.
 
-#Step 1: Get structure of t to match SMFS_Integrate_Expand. 1 row = 1 fish 
+#Step 1: Get structure of t to match SMFS_Integrate_NoNAFish_Expand. 1 row = 1 fish 
 View(DataWithAges)
 #Step 2: Add the rows to 
 
@@ -575,35 +584,100 @@ View(DataWithAges)
 ### Adding zeros - LAST STEP
 ```{r}
 #Now add zeros!
-SMFS_OTR_Thesis_AgeClassWithZeros<-DataWithAges %>% 
-  complete(nesting(SampleRowID, 
-                   WaterTemperature, 
-                   Secchi, 
-                   DO, 
-                   Salinity, 
-                   MethodCode, 
-                   StationCode, 
-                   SampleDate, 
-                   SampleTime, 
-                   PctSaturation, 
-                   SpecificConductance, 
-                   TideCode, 
-                   ElecCond, 
-                   TowDuration, 
-                   TrawlComments, 
-                   Year,
-                   Month,
-                   WaterYear), 
-           OrganismCode, AgeClass,
-           fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
 
-SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0
+#I need to make a dataframe that repeats the age classes for each organism for each sampling event. 
+
+#First, clean up the agesbysizemo df to only contain needed information. 
+
+Ages<-SMFS_AgesBySizeMo %>% select(Class, OrganismCode) %>% rename(AgeClass = Class) %>% filter(AgeClass %in% c("Age-0",  "Age-1+", "Age-1",  "Age-2+")) %>%   distinct()
+
+#Now for every sampling event, repeat all of the species x age combinations. Make a df of the sampling events.
+SamplingEvents<-SMFS_Integrate %>% select(SampleRowID, StationCode, SampleDate, SampleTime, WaterTemperature, Salinity, DO, PctSaturation, Secchi, SpecificConductance, TideCode, UserName, ElecCond, TrawlRowID, TowDuration, TrawlComments, Year, Month, WaterYear) %>% distinct()
+
+# Create all combinations of sampling events with ages
+AllCombinations <- crossing(SamplingEvents, Ages)
+
+# Separate rows with OrganismCode that lack AgeClass information
+has_ageclass_info <- FullyReadyDataWithAge %>% filter(AgeClass %in% c("Age-0",  "Age-1+", "Age-1",  "Age-2+"))
+
+no_ageclass_info <- FullyReadyDataWithAge %>% filter(AgeClass %in% c("N/A",  NA))
+
+NewCombinations <- AllCombinations %>%
+  anti_join(has_ageclass_info, by = c("SampleRowID", "StationCode", "SampleDate", "SampleTime", "WaterTemperature", "Salinity", "DO", "PctSaturation", "Secchi", "SpecificConductance", "TideCode", "UserName", "ElecCond", "TrawlRowID", "TowDuration", "TrawlComments", "Year", "Month", "WaterYear", "OrganismCode", "AgeClass")) %>% mutate(Count=0, type="Absence")
+
+
+# Perform join and complete missing AgeClass for rows with AgeClass information
+completed_with_ageclass <- bind_rows(NewCombinations, has_ageclass_info)
+
+#Do the same for the non-aged specimens so we get 0's for those when absent as well. 
+no_ageclass_info <- FullyReadyDataWithAge %>% filter(AgeClass %in% c("N/A",  NA)) 
+
+#Just want the organism codes
+NonAgedOrganisms<-unique(no_ageclass_info$OrganismCode)
+
+NonagedCombinations <- crossing(SamplingEvents, NonAgedOrganisms) 
+NonagedCombinations$OrganismCode <-NonagedCombinations$NonAgedOrganisms
+NewnewCombinations <- NonagedCombinations %>%
+  anti_join(no_ageclass_info, by = c("SampleRowID", "StationCode", "SampleDate", "SampleTime", "WaterTemperature", "Salinity", "DO", "PctSaturation", "Secchi", "SpecificConductance", "TideCode", "UserName", "ElecCond", "TrawlRowID", "TowDuration", "TrawlComments", "Year", "Month", "WaterYear", "OrganismCode")) %>% mutate(Count=0, type="Absence", AgeClass=NA)
+completed_NA_ageclass <- bind_rows(NewnewCombinations, no_ageclass_info)
+
+Massive<-bind_rows(completed_with_ageclass, completed_NA_ageclass)
+Massive_Codes<-Massive %>% select(!c("Native", "Resident", "CommonName", "Phylum", "Class", "Order", "Family", "Genus", "Species", "Comments"))
+
+Massive_Codes<-left_join(Massive_Codes, SMFS_OrganismsLookUp, by="OrganismCode")
+Massive_Codes<-mutate(Massive_Codes, gensp = paste(Genus, Species, sep=" "), id_sp = paste(SampleRowID, gensp, sep="_")) %>% select(!c("NonAgedOrganisms", "OrganismRowID.y", "OrganismRowID.x"))
+unique(Massive_Codes$OrganismCode)
+
+#Add in species info that is missing
+
+
+#SMFS_OTR_Thesis_AgeClassWithZeros<-FullyReadyDataWithAge %>% 
+#  complete(nesting(FishID,
+#                   id_sp,
+#                   SampleRowID, 
+#                   gensp,
+#                   StandardLength,
+#                   Volume,
+ #                  type,
+  #                 StationCode,
+   #                SampleDate,
+    #               SampleTime,
+     #              WaterTemperature,
+      #             Salinity, 
+       #            DO,
+        #           PctSaturation,
+         #          Secchi, 
+          #         SpecificConductance,
+           #        ElecCond,
+            #       TideCode,
+             #      TrawlRowID,
+              #     TowDuration,
+               #    TrawlComments,
+                #   Year,
+                 #  Month,
+                  # WaterYear,
+                  # OrganismRowID,
+                  # Native,
+                  # Resident,
+                   #CommonName,
+                   #Phylum,
+                   #Class,
+                   #Order,
+                   #Family,
+                   #Genus,
+                   #Species,
+                   #Comments,
+                   #PlusID), 
+           #OrganismCode, AgeClass,
+           #fill=list(num=0)) %>% as.data.frame() #Didn't add 0 values...Also ended up with more rows than expected? I have more rows than expected because there are multiple SIZES which each get their own row as well. So if I care about size/age classes, will have to bin those first and then add zeros. For now, move forward here.
+
+#SMFS_OTR_Thesis_AgeClassWithZeros$Count[is.na(SMFS_OTR_Thesis_AgeClassWithZeros$Count)] <- 0
 #NOW it has zeros
 ```
 
 # Save
 ```{r}
 #Save New DF
-#write.csv(SMFS_Integrate, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Integrate.csv")
+write.csv(Massive_Codes, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences.csv")
 
 ```

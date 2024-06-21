@@ -9,17 +9,28 @@ editor_options:
 
 In this rmd, I start with the output from SMFSDataTableMerging (SMFS_09192023) to complete the following objectives:
 
-1. Create SMFS_Integrate dataframe by
-- Create columns for Year, Month, and Water Year
-- Filter to only keep otter trawls and samples after 2010
-- Add a column for Organism Code scientific names to match SBOTS (gensp)
+Create Fully wrangled dataframe by
+- Create SMFS_Integrate that has columns for Year, Month, and Water Year, Filters to only keep otter trawls and samples after 2010; Add a column for Organism Code scientific names to match SBOTS (gensp)
+- Give each measured fish its own row (OneMeasuredFihOneRow) and separate out all of the non-measured stuff (PlusCountDF)
+- I separate out fish from PlusCountDF (PlusCount_OC) and assign lengths to plus count fish based on measured fish of the same tow (PlusAssigned -> PlusJoined to give fish sampling info).
+- Put all organisms back in same df ()
 - Add age class info
+- Compare and fish plus assignments for YOY fish that don't match catch comments. (Other sizes of fish harder to do)
 - Add zeros for when fish aren't caught (each species, each size class)
 - Save those changes as SMFS_Integrate
 
-2. Create SMFS_OneFishOneRow by taking SMFS_Integrate and giving each fish its own row (aside from plus counted fish)
 
-3. Investigate NA's in the dataset to evaluate the need to interpolate missing environmental data. I create a dataframe of missing environmental data samples called SMFS_NA_WaterQuality and find that there are 46 sampling events with missing wq data. Of these:
+
+*More details on how I expand plus count data:
+
+Poisson: I take each tow, species combination and create a poisson distribution of the sizes of measured fish. I then use that distribution to randomly assign lengths to the plus count fish. From there I assign the plus count fish age classes.
+
+Checking the comments to ground-truth:
+I check the outputs of each approach against the comments that detail which fish are YOY (not all YOY recieve comments). Results for poisson show that only 9 of the 3629 fish from the poisson have been misidentified as older than age-0 despite having comments that they are age 0. Those fish have the following plus ID's: 1099, 1109, 1131, 1140, 1144, 1174, 4708, 8225, 8226 
+
+There are some fish with no length assignment because they have no measured fish to be based off of. They were one-offs that length measurements were missed on. Levi wants me to deal with them by basing their lengths on lengths of the day.
+
+2. Investigate NA's in the dataset to evaluate the need to interpolate missing environmental data. I create a dataframe of missing environmental data samples called SMFS_NA_WaterQuality and find that there are 46 sampling events with missing wq data. Of these:
 > 8 have NA Tow Duration (not real tows)
 > 2 from Boynton in July 2013 missing DO and PctSat (BY1, 3)
 > 2 from Cutoff in July 2013 missing DO and PctSat (CO1, 2)
@@ -34,18 +45,6 @@ In this rmd, I start with the output from SMFSDataTableMerging (SMFS_09192023) t
 > 3 from SB (SB1 July '13 NA DO & PctSat; SB2 May 2018 NA Temp, Salinity, DO, PctSat, SpecCond; SB2 July 2013 NA DO & PctSat)
 > 1 from Shelldrake (SD2) May 2018 NA Temp, Salinity, DO, PctSat, SpecificCond
 > 6 from Suisun (SU1 July 2013 NA DO & PctSat; SU2 July 2013 NA Secchi, DO, PctSat; SU2 August 2013 NA salinity & SpecCond; SU3 July 2013 NA DO & PctSat; SU3 Oct 2013 NA DO & PctSat; SU4 July 2013 NA DO & PctSat)
-
-4. I expand plus count data
-There are 2 approaches: Poisson and proportional.
-
-Poisson: I take each tow, species combination and create a poisson distribution of the sizes of measured fish. I then use that distribution to randomly assign lengths to the plus count fish. From there I assign the plus count fish age classes.
-
-Proportional: I take each tow, species combination and calculate the proportion of age classes represented in the tow for the species. I then apply that proportion to the plus counted fish. This results in 9 fish accidentally deleted and 1 artificially created due to the math of the rounding. Overall, not terribly meaningful impact. But also imperfect.
-
-Checking the comments to ground-truth:
-I check the outputs of each approach against the comments that detail which fish are YOY (not all YOY recieve comments). Results for poisson show that only 9 of the 3629 fish from the poisson have been misidentified as older than age-0 despite having comments that they are age 0. Those fish have the following plus ID's: 1099, 1109, 1131, 1140, 1144, 1174, 4708, 8225, 8226 
-
-There are some fish with no length assignment because they have no measured fish to be based off of. They were one-offs that length measurements were missed on. Levi wants me to deal with them by basing their lengths on lengths of the day.
 
 # Loading Data
 ```{r}
@@ -68,7 +67,7 @@ SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
 SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
 
-# 1. Create SMFS_Integrate dataframe
+# Create SMFS_Integrate dataframe
 ## Filtering
 ```{r}
 #Now I just want otter trawl data
@@ -83,87 +82,6 @@ SMFS_OTR_09192023$Year<-as.numeric(SMFS_OTR_09192023$Year) #need to make water y
 SMFS_Integrate<-SMFS_OTR_09192023 %>% filter(Year > 2010, !OrganismCode %in% "NOTRAWL") #Filtering out years which overlap with South Bay Otter Trawl Survey and non-trawls.
 ```
 
-
-### Investigating NA's in dataset (DOES NOT REMOVE THEM FROM SMFS_Integrate)
-```{r}
-#How many rows will we lose if we remove NAs?
-sum(is.na(SMFS_Integrate$WaterTemperature)) #44
-sum(is.na(SMFS_Integrate$DO)) #495
-sum(is.na(SMFS_Integrate$Salinity)) #47
-sum(is.na(SMFS_Integrate$Secchi)) #100
-#This isn't super helpful... We have multiple rows for one 
-Na_Assessment<-SMFS_Integrate %>% 
-  group_by(SampleRowID) %>% 
-  dplyr::summarize(WaterTemp_NA=sum(is.na(WaterTemperature)),
-            DO_NA =  sum(is.na(DO)),
-            Sal_NA = sum(is.na(Salinity)),
-            Secchi_NA=sum(is.na(Secchi)))
-Na_Assessment<- Na_Assessment %>% filter(WaterTemp_NA>0 | DO_NA>0 | Sal_NA>0 | Secchi_NA>0)
-#Overall, there are 46 sampling events with missing wq data.
-#let's find out more about these.
-NaSamples<-Na_Assessment$SampleRowID
-
-SMFS_OTR_Thesis_WQNA<-SMFS_Integrate %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% dplyr::select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
-SMFS_OTR_Thesis_WQNA<-as.data.frame(SMFS_OTR_Thesis_WQNA)
-SMFS_OTR_Thesis_WQNA<-SMFS_OTR_Thesis_WQNA %>% distinct()
-#Save New DF
-#write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv") #This holds the information with samples that have NA wq data
-
-
-#Visualizing fish counts by year for each species
-FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
-
-FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
-
-FishCountTable %>% spread(key = Year, value = Total)
-
-#Adding zeros for sampling events with no fish caught
-#https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
-length(unique(SMFS_Integrate$SampleRowID)) 
-length(unique(SMFS_Integrate$TrawlRowID)) 
-length(unique(SMFS_Integrate$OrganismCode))
-3702*79
-
-
-Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
-NA_SampleRowIDs<-unique(Nas_$SampleRowID)
-NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
-unique(NA_Tow_Info$SampleRowID)
-#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
-#Removing all NA Trawl Duration (below)
-
-
-#Why NA DO?
-NoDO<-SMFS_Integrate %>% filter(DO %in% NA)
-#Reasons for missing DO: 
-#Row 81, 232, 253,  - just didn't record DO or PctSat
-#Is it missing for other organisms from the same trawl?
-
-NoDOTrawlID<-unique(NoDO$TrawlRowID)
-length(NoDOTrawlID) #35 trawls
-NoDOTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
-
-
-#Now checking salinity
-NoSal<-SMFS_Integrate %>% filter(Salinity %in% NA)
-NoSalTrawlID<-unique(NoSal$TrawlRowID)
-length(NoSalTrawlID) #6 trawls
-NoSalTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
-
-#Now checking Secchi
-NoSecchi<-SMFS_Integrate %>% filter(Secchi %in% NA)
-NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
-length(NoSecchiTrawlID) #3 trawls
-NoSecchiTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
-
-#Now checking Water Temp
-NoWT<-SMFS_Integrate %>% filter(WaterTemperature %in% NA)
-NoWTTrawlID<-unique(NoWT$TrawlRowID) 
-length(NoWTTrawlID) #5 trawls
-NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
-#I remove these NAs in the SMFS_WranglingForThesis rmd
-```
-
 ## Adding species name information
 
 ```{r}
@@ -175,6 +93,7 @@ SMFS_Integrate<-mutate(SMFS_Integrate, gensp = paste(Genus, Species, sep=" ")) #
 na_gensp_rows <- subset(SMFS_Integrate, gensp == "NA NA")
 ```
 
+### Unknown Gobies
 ```{r}
 #Would love to resolve these unknown gobies.
 unkgobs<-na_gensp_rows %>% filter(OrganismCode %in% "GBU")
@@ -182,6 +101,7 @@ GobyIdNeed<-SMFS_Integrate %>% filter(SampleRowID %in% unkgobs$SampleRowID)
 #write.csv(GobyIdNeed, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/MissingGobyIDs.csv") #Send to teejay for help?
 ```
 
+### Fixing gensp for unknown fish
 ```{r}
 unique(na_gensp_rows$CommonName)
 na_gensp <-na_gensp_rows %>% group_by(CommonName) %>% summarise(nrows= n(), CountTotal = sum(Count)) #unknown fish IDs. Remove. Losing "Goby Unknown"        "Herring Unknown"     "Unknown Larval Fish" "Heel Splitter"  "Catfish Unknown"     "Water quality only"
@@ -204,7 +124,7 @@ unique(SMFS_Integrate$gensp)
 4 Herring Unknown        28         32
 5 Unknown Larval Fish   113        347
 
-## One fish one row (MUST RUN)
+## One Measured Fish One Row 
 I assume we don't want 1 row, 1 fish for all of the unmeasured fish and would instead prefer 1 row 1 fish for all of the measured fish, and all of the unmeasured fish together in a row to later be expanded once we decide on a method for doing that. Otherwise, I can easily change the code to uncount everything by removing the filter.
 ```{r}
 OneMeasuredFishOneRow <- SMFS_Integrate %>%
@@ -219,6 +139,15 @@ OneMeasuredFishOneRow <- OneMeasuredFishOneRow %>%
   dplyr::mutate(FishID = row_number()) #df becomes size 0. Hopefully that is okay?
 ```
 
+
+# Plus Count Expansion
+Trawls have a range of measured fish for plus counts. Some of these have a wide range (one 625mm fish and the rest under 200mm for example). 
+1. Pull from comments. Or use the comments to ground-truth.
+2.Identify and remove outliers from trawls when doing this calculation.
+3. Either random assignment or proportional (Levi doing random). Poisson distribution? 
+4. Give each fish own row and ID.  
+
+## Separating plus count fish
 ```{r}
 #Bringing plus counts back together with expanded dataframe. 
 PlusCountDF<-SMFS_Integrate %>%
@@ -246,15 +175,8 @@ OrganismCode CountSum
 5 SKG               709
 6 STBK              380
 
-## Plus Count Expansion
-Trawls have a range of measured fish for plus counts. Some of these have a wide range (one 625mm fish and the rest under 200mm for example). 
-1. Pull from comments. Or use the comments to ground-truth.
-2.Identify and remove outliers from trawls when doing this calculation.
-3. Either random assignment or proportional (Levi doing random). Poisson distribution? 
-4. Give each fish own row and ID.  
-
 Built with Levi and Kyle.
-### Poisson distribution random sample
+## Poisson distribution random sample
 ```{r}
 #Doesn't work well with non-fish. Let's isolate the fish and then run the code. 
 PlusCount_OC<-PlusCountDF %>% filter(Class %in% c("Osteichthyes","Cephalaspidomorphi")) #Technically we don't have any plus count Cephalaspidomorphi but in case they appear in the future this code is needed.
@@ -328,7 +250,7 @@ OneFishOneRow<-bind_rows(OneMeasuredFishOneRow, PlusJoined)
 ```
 179 fish were unmeasured but had no other measured fish to be based on. They have NA standard lengths.
 
-## Adding Age Class Info
+# Adding Age Class Info
 ```{r}
 #Need to merge with ages. Will move this to data wrangling after plus counts are dealt with.
 #Need to update the max in the csv for sizes for HCH to 266 in Jan, BF to 450 in Oct, and ASH to 460 in Aug
@@ -453,13 +375,8 @@ p<-SMFS_Integrate_NoNAFish_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=
 p
 ```
 
-#### Putting the pieces back together
-The pieces:
-OtherPlus
-AllCatch_AgeClasses
-DataWithAges
-
-When I put these all back together, I should have the same number of fish that I started with...
+#### Final Check
+I should have the same number of fish that I started with...
 ```{r}
 glimpse(AllCatch_AgeClasses) #55 columns. 107,307 observations
 glimpse(SMFS_Integrate) #49 columns. 80,044 observations
@@ -468,7 +385,7 @@ sum(SMFS_Integrate$Count)#731505
 ```
 
 
-### Adding zeros - LAST STEP
+# Adding zeros - LAST STEP
 ```{r}
 #Now add zeros!
 
@@ -522,5 +439,85 @@ sum(Massive_Codes$Count) #731505
 ```{r}
 #Save New DF
 write.csv(Massive_Codes, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences_062024.csv")
+```
 
+
+# Investigating NA's in dataset (DOES NOT REMOVE THEM)
+```{r}
+#How many rows will we lose if we remove NAs?
+sum(is.na(SMFS_Integrate$WaterTemperature)) #44
+sum(is.na(SMFS_Integrate$DO)) #495
+sum(is.na(SMFS_Integrate$Salinity)) #47
+sum(is.na(SMFS_Integrate$Secchi)) #100
+#This isn't super helpful... We have multiple rows for one 
+Na_Assessment<-SMFS_Integrate %>% 
+  group_by(SampleRowID) %>% 
+  dplyr::summarize(WaterTemp_NA=sum(is.na(WaterTemperature)),
+            DO_NA =  sum(is.na(DO)),
+            Sal_NA = sum(is.na(Salinity)),
+            Secchi_NA=sum(is.na(Secchi)))
+Na_Assessment<- Na_Assessment %>% filter(WaterTemp_NA>0 | DO_NA>0 | Sal_NA>0 | Secchi_NA>0)
+#Overall, there are 46 sampling events with missing wq data.
+#let's find out more about these.
+NaSamples<-Na_Assessment$SampleRowID
+
+SMFS_OTR_Thesis_WQNA<-SMFS_Integrate %>% filter(SampleRowID %in% NaSamples) %>% group_by(SampleRowID) %>% dplyr::select(SampleRowID, StationCode, MethodCode, TowDuration, WaterTemperature, Secchi, Salinity, DO, PctSaturation, SpecificConductance, TideCode, SampleDate, Year, WaterYear)
+SMFS_OTR_Thesis_WQNA<-as.data.frame(SMFS_OTR_Thesis_WQNA)
+SMFS_OTR_Thesis_WQNA<-SMFS_OTR_Thesis_WQNA %>% distinct()
+#Save New DF
+#write.csv(SMFS_OTR_Thesis_WQNA, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_NA_WaterQuality.csv") #This holds the information with samples that have NA wq data
+
+
+#Visualizing fish counts by year for each species
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode) %>% summarise(Total=sum(Count))
+
+FishCountTable<-SMFS_Integrate %>% group_by(OrganismCode, Year) %>% summarise(Total=sum(Count))
+
+FishCountTable %>% spread(key = Year, value = Total)
+
+#Adding zeros for sampling events with no fish caught
+#https://derekogle.com/fishR/2018-04-19-Adding-Zero-Catches
+length(unique(SMFS_Integrate$SampleRowID)) 
+length(unique(SMFS_Integrate$TrawlRowID)) 
+length(unique(SMFS_Integrate$OrganismCode))
+3702*79
+
+
+Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
+NA_SampleRowIDs<-unique(Nas_$SampleRowID)
+NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
+unique(NA_Tow_Info$SampleRowID)
+#Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
+#Removing all NA Trawl Duration (below)
+
+
+#Why NA DO?
+NoDO<-SMFS_Integrate %>% filter(DO %in% NA)
+#Reasons for missing DO: 
+#Row 81, 232, 253,  - just didn't record DO or PctSat
+#Is it missing for other organisms from the same trawl?
+
+NoDOTrawlID<-unique(NoDO$TrawlRowID)
+length(NoDOTrawlID) #35 trawls
+NoDOTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoDOTrawlID) #nope. The trawl just doesn't have the info! Remove these rows.
+
+
+#Now checking salinity
+NoSal<-SMFS_Integrate %>% filter(Salinity %in% NA)
+NoSalTrawlID<-unique(NoSal$TrawlRowID)
+length(NoSalTrawlID) #6 trawls
+NoSalTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSalTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Secchi
+NoSecchi<-SMFS_Integrate %>% filter(Secchi %in% NA)
+NoSecchiTrawlID<-unique(NoSecchi$TrawlRowID) 
+length(NoSecchiTrawlID) #3 trawls
+NoSecchiTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoSecchiTrawlID) #These trawls just doesn't have the info! Remove these rows.
+
+#Now checking Water Temp
+NoWT<-SMFS_Integrate %>% filter(WaterTemperature %in% NA)
+NoWTTrawlID<-unique(NoWT$TrawlRowID) 
+length(NoWTTrawlID) #5 trawls
+NoWTTrawls<-SMFS_Integrate %>% filter(TrawlRowID %in% NoWTTrawlID) #These trawls just doesn't have the info! Also missing all other WQ. Remove these rows.
+#I remove these NAs in the SMFS_WranglingForThesis rmd
 ```

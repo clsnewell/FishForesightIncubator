@@ -30,7 +30,7 @@ glimpse(WrangledSMFSForIntegration)
 ```
 
 # Filtering
- 
+ Removing NA's even though BRTs can handle them because GAMs cant (I think).
 ```{r}
 
 #Now I want to constrain the data to the years of interest (2011 to now)
@@ -39,12 +39,11 @@ WrangledSMFSForIntegration$WaterYear<-as.character(WrangledSMFSForIntegration$Wa
 WrangledSMFSForIntegration$WaterYear<-as.numeric(WrangledSMFSForIntegration$WaterYear) #need to make water year numeric so I can filter out years easily.
 WrangledSMFSForIntegration$Year<-as.numeric(WrangledSMFSForIntegration$Year) #need to make water year numeric so I can filter out years easily.
 
-SMFS_Afer2010<-WrangledSMFSForIntegration %>% filter(Year > 2010) #Filtering out years which overlap with South Bay Otter Trawl Survey for my thesis work.
-NumberSamples1<-unique(SMFS_Afer2010$SampleRowID) #3736. This is the number of unique samples.
-NumberTows<-unique(SMFS_Afer2010$TrawlRowID) #Same
+NumberSamples1<-unique(WrangledSMFSForIntegration$SampleRowID) #3717. This is the number of unique samples.
+NumberTows<-unique(WrangledSMFSForIntegration$TrawlRowID) #Same
 #Removing NAs
 #NOTE: There is info for other wq variables. So I am losing some amount of good info here... 
-SMFS_NoNA<-SMFS_Afer2010 %>% filter(!TowDuration %in% NA, !DO %in% NA, !Salinity %in% NA, !Secchi %in% NA, !WaterTemperature %in% NA, !TideCode %in% NA, !StationCode %in% NA) #Remove NA rows for Tow Duration, DO, Salinity, Secchi, and Water Temp (Important WQ). Also removed NA's for other variables of interest for good measure. 
+SMFS_NoNA<-WrangledSMFSForIntegration %>% filter(!TowDuration %in% NA, !DO %in% NA, !Salinity %in% NA, !Secchi %in% NA, !WaterTemperature %in% NA, !TideCode %in% NA, !StationCode %in% NA) #Remove NA rows for Tow Duration, DO, Salinity, Secchi, and Water Temp (Important WQ). Also removed NA's for other variables of interest for good measure. 
 
 SMFS_Thesis<-SMFS_NoNA %>% filter(!StationCode%in% c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2", "MWB1", "MWB2", "MWS1", "MWS2", "MZN3", "SB0_5"))
 
@@ -95,6 +94,6 @@ Mikaela: For presence/absence model, we don't care about plus counts. Remove all
 # Save
 ```{r}
 #Save New DF
-write.csv(presabs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs.csv")
+write.csv(presabs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062124.csv")
 
 ```

@@ -25,7 +25,7 @@ library(lubridate)
 library(lfstat)
 library(readxl)
 
-WrangledSMFSForIntegration<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences_062024.csv")
+WrangledSMFSForIntegration<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences_062424.csv")
 glimpse(WrangledSMFSForIntegration)
 ```
 
@@ -39,7 +39,7 @@ WrangledSMFSForIntegration$WaterYear<-as.character(WrangledSMFSForIntegration$Wa
 WrangledSMFSForIntegration$WaterYear<-as.numeric(WrangledSMFSForIntegration$WaterYear) #need to make water year numeric so I can filter out years easily.
 WrangledSMFSForIntegration$Year<-as.numeric(WrangledSMFSForIntegration$Year) #need to make water year numeric so I can filter out years easily.
 
-NumberSamples1<-unique(WrangledSMFSForIntegration$SampleRowID) #3717. This is the number of unique samples.
+NumberSamples1<-unique(WrangledSMFSForIntegration$SampleRowID) #3801. This is the number of unique samples.
 NumberTows<-unique(WrangledSMFSForIntegration$TrawlRowID) #Same
 #Removing NAs
 #NOTE: There is info for other wq variables. So I am losing some amount of good info here... 
@@ -48,13 +48,13 @@ SMFS_NoNA<-WrangledSMFSForIntegration %>% filter(!TowDuration %in% NA, !DO %in% 
 SMFS_Thesis<-SMFS_NoNA %>% filter(!StationCode%in% c("BL", "CHA1", "CHA2", "COGR", "CRD1", "CRD2", "CRD3", "CRD3.5", "CRD4", "FH1", "GR3", "GR4", "HL2", "IBI1", "LU1", "PT3", "SD2", "SUVOL", "TRDB2", "MWB1", "MWB2", "MWS1", "MWS2", "MZN3", "SB0_5"))
 
 which(is.na(SMFS_Thesis$TowDuration)) #Tow Duration NAs removed.
-NumberSamples2<-unique(SMFS_NoNA$SampleRowID) #3676
+NumberSamples2<-unique(SMFS_NoNA$SampleRowID) #3760
 
 #Which sites to keep?
 #CODE NOT RELEVANT TO DATA WITH ABSENCES AS IT INFLATES SAMPLES. SMFS_Thesis %>% ggplot() + geom_bar(aes(StationCode))+geom_hline(aes(yintercept=1000), color="red") +theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
  #adding a cutoff of 1000 to be included in the study.
 
-NumberSamples3<-unique(SMFS_Thesis$SampleRowID) #3736 reduced to 3433 after removing NAs and undersampled locations. This is the number of unique samples. Expect 3433 samples * 6 species to yield 20,598 rows to have fish shown for each sample.
+NumberSamples3<-unique(SMFS_Thesis$SampleRowID) #3505 reduced to 3433 after removing NAs and undersampled locations. This is the number of unique samples. Expect 3433 samples * 6 species to yield 20,598 rows to have fish shown for each sample.
 
 ```
 
@@ -82,7 +82,7 @@ STBK have no age classes.
 ```{r}
 presabs<-Inquiry %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
 
-WieLang<-unique(presabs$SampleRowID) #3433
+WieLang<-unique(presabs$SampleRowID) #3505
 ```
 
 Plus counts unaltered but may want to update them so that I can create a filter to remove non-targeted fish sizes.
@@ -94,6 +94,6 @@ Mikaela: For presence/absence model, we don't care about plus counts. Remove all
 # Save
 ```{r}
 #Save New DF
-write.csv(presabs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062124.csv")
+write.csv(presabs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 
 ```

@@ -20,7 +20,7 @@ library(cowplot)
 library(Hmisc)
 library(tidyverse)
 
-PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062124.csv")
+PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 ```
 
 # PresenceAbsence
@@ -34,9 +34,9 @@ First things first, we need to get the data for the LongfinSmelt of interest we 
 
 
 ```{r}
-LongfinSmeltYOYData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
-LongfinSmeltYOYData<-as.data.frame(LongfinSmeltYOYData)
-print(summary(LongfinSmeltYOYData$TowDuration))
+LongfinSmeltYOYDataPA<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
+LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
+unique(LongfinSmeltYOYDataPA$AgeClass)
 ```
 
 Now lets check the dataset.
@@ -44,23 +44,38 @@ Now lets check the dataset.
 ```{r}
 glimpse(LongfinSmeltYOYData)
 summary(LongfinSmeltYOYData)
-NumSamples<-unique(LongfinSmeltYOYData$SampleRowID) #3433 sampling events.
+NumSamples<-unique(LongfinSmeltYOYData$SampleRowID) #3505 sampling events.
 ```
 
-Let's make a couple of plots for making predictions.
+Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
+
+```{r}
+LongfinSmeltYOYDataPA<-LongfinSmeltYOYData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
+
+LongfinSmeltYOYDataPA$PresAbs<-as.factor(LongfinSmeltYOYDataPA$PresAbs)
+
+LongfinSmeltYOYDataPA$Year<-as.factor(LongfinSmeltYOYDataPA$Year)
+
+LongfinSmeltYOYDataPA$Month<-as.factor(LongfinSmeltYOYDataPA$Month)
+
+LongfinSmeltYOYDataPA$StationCode<-as.factor(LongfinSmeltYOYDataPA$StationCode)
+
+LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
+```
 
 ```{r}
 # I want to show presences vs. all samples.
+cdplot(y=LongfinSmeltYOYDataPA$PresAbs, x=LongfinSmeltYOYDataPA$WaterTemperature)
 
-Plot_Water<-LongfinSmeltYOYData %>% ggplot(aes(y=PresAbs, x=WaterTemperature, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+Plot_Water<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
-Plot_DO<-LongfinSmeltYOYData %>% ggplot(aes(y=PresAbs, x=DO, color = TowDuration)) + 
+Plot_DO<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=DO)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
-Plot_Secchi<-LongfinSmeltYOYData %>% ggplot(aes(y=PresAbs, x=Secchi, color = TowDuration)) + 
+Plot_Secchi<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-LongfinSmeltYOYData %>% ggplot(aes(y=PresAbs, x=Salinity, color = TowDuration)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -74,7 +89,7 @@ plot_grid(title, Plots, ncol = 1,
   # rel_heights values control vertical title margins
   rel_heights = c(0.1, 1))
 
-SummTable <- LongfinSmeltYOYData %>% 
+SummTable <- LongfinSmeltYOYDataPA %>% 
   group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature, na.rm=TRUE),
@@ -99,24 +114,11 @@ print(SummTable)
 write.csv(SummTable, here("data", "LongfinSmeltYOY_SummTable.csv"))
 
 #Seasonality
-LongfinSmeltYOYData$Year<-as.factor(LongfinSmeltYOYData$Year)
+LongfinSmeltYOYDataPA %>% dplyr::summarize(TotalPresence=sum(Binary, na.rm=TRUE), sd_binary=sd(Binary, na.rm=TRUE), n=n(), PercentageOfPresence=100*(TotalPresence/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
 
-LongfinSmeltYOYData$Month<-as.factor(LongfinSmeltYOYData$Month)
-
-LongfinSmeltYOYData$StationCode<-as.factor(LongfinSmeltYOYData$StationCode)
-
-LongfinSmeltYOYData %>% dplyr::summarize(TotalPresence=sum(Binary, na.rm=TRUE), sd_binary=sd(Binary, na.rm=TRUE), n=n(), PercentageOfPresence=100*(TotalPresence/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
-
-LongfinSmeltYOYData %>% group_by(Month) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch yoy longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-LongfinSmeltYOYData %>% group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+LongfinSmeltYOYDataPA %>% group_by(Month) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch yoy longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+LongfinSmeltYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
-
-
-Plot analysis: Average water temperature when LFS absent is 16.37 C (standard deviation is 4.64), present is 17.36 C (standard deviation 3.14). Average dissolved oxygen when LFS absent is 6.95 mg/L (sd 1.64), present is 7.39 (sd 1.18). Average secchi when LFS absent is 30.5 cm (sd 11.55), present is 30.56 cm (sd 10.18). Average salinity when LFS absent is 4.66 psu (sd 3.4) and present is 5.4 (sd 3.24).
-
-Range for presences: 7.6 to 23.8 C; 4.2 to 10.10 mg/L; 11 to 73 cm; 0.2 to 14.2 psu.
-
-Range for absences (other samples): 4.6 to 27 C; 1 to 13.74 mg/L; 7 to 99; 0 to 15 psu.
 
 Most restricted presence compared to absence is dissolved oxygen. High secchi depth (clear water) also lacks presence above 75 cm.
 
@@ -126,19 +128,27 @@ Do the most influential?
 
 Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> for tuning strategy?
 
+### Setting hyperparameters
 ```{r}
 
-str(LongfinSmeltYOYData)
+str(LongfinSmeltYOYDataPA)
 
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
-system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYData, 
-                         gbm.x= c(5, 6, 7, 9), # environmental variables. 5 = Water Temperature, 6 = salinity, 7 = DO, 9 = Secchi
-                         gbm.y= 59, # Binary response variable
+Complexity<-4
+LearningRate<-0.01
+Bag<-0.6  
+
+```
+
+```{r}
+system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+                         gbm.y= 11, # Binary response variable
                          family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = 4, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = 0.01,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = 0.6 # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
                          ))
 
 # make sure to save the model!
@@ -163,8 +173,10 @@ dismo::gbm.plot.fits(brt1)
 
 find.int <- gbm.interactions(brt1)
 find.int
-brt1$self.statistics$correlation[[1]]
+brt1$self.statistics$correlation[[1]] #The relevant set of evaluation statistics, calculated on the fitted values - i.e. this is only interesting in so far as it demonstrates "evaluation" (i.e. t) on the training data. It should NOT be reported as the model predictive performance.
 # The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+
+brt1$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identied optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
 
 # You can plot pairwise interactions like this:
 par(mfrow=c(1,2))
@@ -174,57 +186,11 @@ gbm.perspec(brt1,3, 2) #salinity and DO
 # save the model
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
 
+
+predicted<-predict(object=brt1, )
 ```
 
--   tree.complexity = 5, learning.rate = 0.001, bag.fraction = 0.6 (Nima's preference) fit final gbm model with a fixed number of 5800 trees for Binary mean total deviance = 0.467 mean residual deviance = 0.304
-
-estimated cv deviance = 0.377 ; se = 0.008
-
-training data correlation = 0.546 cv correlation = 0.359 ; se = 0.024
-
-training data AUC score = 0.921 cv AUC score = 0.828 ; se = 0.014
-
-elapsed time - 0.03 minutes user system elapsed 92.58 0.03 105.67 - Increase bag fraction to the recommendation from Elith et al of 0.75: fit final gbm model with a fixed number of 6150 trees for Binary
-
-mean total deviance = 0.467 mean residual deviance = 0.302
-
-estimated cv deviance = 0.373 ; se = 0.01
-
-training data correlation = 0.552 cv correlation = 0.368 ; se = 0.026
-
-training data AUC score = 0.923 cv AUC score = 0.831 ; se = 0.012
-
-elapsed time - 0.03 minutes user system elapsed 88.67 0.14 110.60
-
--   learning rate 0.05 attempted but too big. Has to be smaller to reach minimum
-
--   learning rate 0.005: fit final gbm model with a fixed number of 1500 trees for Binary
-
-mean total deviance = 0.467 mean residual deviance = 0.291
-
-estimated cv deviance = 0.377 ; se = 0.014
-
-training data correlation = 0.574 cv correlation = 0.36 ; se = 0.04
-
-training data AUC score = 0.93 cv AUC score = 0.835 ; se = 0.015
-
-elapsed time - 0.46 minutes user system elapsed 20.75 0.05 27.56
-
--   changed bag fraction to 0.6 fitting final gbm model with a fixed number of 1600 trees for Binary
-
-mean total deviance = 0.467 mean residual deviance = 0.285
-
-estimated cv deviance = 0.373 ; se = 0.01
-
-training data correlation = 0.582 cv correlation = 0.383 ; se = 0.019
-
-training data AUC score = 0.934 cv AUC score = 0.829 ; se = 0.014
-
-Firstly, the things you can see: The R console will show some results (see the Word Working Guide of the Elith tutorial for an example). It reports a brief model summary & all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
-
-There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
-
-For the final model (lr = 0.005, tc = 5, bag fraction = 0.6)
+For the final model (lr = , tc = , bag fraction = )
 
 Interaction report:
 
@@ -256,7 +222,7 @@ NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will hav
 ```{r}
 #k fold cross validation function
 
-eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_folds = 10, tree.complexity = 3, bag.fraction = 0.6){
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate, k_folds = 10, tree.complexity = Complexity, bag.fraction = Bag){
   dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
   Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
   colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
@@ -298,10 +264,10 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = 0.005, k_fol
 }
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltYOYData,
-                        gbm.x = c(21, 22, 23, 25),
-                        gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.6, tree.complexity = 3,
+brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltYOYDataPA,
+                        gbm.x = c(2,3,4,5),
+                        gbm.y=11, learning.rate = LearningRate,
+                        bag.fraction = Bag, tree.complexity = Complexity,
                         k_folds = 10)
 brt_SDM_k
 ```
@@ -313,7 +279,7 @@ NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.
 ```{r}
 #leave one year out function
 
-eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.complexity = 3, bag.fraction = 0.6){
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, tree.complexity = Complexity, bag.fraction = Bag){
   
   pres$year <- pres$Year
   abs$year <- abs$Year
@@ -373,11 +339,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = 0.005, tree.co
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltYOYData[which(LongfinSmeltYOYData$Binary == 1),],
-                        abs = LongfinSmeltYOYData[which(LongfinSmeltYOYData$Binary == 0),],
-                        gbm.x = c(21, 22, 23, 25),
-                        gbm.y=17, learning.rate = 0.005,
-                        bag.fraction = 0.6, tree.complexity = 3)
+brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 1),],
+                        abs = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 0),],
+                        gbm.x = c(2,3,4,5),
+                        gbm.y=11, learning.rate = LearningRate,
+                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
@@ -386,7 +352,7 @@ eval <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval
 #now save it
 
-saveRDS(eval, here("data","LongfinSmelt_brt_SDM_eval_gbm_step.rds"))
+saveRDS(eval, here("data","YOYLongfinSmelt_brt_SDM_eval_gbm_step.rds"))
 ```
 
 -   learning.rate = 0.005, bag.fraction = 0.75, tree.complexity = 5: 

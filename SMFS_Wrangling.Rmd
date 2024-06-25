@@ -106,7 +106,7 @@ GobyIdNeed<-SMFS_Integrate %>% filter(SampleRowID %in% unkgobs$SampleRowID)
 ```{r}
 unique(na_gensp_rows$CommonName)
 na_gensp <-na_gensp_rows %>% group_by(CommonName) %>% summarise(nrows= n(), CountTotal = sum(Count)) #unknown fish IDs. Remove. Losing "Goby Unknown"        "Herring Unknown"     "Unknown Larval Fish" "Heel Splitter"  "Catfish Unknown"     "Water quality only"
-
+na_gensp
 #fixing names
 SMFS_Integrate$gensp[SMFS_Integrate$OrganismCode=='GBU']<- "Unknown Goby"
 SMFS_Integrate$gensp[SMFS_Integrate$OrganismCode=='UKNLARV']<- "Unknown Larval Fish"
@@ -348,32 +348,32 @@ For presence/absence model, filter on tows that measured big fish. Remove those 
 #### How does possion compare to original distribution? (INCOMPLETE CODE - work in progress but dont run)
 ```{r}
 #Trying to see how the poisson distribution compares to the original distribution of lengths for the same samples/species.
-id_sp2 <- unique(SMFS_Integrate_NoNAFish_Expand$id_sp)
+##id_sp2 <- unique(SMFS_Integrate_NoNAFish_Expand$id_sp)
 
-tSample<-sample(id_sp2, 30, replace=FALSE)
+##tSample<-sample(id_sp2, 30, replace=FALSE)
 
-PlusAssigned_random <-PlusAssigned %>% filter(id_sp %in% tSample)
+##PlusAssigned_random <-PlusAssigned %>% filter(id_sp %in% tSample)
 
-SMFS_Integrate_NoNAFish_Expand %>%
-  group_by(SampleRowID,gensp) %>% ggplot(aes(x=StandardLength))+geom_density()
-SMFS_Integrate_NoNAFish_Expand$id_sp <- paste0(SMFS_Integrate_NoNAFish_Expand$SampleRowID, "_", SMFS_Integrate_NoNAFish_Expand$gensp) 
-glimpse(SMFS_Integrate_NoNAFish_Expand)
+##SMFS_Integrate_NoNAFish_Expand %>%
+##  group_by(SampleRowID,gensp) %>% ggplot(aes(x=StandardLength))+geom_density()
+##SMFS_Integrate_NoNAFish_Expand$id_sp <- paste0(SMFS_Integrate_NoNAFish_Expand$SampleRowID, "_", SMFS_Integrate_NoNAFish_Expand$gensp) 
+##glimpse(SMFS_Integrate_NoNAFish_Expand)
 #Randomly sample these id's because doing all of them takes too long...
-SMFS_Integrate_NoNAFish_Expand_random<- SMFS_Integrate_NoNAFish_Expand%>% filter(id_sp %in% tSample)
+##SMFS_Integrate_NoNAFish_Expand_random<- SMFS_Integrate_NoNAFish_Expand%>% filter(id_sp %in% tSample)
 
-for(i in tSample){
+##for(i in tSample){
   # Filter your data based on the current ID
-  subset_data <- SMFS_Integrate_NoNAFish_Expand %>%
-    filter(id_sp == i)
+##  subset_data <- SMFS_Integrate_NoNAFish_Expand %>%
+##    filter(id_sp == i)
   
-  p<-ggplot(subset_data, aes(x=StandardLength))+geom_histogram(binwidth = 1)+labs(title = paste("ID:", i))
+##  p<-ggplot(subset_data, aes(x=StandardLength))+geom_histogram(binwidth = 1)+labs(title = paste("ID:", i))
   
-  print(p)
-}
+##  print(p)
+#}
 
   
-p<-SMFS_Integrate_NoNAFish_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=mean(StandardLength), SD = sd(StandardLength))
-p
+##p<-SMFS_Integrate_NoNAFish_Expand_random %>% group_by(id_sp) %>% summarize(MEAN=mean(StandardLength), SD = sd(StandardLength))
+##p
 ```
 
 #### Final Check

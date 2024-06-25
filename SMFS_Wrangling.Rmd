@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-In this rmd, I start with the output from SMFSDataTableMerging (SMFS_09192023) to complete the following objectives:
+In this rmd, I start with the output from SMFSDataTableMerging (SMFS_062424) to complete the following objectives:
 
 Create Fully wrangled dataframe by
 - Create SMFS_Integrate that has columns for Year, Month, and Water Year, Filters to only keep otter trawls and samples after 2010; Add a column for Organism Code scientific names to match SBOTS (gensp)
@@ -57,29 +57,30 @@ library(lfstat)
 library(tibble)
 library(tidyverse)
 
-SMFS_09192023 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_09192023.csv")
-SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp.xlsx")
-SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo.xlsx")
+SMFS_062424 <- read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_062424.csv")
+SMFS_OrganismsLookUp <- read_excel("Data/SMFS_OrganismsLookUp062424.xlsx")
+SMFS_AgesBySizeMo <- read_excel("Data/SMFS_AgesBySizeMo062424.xlsx")
 
-str(SMFS_09192023)
-SMFS_09192023$Year<-year(SMFS_09192023$SampleDate)
-SMFS_09192023$Month<-month(SMFS_09192023$SampleDate)
-SMFS_09192023$WaterYear<-water_year(SMFS_09192023$SampleDate, as.POSIX = FALSE, origin="usgs")
+str(SMFS_062424)
+SMFS_062424$Year<-year(SMFS_062424$SampleDate)
+SMFS_062424$Month<-month(SMFS_062424$SampleDate)
+SMFS_062424$WaterYear<-water_year(SMFS_062424$SampleDate, as.POSIX = FALSE, origin="usgs")
 ```
 
 # Create SMFS_Integrate dataframe
 ## Filtering
 ```{r}
 #Now I just want otter trawl data
-SMFS_OTR_09192023<-SMFS_09192023 %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
+SMFS_OTR<-SMFS_062424 %>% filter(MethodCode %in% "OTR") #filters otter trawl samples from table
 
 #Now I want to constrain the data to the years of interest (2011 to now)
-str(SMFS_OTR_09192023)
-SMFS_OTR_09192023$WaterYear<-as.character(SMFS_OTR_09192023$WaterYear)#when converting the factor to a number, need to first make it a character and THEN numeric. Otherwise, the number gets changedfor some reason.
-SMFS_OTR_09192023$WaterYear<-as.numeric(SMFS_OTR_09192023$WaterYear) #need to make water year numeric so I can filter out years easily.
-SMFS_OTR_09192023$Year<-as.numeric(SMFS_OTR_09192023$Year) #need to make water year numeric so I can filter out years easily.
+str(SMFS_OTR)
+SMFS_OTR$WaterYear<-as.character(SMFS_OTR$WaterYear)#when converting the factor to a number, need to first make it a character and THEN numeric. Otherwise, the number gets changedfor some reason.
+SMFS_OTR$WaterYear<-as.numeric(SMFS_OTR$WaterYear) #need to make water year numeric so I can filter out years easily.
+SMFS_OTR$Year<-as.numeric(SMFS_OTR$Year) #need to make water year numeric so I can filter out years easily.
 
-SMFS_Integrate<-SMFS_OTR_09192023 %>% filter(Year > 2010, !OrganismCode %in% "NOTRAWL") #Filtering out years which overlap with South Bay Otter Trawl Survey and non-trawls.
+SMFS_Integrate<-SMFS_OTR %>% filter(Year > 2010, Year<2024, !OrganismCode %in% "NOTRAWL") #Filtering out years which overlap with South Bay Otter Trawl Survey and non-trawls.
+
 ```
 
 ## Adding species name information
@@ -232,7 +233,7 @@ PlusAssigned<-do.call(rbind.data.frame, exp_sl_list) #creates a dataframe from t
 
 PlusAssigned <-  PlusAssigned %>% 
     rownames_to_column('id_sp')#fixing column name for id_sp
-PlusAssigned$PlusID<-1:14983 #I need to track these fish. Giving them each a number for simplicity.
+PlusAssigned$PlusID<-1:15123 #I need to track these fish. Giving them each a number for simplicity.
 #negative_sl_rows <- PlusAssigned %>% filter(sl<0) #No negative assigned lengths :)
 
 #How do these turn into size bins when I join with the size by month approach. 
@@ -328,7 +329,7 @@ Comparison
 ShouldYOY<-AllCatch_AgeClasses %>% filter(id_sp %in% YoyList)
 #Save list of incorrect fish.
 ShouldYOYButNotYOY<-ShouldYOY %>% filter(!AgeClass%in%"Age-0")
-ShouldYOYButNotYOY$PlusID
+ShouldYOYButNotYOY$PlusID #9 fish
 
 #Make the not yoy but should yoy turn into yoy since we know they should be...
 AllCatch_AgeClasses$AgeClass[AllCatch_AgeClasses$PlusID %in% ShouldYOYButNotYOY$PlusID]<-"Age-0" #fixing age class
@@ -344,7 +345,7 @@ For presence/absence model, filter on tows that measured big fish. Remove those 
 
 
 
-#### How does possion compare to original distribution? (INCOMPLETE CODE)
+#### How does possion compare to original distribution? (INCOMPLETE CODE - work in progress but dont run)
 ```{r}
 #Trying to see how the poisson distribution compares to the original distribution of lengths for the same samples/species.
 id_sp2 <- unique(SMFS_Integrate_NoNAFish_Expand$id_sp)
@@ -378,10 +379,10 @@ p
 #### Final Check
 I should have the same number of fish that I started with...
 ```{r}
-glimpse(AllCatch_AgeClasses) #55 columns. 107,307 observations
-glimpse(SMFS_Integrate) #49 columns. 80,044 observations
-sum(AllCatch_AgeClasses$Count) # 731505
-sum(SMFS_Integrate$Count)#731505
+glimpse(AllCatch_AgeClasses) #54 columns. 112,927 observations
+glimpse(SMFS_Integrate) #49 columns. 84,375 observations
+sum(AllCatch_AgeClasses$Count) # 749580
+sum(SMFS_Integrate$Count)#749580
 ```
 
 
@@ -432,13 +433,13 @@ Massive_Codes<-Massive %>% dplyr::select(!c("Native", "Resident", "CommonName", 
 Massive_Codes<-left_join(Massive_Codes, SMFS_OrganismsLookUp, by="OrganismCode")
 Massive_Codes<-mutate(Massive_Codes, gensp = paste(Genus, Species, sep=" "), id_sp = paste(SampleRowID, gensp, sep="_")) %>% dplyr::select(!c("NonAgedOrganisms", "OrganismRowID.y", "OrganismRowID.x"))
 unique(Massive_Codes$OrganismCode)
-sum(Massive_Codes$Count) #731505
+sum(Massive_Codes$Count) #749580
 ```
 
 # Save
 ```{r}
 #Save New DF
-write.csv(Massive_Codes, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences_062024.csv")
+write.csv(Massive_Codes, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_WithAbsences_062424.csv")
 ```
 
 
@@ -485,7 +486,7 @@ length(unique(SMFS_Integrate$OrganismCode))
 
 Nas_<-SMFS_Integrate %>% filter(TowDuration %in% NA)
 NA_SampleRowIDs<-unique(Nas_$SampleRowID)
-NA_Tow_Info<-SMFS_09192023 %>% filter(SampleRowID %in% NA_SampleRowIDs)
+NA_Tow_Info<-SMFS_062424 %>% filter(SampleRowID %in% NA_SampleRowIDs)
 unique(NA_Tow_Info$SampleRowID)
 #Okay I am deducing that these samples are actually fake samples with incidental or rod and reel info? 
 #Removing all NA Trawl Duration (below)

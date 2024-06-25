@@ -1,14 +1,14 @@
-#Merging SMFS dataframes (in r instead of database)
+#Merging SMFS dataframes (in r instead of database). Not included but needed later: Depth, Organism Lookup, Station Lookup, AgesBySizeMonth
 #read in tables
 library(readxl)
-SMFS_Catch091923 <- read_excel("Data/SMFS_Catch091923.xlsx")
-SMFS_Sample091923 <- read_excel("Data/SMFS_Sample091923.xlsx")
-SMFS_TrawlEffort091923 <- read_excel("Data/SMFS_TrawlEffort091923.xlsx")
+SMFS_Catch062424 <- read_excel("Data/SMFS_Catch062424.xlsx")
+SMFS_Sample062424 <- read_excel("Data/SMFS_Sample062424.xlsx")
+SMFS_TrawlEffort062424 <- read_excel("Data/SMFS_TrawlEffort062424.xlsx")
 
 #Join them by SampleRowID
 library(tidyverse)
-Step1<-left_join(SMFS_Catch091923, SMFS_Sample091923, by="SampleRowID")
+Step1<-left_join(SMFS_Catch062424, SMFS_Sample062424, by="SampleRowID")
 Step1
-FullTable<-left_join(Step1, SMFS_TrawlEffort091923, by="SampleRowID")
-write.csv(FullTable, "Data/SMFS_09192023.csv")
+FullTable<-left_join(Step1, SMFS_TrawlEffort062424, by="SampleRowID")
+write.csv(FullTable, "Data/SMFS_062424.csv")
 

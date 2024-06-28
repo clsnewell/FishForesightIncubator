@@ -1,13 +1,11 @@
 ---
-title: "Modeling Protocol"
+title: "Age-0 Longfin Smelt Presence/Absence BRT"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-
-Constructed so I can search "LongfinSmelt"and replace with Gensp name and have the code run.
 
 ### Loading libraries and data
 
@@ -31,12 +29,10 @@ Before modeling, we will ensure the data is up to snuff.
 
 First things first, we need to get the data for the LongfinSmelt of interest we want to model.
 
-
-
 ```{r}
-LongfinSmeltYOYDataPA<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
-LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
-unique(LongfinSmeltYOYDataPA$AgeClass)
+LongfinSmeltYOYData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
+LongfinSmeltYOYData<-as.data.frame(LongfinSmeltYOYData)
+unique(LongfinSmeltYOYData$AgeClass)
 ```
 
 Now lets check the dataset.
@@ -61,11 +57,46 @@ LongfinSmeltYOYDataPA$Month<-as.factor(LongfinSmeltYOYDataPA$Month)
 LongfinSmeltYOYDataPA$StationCode<-as.factor(LongfinSmeltYOYDataPA$StationCode)
 
 LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
+
+LongfinSmeltYOYDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
+
+LongfinSmeltYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
+
+LongfinSmeltYOYDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
+
+#Overall capture probability
+(sum(LongfinSmeltYOYDataPA$Binary)/nrow(LongfinSmeltYOYDataPA))*100
 ```
+
+6.22% probability of capturing yoy lfs.
+
+```{r}
+range(LongfinSmeltYOYDataPA$WaterTemperature)
+mean(LongfinSmeltYOYDataPA$WaterTemperature)
+
+range(LongfinSmeltYOYDataPA$DO)
+mean(LongfinSmeltYOYDataPA$DO)
+
+range(LongfinSmeltYOYDataPA$Salinity)
+mean(LongfinSmeltYOYDataPA$Salinity)
+
+range(LongfinSmeltYOYDataPA$Secchi)
+mean(LongfinSmeltYOYDataPA$Secchi)
+
+```
+
+
+
+| Water Quality     | Mean      | Range           |
+|-------------------|-----------|-----------------|
+| Water temperature | 16.42 C   | 4.6, 27 C       |
+| Dissolved oxygen  | 6.97 mg/L | 0.7, 13.74 mg/L |
+| Salinity          | 4.69 psu  | 0, 15.8 psu     |
+| Secchi            | 30.66 cm  | 7, 99 cm        |
 
 ```{r}
 # I want to show presences vs. all samples.
-cdplot(y=LongfinSmeltYOYDataPA$PresAbs, x=LongfinSmeltYOYDataPA$WaterTemperature)
+#cdplot(y=LongfinSmeltYOYDataPA$PresAbs, x=LongfinSmeltYOYDataPA$WaterTemperature)
 
 Plot_Water<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
@@ -129,6 +160,7 @@ Do the most influential?
 Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> for tuning strategy?
 
 ### Setting hyperparameters
+
 ```{r}
 
 str(LongfinSmeltYOYDataPA)
@@ -136,7 +168,7 @@ str(LongfinSmeltYOYDataPA)
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
-LearningRate<-0.01
+LearningRate<-0.008
 Bag<-0.6  
 
 ```
@@ -154,16 +186,16 @@ system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA,
 # make sure to save the model!
 summary(brt1)
 
+mean(brt1$residuals^2) #mean residual deviance 0.309
+#brt1$
 names(brt1) #tells us the components of output
 
 # To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
 
  # reponse curves
-par(mfrow=c(3,2))
+dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
 
-dismo::gbm.plot(brt1, n.plots = 5, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,3), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
-
-gbm::plot.gbm(brt1, n.plots=5, return.grid=TRUE)
+gbm::plot.gbm(brt1, n.plots=4, return.grid=TRUE)
 
 dismo::gbm.plot.fits(brt1)
 #I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
@@ -172,44 +204,29 @@ dismo::gbm.plot.fits(brt1)
 # This code assesses the extent to which pairwise interactions exist in the data.
 
 find.int <- gbm.interactions(brt1)
-find.int
-brt1$self.statistics$correlation[[1]] #The relevant set of evaluation statistics, calculated on the fitted values - i.e. this is only interesting in so far as it demonstrates "evaluation" (i.e. t) on the training data. It should NOT be reported as the model predictive performance.
+find.int#Salinity and DO, Salinity and Water Temp.
+brt1$self.statistics$correlation[[1]] #The relevant set of evaluation statistics, calculated on the fitted values - i.e. this is only interesting in so far as it demonstrates "evaluation" (i.e. t) on the training data. It should NOT be reported as the model predictive performance.
 # The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
 
-brt1$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identied optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
+brt1$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identifed optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
 
 # You can plot pairwise interactions like this:
 par(mfrow=c(1,2))
-gbm.perspec(brt1,1, 2) #3D PLOT of Water Temp and Salinity
-gbm.perspec(brt1,3, 2) #salinity and DO
+gbm.perspec(brt1,2, 4) #3D PLOT of Water Temp and Salinity
+gbm.perspec(brt1,1, 4) #salinity and DO
+gbm.perspec(brt1,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
 
 
-predicted<-predict(object=brt1, )
+#predicted<-predict(object=brt1, )
 ```
 
 For the final model (lr = , tc = , bag fraction = )
 
 Interaction report:
 
-find.int \$rank.list
-
-| var1.index | var1.names | var2.index | var2.names       | int.size |
-|------------|------------|------------|------------------|----------|
-| 2          | Salinity   | 1          | WaterTemperature | 169.93   |
-| 3          | DO         | 2          | Salinity         | 111.24   |
-
-\
-
-|             | Water Temp | Salinity | DO     | Secchi | TowDuration |
-|-------------|------------|----------|--------|--------|-------------|
-| Water Temp  | 0          | 169.93   | 44.64  | 23.68  | 0.63         |
-| Salinity    | 0          | 0        | 111.24 | 30.97  | 7.6         |
-| DO          | 0          | 0        | 0      | 14.93  | 13.83       |
-| Secchi      | 0          | 0        | 0      | 0      | 3.61        |
-| TowDuration | 0          | 0        | 0      | 0      | 0           |
 
 ## Validation
 
@@ -355,68 +372,40 @@ eval
 saveRDS(eval, here("data","YOYLongfinSmelt_brt_SDM_eval_gbm_step.rds"))
 ```
 
--   learning.rate = 0.005, bag.fraction = 0.75, tree.complexity = 5: 
-\$brt
+learning.rate = 0.008, bag.fraction = 0.6, tree.complexity = 4:
 
-A gradient boosted model with bernoulli loss function. 1700 iterations were performed. There were 5 predictors of which 5 had non-zero influence.
+A gradient boosted model with bernoulli loss function.
+1100 iterations were performed.
+There were 4 predictors of which 4 had non-zero influence.
 
-\$brt_k 
-k Deviance AUC TSS 
-1 39.28567 0.660442 0.4690653 
-2 41.62835 0.7488567 0.4283537 
-3 40.37159 0.8390805 0.5609979 
-4 40.14176 0.7623641 0.4362772 
-5 33.89985 0.8547767 0.6200828 
-6 36.50092 0.8283688 0.5440729 
-7 37.60592 0.8617647 0.6368421 
-8 34.83711 0.9014946 0.7039402 
-9 35.42474 0.8515509 0.5520791 
-10 36.62672 0.8634146 0.6380081
+$brt_k
+    k Deviance       AUC       TSS
+1   1 36.06116 0.8189071 0.5722643
+2   2 32.38994 0.7789322 0.4411255
+3   3 33.57384 0.7111604 0.3543120
+4   4 40.16386 0.8205538 0.5600000
+5   5 34.99054 0.8659719 0.6342452
+6   6 30.97233 0.8972694 0.7323701
+7   7 33.75016 0.6777572 0.3044804
+8   8 34.82977 0.8483925 0.5753880
+9   9 35.82083 0.7711740 0.4863715
+10 10 33.02876 0.8463463 0.6606607
 
-\$brt_loo k Deviance AUC TSS n_pres 
-2013 42.18586 0.7363281 0.4687500 182 
-2021 39.57273 0.8402778 0.6388889 178 
-2017 46.13577 0.6388889 0.5000000 208 
-2014 60.69164 0.7396694 0.4545455 192 
-2022 36.61205 0.8592593 0.6000000 169 
-2015 46.60470 0.7142857 0.4285714 207 
-2011 42.22235 0.5739645 0.2307692 201 
-2020 41.28407 0.9318182 0.7727273 192 
-2012 52.62661 0.9387755 0.8571429 207 
-2023 47.37607 0.9218750 0.7500000 206 
-2018 45.84699 0.8055556 0.5833333 202 
-2019 45.00243 0.7500000 0.5000000 212 
-2016 46.18059 0.7500000 0.5000000 212
-
--   bag fraction = 0.6 A gradient boosted model with bernoulli loss function. 1600 iterations were performed. There were 5 predictors of which 5 had non-zero influence. 
-\$brt_k 
-k Deviance AUC TSS 
-1 1 33.73731 0.8855978 0.7383152 
-2 2 39.09204 0.8116568 0.5367872 
-3 3 34.86225 0.8910326 0.6425272 
-4 4 38.39483 0.7958204 0.4708978 
-5 5 37.40607 0.8377709 0.5851393 
-6 6 34.76156 0.8281326 0.5079826 
-7 7 36.93593 0.7928128 0.4803313 
-8 8 42.00954 0.8098272 0.5533843 
-9 9 35.63471 0.8245614 0.5630252 
-10 10 38.26671 0.8130731 0.5434783
-
-\$brt_loo k Deviance AUC TSS n_pres 
-1 2013 49.84132 0.7978516 0.5000000 182 
-2 2021 48.63107 0.8796296 0.6944444 178 
-3 2017 41.58266 0.7777778 0.5000000 208 
-4 2014 50.67953 0.7706612 0.5000000 192 
-5 2022 44.32915 0.8567901 0.5111111 169 
-6 2015 44.56914 0.8163265 0.5714286 207 
-7 2011 41.00288 0.7159763 0.3846154 201 
-8 2020 51.86176 0.9256198 0.7727273 192 
-9 2012 47.24728 0.7959184 0.5714286 207 
-10 2023 34.93258 0.6250000 0.3750000 206 
-11 2018 46.10166 0.7777778 0.5000000 202 
-12 2019 46.26296 1.0000000 1.0000000 212 
-13 2016 52.58324 0.7500000 0.5000000 212
-
+$brt_loo
+      k Deviance       AUC       TSS n_pres
+1  2013 34.88317 0.6933594 0.3125000    186
+2  2021 38.64269 0.8449074 0.5555556    182
+3  2017 37.21238 0.5555556 0.3333333    212
+4  2014 41.46111 0.6735537 0.4090909    196
+5  2023 36.23444 0.7291667 0.5833333    206
+6  2022 32.79467 0.8595062 0.6222222    173
+7  2015 37.31258 0.7551020 0.4285714    211
+8  2011 41.83404 0.5207101 0.2307692    205
+9  2020 31.88135 0.7913223 0.5909091    196
+10 2012 40.74887 0.6530612 0.5714286    211
+11 2018 37.87022 0.7986111 0.5833333    206
+12 2019 34.98621 0.5000000 0.5000000    216
+13 2016 39.04901 0.7500000 0.5000000    216
 ## Analyzing Response Curves & Variable Importance
 
 Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R>
@@ -492,6 +481,7 @@ ggsave(here("Plots","LongfinSmelt_relative_importance.png"),
 #ggsave(here("Plots","FS3_relative_importance.svg"),
 #       width = 7, height = 6, units = "in", dpi = 300)
 ```
+
 When looking at partial dependence plots, the y-axis represents the marginal impact of the independent variable to the dependent variable. If at 0, then there is 0 impact...
 
 # NOTES

@@ -17,7 +17,7 @@ library(here)
 library(cowplot)
 library(Hmisc)
 library(tidyverse)
-
+library(gbm3)
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 ```
 
@@ -43,7 +43,7 @@ summary(LongfinSmeltYOYData)
 NumSamples<-unique(LongfinSmeltYOYData$SampleRowID) #3505 sampling events.
 ```
 
-Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
+I need to make the data be just 1 row for each sampling event.
 
 ```{r}
 LongfinSmeltYOYDataPA<-LongfinSmeltYOYData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
@@ -57,7 +57,11 @@ LongfinSmeltYOYDataPA$Month<-as.factor(LongfinSmeltYOYDataPA$Month)
 LongfinSmeltYOYDataPA$StationCode<-as.factor(LongfinSmeltYOYDataPA$StationCode)
 
 LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
+```
 
+
+
+```{r}
 LongfinSmeltYOYDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
 
 LongfinSmeltYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
@@ -162,7 +166,6 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
 ### Setting hyperparameters
 
 ```{r}
-
 str(LongfinSmeltYOYDataPA)
 
  set.seed(124) # for reproducibility 
@@ -189,8 +192,12 @@ summary(brt1)
 mean(brt1$residuals^2) #mean residual deviance 0.309
 #brt1$
 names(brt1) #tells us the components of output
+CV_deviance_explained <- (((brt1$self.statistics$mean.null- brt1$cv.statistics$deviance.mean)/brt1$self.statistics$mean.null)*100) 
+
+CV_Correlation<-brt1$cv.statistics$correlation.mean
 
 # To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
+
 
  # reponse curves
 dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
@@ -218,17 +225,58 @@ gbm.perspec(brt1,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
-
-
-#predicted<-predict(object=brt1, )
 ```
 
-For the final model (lr = , tc = , bag fraction = )
-
-Interaction report:
-
-
 ## Validation
+
+
+## Splitting out training and testing data.
+https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
+```{r}
+set.seed(124)
+inTrain<-createDataPartition(y=LongfinSmeltYOYDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
+LongfinSmeltYOYDataPA_Train<-LongfinSmeltYOYDataPA[inTrain,]
+LongfinSmeltYOYDataPA_Test<-LongfinSmeltYOYDataPA[-inTrain,]
+```
+
+Running model again
+
+```{r}
+LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
+brt2 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA_Train, 
+                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+                         gbm.y= 11, 
+                         family = "bernoulli", 
+                         tree.complexity = Complexity,
+                         learning.rate = LearningRate, 
+                         bag.fraction = Bag 
+                         ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
+Preds<-predict(object = brt2, newdata = LongfinSmeltYOYDataPA_Test, type = "response")
+
+#PredGrid<-gbm.predict.grids(brt2, LongfinSmeltYOYDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
+PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
+
+LongfinSmeltYOYDataPA_Test$Binary<-as.factor(LongfinSmeltYOYDataPA_Test$Binary)
+
+confusionMatrix(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+
+LongfinSmeltYOYDataPA_Test$Binary<-as.numeric(LongfinSmeltYOYDataPA_Test$Binary)
+
+calc.deviance(LongfinSmeltYOYDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #6.890836
+library(gbm)
+
+roc(LongfinSmeltYOYDataPA_Test$Binary, Preds) #Area under the curve: 0.8112
+
+ROC<-pROC::roc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+auc<-round(auc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary),4)
+ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
+  ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
+  theme_minimal()
+PredBinaries<-as.numeric(PredBinaries)
+cor(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+plot(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+```
+Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
 
 Below are 2 validation schemes that we typically use to assess how well the model is predicting. The first is a K-fold cross-validation where the data is split in k number of equal sections (i.e. folds). A model is the trained on one fold and then its predicts to the rest of the folds. It then iterates this process through all the folds. Most studies do 10 folds as this has shown to be a good number. Too low or too high has shown to potentially bias / cause variability in results.
 
@@ -488,3 +536,87 @@ When looking at partial dependence plots, the y-axis represents the marginal imp
 
 -   If number of trees below 1k, need to lower learning rate.
 -   There may be a difference in the caret output and gbm output (5%). To avoid this can use the default grid to optimize parameters and use predict to have the same results... Or don't worry about it.
+
+# Looking at caret outputs for optimal model (ROC and Kappa)
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
+                       n.trees = 1100,
+                       shrinkage = LearningRate,
+                       n.minobsinnode = 10 )
+
+gbmGrid %>% head() #take a look at what we just made
+
+#specify type of resampling
+fitControlKappa <- trainControl(## 10-fold CV
+                           method = "repeatedcv", #"cv" if roc metric is used below.
+                           number = 10, #Can increase! 
+                           repeats=3, #Delete for roc
+                           )
+
+#specify type of resampling
+fitControlROC <- trainControl(## 10-fold CV
+                           method = "cv", 
+                           number = 10, #Can increase! 
+                           classProbs = TRUE, ## Estimate class probabilities for classification models if ROC
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = LongfinSmeltYOYDataPA, 
+                method = "gbm", 
+                trControl = fitControlKappa, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "Kappa" #Or ROC 
+                )
+
+gbmFitKappa
+
+gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = LongfinSmeltYOYDataPA, 
+                method = "gbm", 
+                trControl = fitControlROC, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "ROC"  
+                )
+gbmFitROC
+# save the model
+#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+Stochastic Gradient Boosting 3505 samples   4 predictor   2 classes: 'absent', 'present' No pre-processingResampling: Cross-Validated (10 fold, repeated 3 times) Summary of sample sizes: 3155, 3154, 3155, 3154, 3155, 3155, ... Resampling results:  Accuracy  Kappa      0.932194  0.1785341Tuning parameter 'n.trees' was held constant at a value of a value of 0.08Tuning parameter 'n.minobsinnode' was held constant at a value of 10
+
+Stochastic Gradient Boosting 
+
+3505 samples
+   4 predictor
+   2 classes: 'absent', 'present' 
+
+No pre-processing
+Resampling: Cross-Validated (10 fold) 
+Summary of sample sizes: 3154, 3155, 3155, 3155, 3155, 3154, ... 
+Resampling results:
+
+  ROC       Sens       Spec     
+  0.774977  0.9838776  0.1422078
+
+Tuning parameter 'n.trees' was held constant at a value of
+ a value of 0.08
+Tuning parameter 'n.minobsinnode' was
+ held constant at a value of 10
+

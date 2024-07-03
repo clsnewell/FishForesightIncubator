@@ -93,7 +93,7 @@ angaus.tc5.lr005 <- gbm.step(data=model.data,
     tree.complexity = 5,
     learning.rate = 0.005,
     bag.fraction = 0.5)
-
+angaus.tc5.lr005$cv.statistics
 # To more broadly explore whether other settings perform better, and assuming that these are the only data available, you could either split the data into a training and testing set or use the CV results. You could systematically alter tc,  lr and the bag fraction and compare the results. See the later section on prediction to find out how to predict to independent data and calculate relevant statistics. 
 
 
@@ -172,8 +172,17 @@ gbm.predict.grids(angaus.tc5.lr005, eval.data, want.grids = F, sp.name = "preds"
 # In both cases the predictions will be in a vector called preds, because that's what we named them.
 # These are evaluation sites, and have observations in column 1 (named Angaus_obs). They are independent of the model building set and could be used for an independent evaluation. For example here is code for calculating the deviance and the AUC (area under the ROC curve):
 
-calc.deviance(eval.data$Angaus_obs,preds,calc.mean=T)
-roc(eval.data$Angaus_obs,preds)
+calc.deviance(eval.data$Angaus_obs,preds,calc.mean=T) #0.7253764
+roc(eval.data$Angaus_obs,preds)#0.8681
+mean(angaus.tc5.lr005$residuals^2) #mean residual deviance 0.395
+#brt1$
+angaus.tc5.lr005$self.statistics$discrimination# 0.9758
+angaus.tc5.lr005$cv.statistics$discrimination.mean #0.87487
+angaus.tc5.lr005$self.statistics$mean.resid# 0.3948164
+CV_correlation<-angaus.tc5.lr005$cv.statistics$correlation.mean #0.5834732
+CV_deviance_explained <- (((angaus.tc5.lr005$self.statistics$mean.null- angaus.tc5.lr005$cv.statistics$deviance.mean)/angaus.tc5.lr005$self.statistics$mean.null)*100) #32.5556
+angaus.tc5.lr005$cv.statistics$deviance.mean
+#https://stackoverflow.com/questions/29873577/r-dismogbm-step-parameter-selection-function-in-parallel
 
 # Note that the calc.deviance function has different formulae for different distributions of data; the default is binomial, so we didn't specify it in the call
 

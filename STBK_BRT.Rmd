@@ -3,9 +3,11 @@ title: "Modeling Protocol"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
-Constructed so I can search "Species"and replace with Gensp name and have the code run.
+Constructed so I can search "Stickleback"and replace with Gensp name and have the code run.
 
 ### Loading libraries and data
 
@@ -25,65 +27,65 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 
 ## Step 1: Data visualization, Quality Check
 
-### Species data filtering
+### Stickleback data filtering
 ```{r}
-SpeciesData<-PresAbs %>% filter(gensp %in% "Genus species") %>% dplyr::select(-...1, -...2)
-SpeciesData<-as.data.frame(SpeciesData)
-unique(SpeciesData$AgeClass)
+SticklebackData<-PresAbs %>% filter(gensp %in% "Gasterosteus aculeatus") %>% dplyr::select(-...1, -...2)
+SticklebackData<-as.data.frame(SticklebackData)
+unique(SticklebackData$AgeClass)
 ```
 
 Now lets check the dataset.
 
 ```{r}
-glimpse(SpeciesData)
-summary(SpeciesData)
-NumSamples<-unique(SpeciesData$SampleRowID) #3505 sampling events.
+glimpse(SticklebackData)
+summary(SticklebackData)
+NumSamples<-unique(SticklebackData$SampleRowID) #3505 sampling events.
 ```
 
 Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
 
 ### 1 row for each sampling event.
 ```{r}
-SpeciesDataPA<-SpeciesData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
+SticklebackDataPA<-SticklebackData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
 
-SpeciesDataPA$PresAbs<-as.factor(SpeciesDataPA$PresAbs)
+SticklebackDataPA$PresAbs<-as.factor(SticklebackDataPA$PresAbs)
 
-SpeciesDataPA$Year<-as.factor(SpeciesDataPA$Year)
+SticklebackDataPA$Year<-as.factor(SticklebackDataPA$Year)
 
-SpeciesDataPA$Month<-as.factor(SpeciesDataPA$Month)
+SticklebackDataPA$Month<-as.factor(SticklebackDataPA$Month)
 
-SpeciesDataPA$StationCode<-as.factor(SpeciesDataPA$StationCode)
+SticklebackDataPA$StationCode<-as.factor(SticklebackDataPA$StationCode)
 
-SpeciesDataPA<-as.data.frame(SpeciesDataPA)
+SticklebackDataPA<-as.data.frame(SticklebackDataPA)
 ```
 
 ### Summaries of catch
 ```{r}
-SpeciesDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
+SticklebackDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
 
-SpeciesDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
+SticklebackDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
 
-SpeciesDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
+SticklebackDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
 
 #Overall capture probability
-(sum(SpeciesDataPA$Binary)/nrow(SpeciesDataPA))*100
+(sum(SticklebackDataPA$Binary)/nrow(SticklebackDataPA))*100
 ```
 
-_% probability of capturing Species.
+13.32% probability of capturing Stickleback.
 
 ### Summaries of samples
 ```{r}
-range(SpeciesDataPA$WaterTemperature)
-mean(SpeciesDataPA$WaterTemperature)
+range(SticklebackDataPA$WaterTemperature)
+mean(SticklebackDataPA$WaterTemperature)
 
-range(SpeciesDataPA$DO)
-mean(SpeciesDataPA$DO)
+range(SticklebackDataPA$DO)
+mean(SticklebackDataPA$DO)
 
-range(SpeciesDataPA$Salinity)
-mean(SpeciesDataPA$Salinity)
+range(SticklebackDataPA$Salinity)
+mean(SticklebackDataPA$Salinity)
 
-range(SpeciesDataPA$Secchi)
-mean(SpeciesDataPA$Secchi)
+range(SticklebackDataPA$Secchi)
+mean(SticklebackDataPA$Secchi)
 
 ```
 
@@ -97,36 +99,22 @@ mean(SpeciesDataPA$Secchi)
 
 ### Visualizations
 ```{r}
-Plot_Water<-SpeciesData %>% ggplot(aes(y=Binary, x=WaterTemperature, color = TowDuration)) + 
-  geom_point()+ theme_bw()
-
-Plot_DO<-SpeciesData %>% ggplot(aes(y=Binary, x=DO, color = TowDuration)) + 
-  geom_point()+ theme_bw()
-
-Plot_Secchi<-SpeciesData %>% ggplot(aes(y=Binary, x=Secchi, color = TowDuration)) + 
-  geom_point()+ theme_bw()
-
-Plot_Salinity<-SpeciesData %>% ggplot(aes(y=Binary, x=Salinity, color = TowDuration)) + 
-  geom_point() + theme_bw()
-
-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
-
 # I want to show presences vs. all samples.
 
-Plot_Water<-SpeciesData %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+Plot_Water<-SticklebackData %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
-Plot_DO<-SpeciesData %>% ggplot(aes(y=PresAbs, x=DO)) + 
+Plot_DO<-SticklebackData %>% ggplot(aes(y=PresAbs, x=DO)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
-Plot_Secchi<-SpeciesData %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
+Plot_Secchi<-SticklebackData %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-SpeciesData %>% ggplot(aes(y=PresAb, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-SticklebackData %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
 # now add the title
-title <- ggdraw() + draw_label("Species presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+title <- ggdraw() + draw_label("Stickleback presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
     # add margin on the left of the drawing canvas,
     # so title is aligned with left edge of first plot
     plot.margin = margin(0, 0, 0, 7))
@@ -135,7 +123,7 @@ plot_grid(title, Plots, ncol = 1,
   # rel_heights values control vertical title margins
   rel_heights = c(0.1, 1))
 
-SummTable <- SpeciesData %>% 
+SummTable <- SticklebackData %>% 
   group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature, na.rm=TRUE),
@@ -157,19 +145,13 @@ SummTable <- SpeciesData %>%
   )
 
 print(SummTable)
-write.csv(SummTable, here("data", "Species_SummTable.csv"))
+write.csv(SummTable, here("data", "Stickleback_SummTable.csv"))
 
 #Seasonality
-SpeciesData$Year<-as.factor(SpeciesData$Year)
+SticklebackData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
 
-SpeciesData$Month<-as.factor(SpeciesData$Month)
-
-SpeciesData$StationCode<-as.factor(SpeciesData$StationCode)
-
-SpeciesData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
-
-SpeciesData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch Species") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-SpeciesData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch Species") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+SticklebackData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch Stickleback") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+SticklebackData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch Stickleback") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
 
 Plot analysis:
@@ -180,23 +162,22 @@ Plot analysis:
 ### Setting hyperparameters
 ```{r}
 
-str(SpeciesDataPA)
-
- set.seed(124) # for reproducibility 
+str(SticklebackDataPA)
+unique(SticklebackDataPA$Binary)
+set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
-LearningRate<-0.01
+LearningRate<-0.005
 Bag<-0.6  
-
 ```
 
 ### gbm.step
 Thanks Nima and Elith!
 
 ```{r}
- set.seed(124) # for reproducibility 
+set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
- brt1 <- dismo::gbm.step(data=SpeciesData, 
+brt1 <- dismo::gbm.step(data=SticklebackDataPA, 
                          gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
                          gbm.y= 11, # Binary response variable
                          family = "bernoulli", # for counts this would be "poisson"
@@ -233,14 +214,13 @@ brt1$self.statistics$correlation[[1]]
 #Use these for plotting interactions
 # You can plot pairwise interactions like this:
 par(mfrow=c(1,2))
-gbm.perspec(brt1,1, 2) #3D PLOT of Water Temp and Salinity
-gbm.perspec(brt1,3, 2) #salinity and DO
-gbm.perspec(brt1,1, 2)
+gbm.perspec(brt1,1, 3) #3D PLOT of Water Temp and Salinity
+gbm.perspec(brt1,1, 2) #salinity and DO
 #Can also rotate by switching x and y.
 
 
 # save the model
-saveRDS(brt1, here("data", "Species_brt_gbm_step.rds"))
+saveRDS(brt1, here("data", "Stickleback_brt_gbm_step.rds"))
 
 ```
 
@@ -249,54 +229,6 @@ Firstly, the things you can see: The R console will show some results (see the W
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
 
 ## Step 3: Validation
-
-### Splitting out training and testing data.
-https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
-```{r}
-set.seed(124)
-inTrain<-createDataPartition(y=SpeciesDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
-SpeciesDataPA_Train<-SpeciesDataPA[inTrain,]
-SpeciesDataPA_Test<-SpeciesDataPA[-inTrain,]
-```
-
-### Running model again
-
-```{r}
-LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
-brt2 <- dismo::gbm.step(data=SpeciesDataPA_Train, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, 
-                         family = "bernoulli", 
-                         tree.complexity = Complexity,
-                         learning.rate = LearningRate, 
-                         bag.fraction = Bag 
-                         ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
-Preds<-predict(object = brt2, newdata = SpeciesDataPA_Test, type = "response")
-
-#PredGrid<-gbm.predict.grids(brt2, SpeciesDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
-PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
-
-SpeciesDataPA_Test$Binary<-as.factor(SpeciesDataPA_Test$Binary)
-
-confusionMatrix(PredBinaries, SpeciesDataPA_Test$Binary)
-
-SpeciesDataPA_Test$Binary<-as.numeric(SpeciesDataPA_Test$Binary)
-
-calc.deviance(SpeciesDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #6.890836
-library(gbm)
-
-roc(SpeciesDataPA_Test$Binary, Preds) #Area under the curve: 0.8112
-
-ROC<-pROC::roc(PredBinaries, SpeciesDataPA_Test$Binary)
-auc<-round(auc(PredBinaries, SpeciesDataPA_Test$Binary),4)
-ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
-  ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
-  theme_minimal()
-PredBinaries<-as.numeric(PredBinaries)
-cor(PredBinaries, SpeciesDataPA_Test$Binary)
-plot(PredBinaries, SpeciesDataPA_Test$Binary)
-```
-Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
 
 ### 10-fold and loo
 
@@ -351,7 +283,7 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
   
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = SpeciesDataPA,
+brt_SDM_k <- eval_kfold_brt(dataInput = SticklebackDataPA,
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity,
@@ -426,8 +358,8 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = SpeciesDataPA[which(SpeciesDataPA$Binary == 1),],
-                        abs = SpeciesDataPA[which(SpeciesDataPA$Binary == 0),],
+brt_SDM_loo <- eval_loo_brt(pres = SticklebackDataPA[which(SticklebackDataPA$Binary == 1),],
+                        abs = SticklebackDataPA[which(SticklebackDataPA$Binary == 0),],
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity)
@@ -439,8 +371,119 @@ eval <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval
 #now save it
 
-saveRDS(eval, here("data","Species_brt_SDM_eval_gbm_step.rds"))
+saveRDS(eval, here("data","Stickleback_brt_SDM_eval_gbm_step.rds"))
 ```
+
+# Looking at caret outputs for optimal model (ROC and Kappa)
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
+                       n.trees = 1350,
+                       shrinkage = LearningRate,
+                       n.minobsinnode = 10 )
+
+gbmGrid %>% head() #take a look at what we just made
+
+#specify type of resampling
+fitControlKappa <- trainControl(## 10-fold CV
+                           method = "repeatedcv", #"cv" if roc metric is used below.
+                           number = 10, #Can increase! 
+                           repeats=3, #Delete for roc
+                           )
+
+#specify type of resampling
+fitControlROC <- trainControl(## 10-fold CV
+                           method = "cv", 
+                           number = 10, #Can increase! 
+                           classProbs = TRUE, ## Estimate class probabilities for classification models if ROC
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = SticklebackDataPA, 
+                method = "gbm", 
+                trControl = fitControlKappa, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "Kappa" #Or ROC 
+                )
+
+gbmFitKappa
+
+gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = SticklebackDataPA, 
+                method = "gbm", 
+                trControl = fitControlROC, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "ROC"  
+                )
+gbmFitROC
+# save the model
+#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+### Splitting out training and testing data.
+https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
+```{r}
+set.seed(124)
+inTrain<-createDataPartition(y=SticklebackDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
+SticklebackDataPA_Train<-SticklebackDataPA[inTrain,]
+SticklebackDataPA_Test<-SticklebackDataPA[-inTrain,]
+```
+
+### Running model again
+
+```{r}
+LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
+brt2 <- dismo::gbm.step(data=SticklebackDataPA_Train, 
+                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+                         gbm.y= 11, 
+                         family = "bernoulli", 
+                         tree.complexity = Complexity,
+                         learning.rate = LearningRate, 
+                         bag.fraction = Bag 
+                         ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
+Preds<-predict(object = brt2, newdata = SticklebackDataPA_Test, type = "response")
+
+#PredGrid<-gbm.predict.grids(brt2, SticklebackDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
+PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
+
+SticklebackDataPA_Test$Binary<-as.factor(SticklebackDataPA_Test$Binary)
+
+confusionMatrix(PredBinaries, SticklebackDataPA_Test$Binary)
+
+SticklebackDataPA_Test$Binary<-as.numeric(SticklebackDataPA_Test$Binary)
+
+calc.deviance(SticklebackDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #5.5702
+
+roc(SticklebackDataPA_Test$Binary, Preds) #Area under the curve: 0.7681
+
+ROC<-pROC::roc(PredBinaries, SticklebackDataPA_Test$Binary)
+auc<-round(auc(PredBinaries, SticklebackDataPA_Test$Binary),4)
+ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
+  ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
+  theme_minimal()
+PredBinaries<-as.numeric(PredBinaries)
+cor(PredBinaries, SticklebackDataPA_Test$Binary)
+plot(PredBinaries, SticklebackDataPA_Test$Binary)
+```
+Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
+
+
 
 ## Step 4: Analyzing Response Curves & Variable Importance
 
@@ -453,15 +496,15 @@ Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_imp
 
 ###----response plots----####
 
-brt_Species <- here("data","Species_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+brt_Stickleback <- here("data","Stickleback_brt_SDM_eval_gbm_step.rds") %>% readRDS()
 
 
 # get the matrix out of the `plot.gbm`
-var<-brt_Species$brt$var.names
+var<-brt_Stickleback$brt$var.names
 response_data<-data.frame()
 
 for (i in 1:length(var)){
-response_plot_data <- gbm::plot.gbm(brt_Species$brt,
+response_plot_data <- gbm::plot.gbm(brt_Stickleback$brt,
                                  i.var = var[i],
                                  return.grid = TRUE)
 
@@ -498,8 +541,8 @@ ggsave(here("Plots","LongfinSmelt_response_plots.png"),
 #       width = 7, height = 6, units = "in", dpi = 300)
 
 ###----variable contribution----####
-rel.inf<-data.frame(Variable = brt_Species$brt$contributions$var,
-                        rel.inf=brt_Species$brt$contributions$rel.inf)# %>% 
+rel.inf<-data.frame(Variable = brt_Stickleback$brt$contributions$var,
+                        rel.inf=brt_Stickleback$brt$contributions$rel.inf)# %>% 
 
 
 
@@ -512,73 +555,13 @@ rel.inf %>%
        y = "Relative Importance (%)")+
   theme(axis.text.x = element_text(angle = 45,hjust=1))
 
-ggsave(here("Plots","Species_relative_importance.png"),
+ggsave(here("Plots","Stickleback_relative_importance.png"),
        width = 7, height = 6, units = "in", dpi = 300)
 #ggsave(here("Plots","FS3_relative_importance.svg"),
 #       width = 7, height = 6, units = "in", dpi = 300)
 ```
 
-# Looking at caret outputs for optimal model (ROC and Kappa)
 
-```{r}
-gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
-                       n.trees = 1100,
-                       shrinkage = LearningRate,
-                       n.minobsinnode = 10 )
-
-gbmGrid %>% head() #take a look at what we just made
-
-#specify type of resampling
-fitControlKappa <- trainControl(## 10-fold CV
-                           method = "repeatedcv", #"cv" if roc metric is used below.
-                           number = 10, #Can increase! 
-                           repeats=3, #Delete for roc
-                           )
-
-#specify type of resampling
-fitControlROC <- trainControl(## 10-fold CV
-                           method = "cv", 
-                           number = 10, #Can increase! 
-                           classProbs = TRUE, ## Estimate class probabilities for classification models if ROC
-                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
-                           )
-
-set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
-
-gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = SpeciesDataPA, 
-                method = "gbm", 
-                trControl = fitControlKappa, 
-                bag.fraction=Bag,
-                na.action=na.pass,
-                distribution="bernoulli",
-                verbose = FALSE, #for gbm's this is needed.
-                ## Now specify the exact models to evaluate:
-                tuneGrid = gbmGrid, #what we made above
-                metric = "Kappa" #Or ROC 
-                )
-
-gbmFitKappa
-
-gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = SpeciesDataPA, 
-                method = "gbm", 
-                trControl = fitControlROC, 
-                bag.fraction=Bag,
-                na.action=na.pass,
-                distribution="bernoulli",
-                verbose = FALSE, #for gbm's this is needed.
-                ## Now specify the exact models to evaluate:
-                tuneGrid = gbmGrid, #what we made above
-                metric = "ROC"  
-                )
-gbmFitROC
-# save the model
-#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
-
-# we can plot the results too which will be easier to interpret
-ggplot(gbmFit)
-```
 # NOTES
 
 -   If number of trees below 1k, need to lower learning rate.

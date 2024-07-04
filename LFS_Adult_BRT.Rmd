@@ -1,11 +1,42 @@
 ---
-title: "Age-0 Longfin Smelt Presence/Absence BRT"
+title: "Adult Longfin Smelt Presence/Absence BRT"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+NOT ENOUGH DATA
+NO GOOD
+
+AgeClass  Year     N Count
+   <chr>    <dbl> <int> <dbl>
+ 1 Age-0     2011   259    15
+ 2 Age-0     2012   254     8
+ 3 Age-0     2013   534   340
+ 4 Age-0     2014   317    56
+ 5 Age-0     2015   287     7
+ 6 Age-0     2016   289     2
+ 7 Age-0     2017   292     8
+ 8 Age-0     2018   276    16
+ 9 Age-0     2019   266     3
+10 Age-0     2020   472   254
+11 Age-0     2021   758   505
+12 Age-0     2022   714   495
+13 Age-0     2023   294    16
+14 Age-1+    2011   257     8
+15 Age-1+    2012   253     3
+16 Age-1+    2013   227     2
+17 Age-1+    2014   285     5
+18 Age-1+    2015   287     1
+19 Age-1+    2016   289     0
+20 Age-1+    2017   290     0
+21 Age-1+    2018   274     9
+22 Age-1+    2019   265     0
+23 Age-1+    2020   240     2
+24 Age-1+    2021   289     3
+25 Age-1+    2022   271    19
+26 Age-1+    2023   292     4
 
 ### Loading libraries and data
 
@@ -17,78 +48,75 @@ library(here)
 library(cowplot)
 library(Hmisc)
 library(tidyverse)
-library(gbm3)
+
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 ```
 
 # PresenceAbsence
 
-## Step 1: Wrangling, Visualization, Quality Check
+## Step 1: Data visualization, Quality Check
 
 Before modeling, we will ensure the data is up to snuff.
 
 First things first, we need to get the data for the LongfinSmelt of interest we want to model.
 
-### LFS data filtering
 ```{r}
-LongfinSmeltYOYData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
-LongfinSmeltYOYData<-as.data.frame(LongfinSmeltYOYData)
-unique(LongfinSmeltYOYData$AgeClass)
+LongfinSmeltAdultData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-1+") %>% dplyr::select(-...1, -...2)
+LongfinSmeltAdultData<-as.data.frame(LongfinSmeltAdultData)
+unique(LongfinSmeltAdultData$AgeClass)
 ```
 
 Now lets check the dataset.
 
 ```{r}
-glimpse(LongfinSmeltYOYData)
-summary(LongfinSmeltYOYData)
-NumSamples<-unique(LongfinSmeltYOYData$SampleRowID) #3505 sampling events.
+glimpse(LongfinSmeltAdultData)
+summary(LongfinSmeltAdultData)
+NumSamples<-unique(LongfinSmeltAdultData$SampleRowID) #3505 sampling events.
 ```
 
-### 1 row for each sampling event.
+Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
+
 ```{r}
-LongfinSmeltYOYDataPA<-LongfinSmeltYOYData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
+LongfinSmeltAdultDataPA<-LongfinSmeltAdultData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
 
-LongfinSmeltYOYDataPA$PresAbs<-as.factor(LongfinSmeltYOYDataPA$PresAbs)
+LongfinSmeltAdultDataPA$PresAbs<-as.factor(LongfinSmeltAdultDataPA$PresAbs)
 
-LongfinSmeltYOYDataPA$Year<-as.factor(LongfinSmeltYOYDataPA$Year)
+LongfinSmeltAdultDataPA$Year<-as.factor(LongfinSmeltAdultDataPA$Year)
 
-LongfinSmeltYOYDataPA$Month<-as.factor(LongfinSmeltYOYDataPA$Month)
+LongfinSmeltAdultDataPA$Month<-as.factor(LongfinSmeltAdultDataPA$Month)
 
-LongfinSmeltYOYDataPA$StationCode<-as.factor(LongfinSmeltYOYDataPA$StationCode)
+LongfinSmeltAdultDataPA$StationCode<-as.factor(LongfinSmeltAdultDataPA$StationCode)
 
-LongfinSmeltYOYDataPA<-as.data.frame(LongfinSmeltYOYDataPA)
-```
+LongfinSmeltAdultDataPA<-as.data.frame(LongfinSmeltAdultDataPA)
 
+LongfinSmeltAdultDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
 
-### Summaries of catch
-```{r}
-LongfinSmeltYOYDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
+LongfinSmeltAdultDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
 
-LongfinSmeltYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
-
-LongfinSmeltYOYDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
+LongfinSmeltAdultDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
 
 #Overall capture probability
-(sum(LongfinSmeltYOYDataPA$Binary)/nrow(LongfinSmeltYOYDataPA))*100
+(sum(LongfinSmeltAdultDataPA$Binary)/nrow(LongfinSmeltAdultDataPA))*100
 ```
 
 6.22% probability of capturing yoy lfs.
 
-### Summaries of samples
 ```{r}
-range(LongfinSmeltYOYDataPA$WaterTemperature)
-mean(LongfinSmeltYOYDataPA$WaterTemperature)
+range(LongfinSmeltAdultDataPA$WaterTemperature)
+mean(LongfinSmeltAdultDataPA$WaterTemperature)
 
-range(LongfinSmeltYOYDataPA$DO)
-mean(LongfinSmeltYOYDataPA$DO)
+range(LongfinSmeltAdultDataPA$DO)
+mean(LongfinSmeltAdultDataPA$DO)
 
-range(LongfinSmeltYOYDataPA$Salinity)
-mean(LongfinSmeltYOYDataPA$Salinity)
+range(LongfinSmeltAdultDataPA$Salinity)
+mean(LongfinSmeltAdultDataPA$Salinity)
 
-range(LongfinSmeltYOYDataPA$Secchi)
-mean(LongfinSmeltYOYDataPA$Secchi)
+range(LongfinSmeltAdultDataPA$Secchi)
+mean(LongfinSmeltAdultDataPA$Secchi)
 
 ```
+
+
 
 | Water Quality     | Mean      | Range           |
 |-------------------|-----------|-----------------|
@@ -97,20 +125,19 @@ mean(LongfinSmeltYOYDataPA$Secchi)
 | Salinity          | 4.69 psu  | 0, 15.8 psu     |
 | Secchi            | 30.66 cm  | 7, 99 cm        |
 
-### Visualizations
 ```{r}
 # I want to show presences vs. all samples.
-#cdplot(y=LongfinSmeltYOYDataPA$PresAbs, x=LongfinSmeltYOYDataPA$WaterTemperature)
+#cdplot(y=LongfinSmeltAdultDataPA$PresAbs, x=LongfinSmeltAdultDataPA$WaterTemperature)
 
-Plot_Water<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+Plot_Water<-LongfinSmeltAdultDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
-Plot_DO<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=DO)) + 
+Plot_DO<-LongfinSmeltAdultDataPA %>% ggplot(aes(y=PresAbs, x=DO)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
-Plot_Secchi<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
+Plot_Secchi<-LongfinSmeltAdultDataPA %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-LongfinSmeltAdultDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -124,7 +151,7 @@ plot_grid(title, Plots, ncol = 1,
   # rel_heights values control vertical title margins
   rel_heights = c(0.1, 1))
 
-SummTable <- LongfinSmeltYOYDataPA %>% 
+SummTable <- LongfinSmeltAdultDataPA %>% 
   group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature, na.rm=TRUE),
@@ -149,10 +176,10 @@ print(SummTable)
 write.csv(SummTable, here("data", "LongfinSmeltYOY_SummTable.csv"))
 
 #Seasonality
-LongfinSmeltYOYDataPA %>% dplyr::summarize(TotalPresence=sum(Binary, na.rm=TRUE), sd_binary=sd(Binary, na.rm=TRUE), n=n(), PercentageOfPresence=100*(TotalPresence/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
+LongfinSmeltAdultDataPA %>% dplyr::summarize(TotalPresence=sum(Binary, na.rm=TRUE), sd_binary=sd(Binary, na.rm=TRUE), n=n(), PercentageOfPresence=100*(TotalPresence/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
 
-LongfinSmeltYOYDataPA %>% group_by(Month) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch yoy longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-LongfinSmeltYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+LongfinSmeltAdultDataPA %>% group_by(Month) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch yoy longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+LongfinSmeltAdultDataPA %>% group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
 
 Most restricted presence compared to absence is dissolved oxygen. High secchi depth (clear water) also lacks presence above 75 cm.
@@ -166,19 +193,19 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
 ### Setting hyperparameters
 
 ```{r}
-str(LongfinSmeltYOYDataPA)
+
+str(LongfinSmeltAdultDataPA)
 
  set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
-LearningRate<-0.008
-Bag<-0.6  
+LearningRate<-0.001
+Bag<-0.6
 
 ```
 
-### gbm.step
 ```{r}
-system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltAdultDataPA, 
                          gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
                          gbm.y= 11, # Binary response variable
                          family = "bernoulli", # for counts this would be "poisson"
@@ -193,12 +220,8 @@ summary(brt1)
 mean(brt1$residuals^2) #mean residual deviance 0.309
 #brt1$
 names(brt1) #tells us the components of output
-CV_deviance_explained <- (((brt1$self.statistics$mean.null- brt1$cv.statistics$deviance.mean)/brt1$self.statistics$mean.null)*100) 
-
-CV_Correlation<-brt1$cv.statistics$correlation.mean
 
 # To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
-
 
  # reponse curves
 dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
@@ -226,59 +249,18 @@ gbm.perspec(brt1,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
 saveRDS(brt1, here("data", "LongfinSmelt_brt_gbm_step.rds"))
+
+
+#predicted<-predict(object=brt1, )
 ```
 
-## Step 3: Validation
+For the final model (lr = , tc = , bag fraction = )
 
-### Splitting out training and testing data.
-https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
-```{r}
-set.seed(124)
-inTrain<-createDataPartition(y=LongfinSmeltYOYDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
-LongfinSmeltYOYDataPA_Train<-LongfinSmeltYOYDataPA[inTrain,]
-LongfinSmeltYOYDataPA_Test<-LongfinSmeltYOYDataPA[-inTrain,]
-```
+Interaction report:
 
-### Running model again
 
-```{r}
-LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
-brt2 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA_Train, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, 
-                         family = "bernoulli", 
-                         tree.complexity = Complexity,
-                         learning.rate = LearningRate, 
-                         bag.fraction = Bag 
-                         ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
-Preds<-predict(object = brt2, newdata = LongfinSmeltYOYDataPA_Test, type = "response")
+## Validation
 
-#PredGrid<-gbm.predict.grids(brt2, LongfinSmeltYOYDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
-PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
-
-LongfinSmeltYOYDataPA_Test$Binary<-as.factor(LongfinSmeltYOYDataPA_Test$Binary)
-
-confusionMatrix(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-
-LongfinSmeltYOYDataPA_Test$Binary<-as.numeric(LongfinSmeltYOYDataPA_Test$Binary)
-
-calc.deviance(LongfinSmeltYOYDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #6.890836
-library(gbm)
-
-roc(LongfinSmeltYOYDataPA_Test$Binary, Preds) #Area under the curve: 0.8112
-
-ROC<-pROC::roc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-auc<-round(auc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary),4)
-ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
-  ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
-  theme_minimal()
-PredBinaries<-as.numeric(PredBinaries)
-cor(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-plot(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-```
-Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
-
-### 10-fold and loo
 Below are 2 validation schemes that we typically use to assess how well the model is predicting. The first is a K-fold cross-validation where the data is split in k number of equal sections (i.e. folds). A model is the trained on one fold and then its predicts to the rest of the folds. It then iterates this process through all the folds. Most studies do 10 folds as this has shown to be a good number. Too low or too high has shown to potentially bias / cause variability in results.
 
 Performance metrics that are calculated are deviance explained, AUC, and TSS. Deviance explained is a metric for how much variance did our model explain (you can think of is as R squared) and AUC and TSS are assessing predictive skill. Since you are using abundance data you may need to change that to RMSE or MAE (I’d suggest taking a look at the Metrics package for that)
@@ -330,7 +312,7 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
 }
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltYOYDataPA,
+brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltAdultDataPA,
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity,
@@ -405,8 +387,8 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 1),],
-                        abs = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 0),],
+brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltAdultDataPA[which(LongfinSmeltAdultDataPA$Binary == 1),],
+                        abs = LongfinSmeltAdultDataPA[which(LongfinSmeltAdultDataPA$Binary == 0),],
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity)
@@ -455,11 +437,10 @@ $brt_loo
 11 2018 37.87022 0.7986111 0.5833333    206
 12 2019 34.98621 0.5000000 0.5000000    216
 13 2016 39.04901 0.7500000 0.5000000    216
-## Step 4: Analyzing Response Curves & Variable Importance
+## Analyzing Response Curves & Variable Importance
 
 Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R>
 
-### Nima plots
 ```{r}
 # Fig. S3. The relative importance of drivers in distribution models
 # Fig. S4. Response curves of each environmental variable from distribution models
@@ -534,92 +515,7 @@ ggsave(here("Plots","LongfinSmelt_relative_importance.png"),
 
 When looking at partial dependence plots, the y-axis represents the marginal impact of the independent variable to the dependent variable. If at 0, then there is 0 impact...
 
-
-### Looking at caret outputs for optimal model (ROC and Kappa)
-
-```{r}
-gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
-                       n.trees = 1100,
-                       shrinkage = LearningRate,
-                       n.minobsinnode = 10 )
-
-gbmGrid %>% head() #take a look at what we just made
-
-#specify type of resampling
-fitControlKappa <- trainControl(## 10-fold CV
-                           method = "repeatedcv", #"cv" if roc metric is used below.
-                           number = 10, #Can increase! 
-                           repeats=3, #Delete for roc
-                           )
-
-#specify type of resampling
-fitControlROC <- trainControl(## 10-fold CV
-                           method = "cv", 
-                           number = 10, #Can increase! 
-                           classProbs = TRUE, ## Estimate class probabilities for classification models if ROC
-                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
-                           )
-
-set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
-
-gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = LongfinSmeltYOYDataPA, 
-                method = "gbm", 
-                trControl = fitControlKappa, 
-                bag.fraction=Bag,
-                na.action=na.pass,
-                distribution="bernoulli",
-                verbose = FALSE, #for gbm's this is needed.
-                ## Now specify the exact models to evaluate:
-                tuneGrid = gbmGrid, #what we made above
-                metric = "Kappa" #Or ROC 
-                )
-
-gbmFitKappa
-
-gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = LongfinSmeltYOYDataPA, 
-                method = "gbm", 
-                trControl = fitControlROC, 
-                bag.fraction=Bag,
-                na.action=na.pass,
-                distribution="bernoulli",
-                verbose = FALSE, #for gbm's this is needed.
-                ## Now specify the exact models to evaluate:
-                tuneGrid = gbmGrid, #what we made above
-                metric = "ROC"  
-                )
-gbmFitROC
-# save the model
-#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
-
-# we can plot the results too which will be easier to interpret
-ggplot(gbmFit)
-```
-
-Stochastic Gradient Boosting 3505 samples   4 predictor   2 classes: 'absent', 'present' No pre-processingResampling: Cross-Validated (10 fold, repeated 3 times) Summary of sample sizes: 3155, 3154, 3155, 3154, 3155, 3155, ... Resampling results:  Accuracy  Kappa      0.932194  0.1785341Tuning parameter 'n.trees' was held constant at a value of a value of 0.08Tuning parameter 'n.minobsinnode' was held constant at a value of 10
-
-Stochastic Gradient Boosting 
-
-3505 samples
-   4 predictor
-   2 classes: 'absent', 'present' 
-
-No pre-processing
-Resampling: Cross-Validated (10 fold) 
-Summary of sample sizes: 3154, 3155, 3155, 3155, 3155, 3154, ... 
-Resampling results:
-
-  ROC       Sens       Spec     
-  0.774977  0.9838776  0.1422078
-
-Tuning parameter 'n.trees' was held constant at a value of
- a value of 0.08
-Tuning parameter 'n.minobsinnode' was
- held constant at a value of 10
-
 # NOTES
 
 -   If number of trees below 1k, need to lower learning rate.
 -   There may be a difference in the caret output and gbm output (5%). To avoid this can use the default grid to optimize parameters and use predict to have the same results... Or don't worry about it.
-

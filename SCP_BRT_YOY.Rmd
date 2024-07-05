@@ -1,5 +1,5 @@
 ---
-title: "Modeling Protocol"
+title: "Age 0 Prickly Sculpin "
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document
@@ -29,67 +29,67 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 
 ### PricklySculpin data filtering
 ```{r}
-PricklySculpinData<-PresAbs %>% filter(gensp %in% "Cottus asper") %>% dplyr::select(-...1, -...2)
-PricklySculpinData<-as.data.frame(PricklySculpinData)
-unique(PricklySculpinData$AgeClass)
+PricklySculpinYOYData<-PresAbs %>% filter(gensp %in% "Cottus asper", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
+PricklySculpinYOYData<-as.data.frame(PricklySculpinYOYData)
+unique(PricklySculpinYOYData$AgeClass)
 ```
 
 ### Ages
 ```{r}
-PricklySculpinData %>% group_by(AgeClass)%>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100)# %>% print(n=26)
+PricklySculpinYOYData %>% group_by(AgeClass)%>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100)# %>% print(n=26)
 ```
 Now lets check the dataset.
 
 ```{r}
-glimpse(PricklySculpinData)
-summary(PricklySculpinData)
-NumSamples<-unique(PricklySculpinData$SampleRowID) #3505 sampling events.
+glimpse(PricklySculpinYOYData)
+summary(PricklySculpinYOYData)
+NumSamples<-unique(PricklySculpinYOYData$SampleRowID) #3505 sampling events.
 ```
 
 Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
 
 ### 1 row for each sampling event.
 ```{r}
-PricklySculpinDataPA<-PricklySculpinData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
+PricklySculpinYOYDataPA<-PricklySculpinYOYData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0))
 
-PricklySculpinDataPA$PresAbs<-as.factor(PricklySculpinDataPA$PresAbs)
+PricklySculpinYOYDataPA$PresAbs<-as.factor(PricklySculpinYOYDataPA$PresAbs)
 
-PricklySculpinDataPA$Year<-as.factor(PricklySculpinDataPA$Year)
+PricklySculpinYOYDataPA$Year<-as.factor(PricklySculpinYOYDataPA$Year)
 
-PricklySculpinDataPA$Month<-as.factor(PricklySculpinDataPA$Month)
+PricklySculpinYOYDataPA$Month<-as.factor(PricklySculpinYOYDataPA$Month)
 
-PricklySculpinDataPA$StationCode<-as.factor(PricklySculpinDataPA$StationCode)
+PricklySculpinYOYDataPA$StationCode<-as.factor(PricklySculpinYOYDataPA$StationCode)
 
-PricklySculpinDataPA<-as.data.frame(PricklySculpinDataPA)
+PricklySculpinYOYDataPA<-as.data.frame(PricklySculpinYOYDataPA)
 ```
 
 ### Summaries of catch
 ```{r}
-PricklySculpinDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
+PricklySculpinYOYDataPA %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Boom and bust years, not great for loo validation.
 
-PricklySculpinDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
+PricklySculpinYOYDataPA %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
 
-PricklySculpinDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
+PricklySculpinYOYDataPA %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
 
 #Overall capture probability
-OverallProb<-(sum(PricklySculpinDataPA$Binary)/nrow(PricklySculpinDataPA))*100
+OverallProb<-(sum(PricklySculpinYOYDataPA$Binary)/nrow(PricklySculpinYOYDataPA))*100
 ```
 
 `OverallProb`% probability of capturing PricklySculpin.
 
 ### Summaries of samples
 ```{r}
-RangeWT<-range(PricklySculpinDataPA$WaterTemperature)
-MeanWT<-mean(PricklySculpinDataPA$WaterTemperature)
+RangeWT<-range(PricklySculpinYOYDataPA$WaterTemperature)
+MeanWT<-mean(PricklySculpinYOYDataPA$WaterTemperature)
 
-RangeDO<-range(PricklySculpinDataPA$DO)
-MeanDO<-mean(PricklySculpinDataPA$DO)
+RangeDO<-range(PricklySculpinYOYDataPA$DO)
+MeanDO<-mean(PricklySculpinYOYDataPA$DO)
 
-RangeSal<-range(PricklySculpinDataPA$Salinity)
-MeanSal<-mean(PricklySculpinDataPA$Salinity)
+RangeSal<-range(PricklySculpinYOYDataPA$Salinity)
+MeanSal<-mean(PricklySculpinYOYDataPA$Salinity)
 
-RangeSec<-range(PricklySculpinDataPA$Secchi)
-MeanSec<-mean(PricklySculpinDataPA$Secchi)
+RangeSec<-range(PricklySculpinYOYDataPA$Secchi)
+MeanSec<-mean(PricklySculpinYOYDataPA$Secchi)
 
 ```
 
@@ -105,20 +105,20 @@ MeanSec<-mean(PricklySculpinDataPA$Secchi)
 ```{r}
 # I want to show presences vs. all samples.
 
-Plot_Water<-PricklySculpinData %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+Plot_Water<-PricklySculpinYOYData %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
-Plot_DO<-PricklySculpinData %>% ggplot(aes(y=PresAbs, x=DO)) + 
+Plot_DO<-PricklySculpinYOYData %>% ggplot(aes(y=PresAbs, x=DO)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
-Plot_Secchi<-PricklySculpinData %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
+Plot_Secchi<-PricklySculpinYOYData %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-PricklySculpinData %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-PricklySculpinYOYData %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
 # now add the title
-title <- ggdraw() + draw_label("PricklySculpin presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+title <- ggdraw() + draw_label("YOY Prickly Sculpin presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
     # add margin on the left of the drawing canvas,
     # so title is aligned with left edge of first plot
     plot.margin = margin(0, 0, 0, 7))
@@ -127,7 +127,7 @@ plot_grid(title, Plots, ncol = 1,
   # rel_heights values control vertical title margins
   rel_heights = c(0.1, 1))
 
-SummTable <- PricklySculpinData %>% 
+SummTable <- PricklySculpinYOYData %>% 
   group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature, na.rm=TRUE),
@@ -149,15 +149,15 @@ SummTable <- PricklySculpinData %>%
   )
 
 print(SummTable)
-write.csv(SummTable, here("data", "PricklySculpin_SummTable.csv"))
+write.csv(SummTable, here("data", "PricklySculpinYOY_SummTable.csv"))
 
 #Seasonality
-PricklySculpinData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
+PricklySculpinYOYData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
 
-PricklySculpinData$Month<-as.factor(PricklySculpinData$Month)
+PricklySculpinYOYData$Month<-as.factor(PricklySculpinYOYData$Month)
 
-PricklySculpinData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch PricklySculpin") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-PricklySculpinData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch PricklySculpin") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+PricklySculpinYOYData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch YOY Prickly Sculpin") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+PricklySculpinYOYData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch YOY Prickly Sculpin") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
 
 Plot analysis:
@@ -168,12 +168,12 @@ Plot analysis:
 ### Setting hyperparameters
 ```{r}
 
-str(PricklySculpinDataPA)
-unique(PricklySculpinDataPA$Binary)
+str(PricklySculpinYOYDataPA)
+unique(PricklySculpinYOYDataPA$Binary)
 set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
-LearningRate<-0.005
+LearningRate<-0.01
 Bag<-0.6  
 ```
 
@@ -183,7 +183,7 @@ Thanks Nima and Elith!
 ```{r}
 set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
-brt1 <- dismo::gbm.step(data=PricklySculpinDataPA, 
+brt1 <- dismo::gbm.step(data=PricklySculpinYOYDataPA, 
                          gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
                          gbm.y= 11, # Binary response variable
                          family = "bernoulli", # for counts this would be "poisson"
@@ -204,6 +204,10 @@ dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.
 
 gbm::plot.gbm(brt1, n.plots=4, return.grid=TRUE)
 
+library(plotmo)
+plotres(brt1)
+plotmo(brt1, pmethod="partdep")
+
 dismo::gbm.plot.fits(brt1)
 #I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
 
@@ -221,7 +225,7 @@ brt1$self.statistics$correlation[[1]]
 # You can plot pairwise interactions like this:
 par(mfrow=c(1,2))
 gbm.perspec(brt1,1, 3) #3D PLOT of Water Temp and Secchi
-gbm.perspec(brt1,1, 2) #Water temp and salinity
+gbm.perspec(brt1,1, 4) #Water temp and salinity
 #Can also rotate by switching x and y.
 
 
@@ -289,7 +293,7 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
   
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinDataPA,
+brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinYOYDataPA,
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity,
@@ -364,8 +368,8 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinDataPA[which(PricklySculpinDataPA$Binary == 1),],
-                        abs = PricklySculpinDataPA[which(PricklySculpinDataPA$Binary == 0),],
+brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinYOYDataPA[which(PricklySculpinYOYDataPA$Binary == 1),],
+                        abs = PricklySculpinYOYDataPA[which(PricklySculpinYOYDataPA$Binary == 0),],
                         gbm.x = c(2,3,4,5),
                         gbm.y=11, learning.rate = LearningRate,
                         bag.fraction = Bag, tree.complexity = Complexity)
@@ -384,7 +388,7 @@ saveRDS(eval, here("data","PricklySculpin_brt_SDM_eval_gbm_step.rds"))
 
 ```{r}
 gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
-                       n.trees = 1900,
+                       n.trees = 1800,
                        shrinkage = LearningRate,
                        n.minobsinnode = 10 )
 
@@ -408,7 +412,7 @@ fitControlROC <- trainControl(## 10-fold CV
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
 gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = PricklySculpinDataPA, 
+                data = PricklySculpinYOYDataPA, 
                 method = "gbm", 
                 trControl = fitControlKappa, 
                 bag.fraction=Bag,
@@ -423,7 +427,7 @@ gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret
 gbmFitKappa
 
 gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = PricklySculpinDataPA, 
+                data = PricklySculpinYOYDataPA, 
                 method = "gbm", 
                 trControl = fitControlROC, 
                 bag.fraction=Bag,
@@ -438,24 +442,22 @@ gbmFitROC
 # save the model
 #saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
 
-# we can plot the results too which will be easier to interpret
-ggplot(gbmFit)
 ```
 
 ### Splitting out training and testing data.
 https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
 ```{r}
 set.seed(124)
-inTrain<-createDataPartition(y=PricklySculpinDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
-PricklySculpinDataPA_Train<-PricklySculpinDataPA[inTrain,]
-PricklySculpinDataPA_Test<-PricklySculpinDataPA[-inTrain,]
+inTrain<-createDataPartition(y=PricklySculpinYOYDataPA$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
+PricklySculpinYOYDataPA_Train<-PricklySculpinYOYDataPA[inTrain,]
+PricklySculpinYOYDataPA_Test<-PricklySculpinYOYDataPA[-inTrain,]
 ```
 
 ### Running model again
 
 ```{r}
 #LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
-brt2 <- dismo::gbm.step(data=PricklySculpinDataPA_Train, 
+brt2 <- dismo::gbm.step(data=PricklySculpinYOYDataPA_Train, 
                          gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
                          gbm.y= 11, 
                          family = "bernoulli", 
@@ -463,29 +465,46 @@ brt2 <- dismo::gbm.step(data=PricklySculpinDataPA_Train,
                          learning.rate = LearningRate, 
                          bag.fraction = Bag 
                          ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
-Preds<-predict(object = brt2, newdata = PricklySculpinDataPA_Test, type = "response")
+Preds<-predict(object = brt2, newdata = PricklySculpinYOYDataPA_Test, type = "response")
 
-#PredGrid<-gbm.predict.grids(brt2, PricklySculpinDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
+#PredGrid<-gbm.predict.grids(brt2, PricklySculpinYOYDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
 PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
 
-PricklySculpinDataPA_Test$Binary<-as.factor(PricklySculpinDataPA_Test$Binary)
+PricklySculpinYOYDataPA_Test$Binary<-as.factor(PricklySculpinYOYDataPA_Test$Binary)
 
-confusionMatrix(PredBinaries, PricklySculpinDataPA_Test$Binary)
+confusionMatrix(PredBinaries, PricklySculpinYOYDataPA_Test$Binary)
 
-PricklySculpinDataPA_Test$Binary<-as.numeric(PricklySculpinDataPA_Test$Binary)
+PricklySculpinYOYDataPA_Test$Binary<-as.numeric(PricklySculpinYOYDataPA_Test$Binary)
 
-calc.deviance(PricklySculpinDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #3.599321
+calc.deviance(PricklySculpinYOYDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #3.599321
 
-roc(PricklySculpinDataPA_Test$Binary, Preds) #Area under the curve: 0.8104
+roc(PricklySculpinYOYDataPA_Test$Binary, Preds) #Area under the curve: 0.8104
 
-ROC<-pROC::roc(PredBinaries, PricklySculpinDataPA_Test$Binary)
-auc<-round(auc(PredBinaries, PricklySculpinDataPA_Test$Binary),4)
+ROC<-pROC::roc(PredBinaries, PricklySculpinYOYDataPA_Test$Binary)
+auc<-round(auc(PredBinaries, PricklySculpinYOYDataPA_Test$Binary),4)
 ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
   ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
   theme_minimal()
 PredBinaries<-as.numeric(PredBinaries)
-cor(PredBinaries, PricklySculpinDataPA_Test$Binary)
-plot(PredBinaries, PricklySculpinDataPA_Test$Binary)
+cor(PredBinaries, PricklySculpinYOYDataPA_Test$Binary)
+plot(PredBinaries, PricklySculpinYOYDataPA_Test$Binary)
+
+gbmFitKappa_split <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = PricklySculpinYOYDataPA_Train, 
+                method = "gbm", 
+                trControl = fitControlKappa, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "Kappa" #Or ROC 
+                )
+
+Result<-predict(gbmFitKappa_split, PricklySculpinYOYDataPA_Test)
+
+confusionMatrix(PricklySculpinYOYDataPA_Test$Binary, Result)
 ```
 Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
 
@@ -496,21 +515,49 @@ Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
 Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R>
 
 ```{r}
+
+getVar = function(gbm.object,predictor_of_interest){
+gbm.call <- gbm.object$gbm.call
+gbm.x <- gbm.call$gbm.x
+pred.names <- gbm.call$predictor.names
+response.name <- gbm.call$response.name
+data <- gbm.call$dataframe
+k <- match(predictor_of_interest, pred.names)
+var.name <- gbm.call$predictor.names[k]
+pred.data <- data[, gbm.call$gbm.x[k]]
+response.matrix <- gbm::plot.gbm(gbm.object, k, return.grid = TRUE)
+data.frame(predictors = response.matrix[, 1],
+responses = response.matrix[, 2] - mean(response.matrix[,2])
+)
+}
+
+plot(brt1, i.var=3, lwd=2)
+
+library(pdp)
+
+brt1 %>% partial(pred.var = c("WaterTemperature"),train=PricklySculpinYOYDataPA, n.trees=1800) %>% autoplot()
+
+
+brt1 %>%
+  partial(pred.var = "WaterTemperature", plot=FALSE, train = ceta_dd_final, n.trees = 2400) %>%
+  plotPartial(smooth = TRUE, train = ceta_dd_final, rug = TRUE,
+      lwd = 2, ylab = expression(f(lat)))
+
 # Fig. S3. The relative importance of drivers in distribution models
 # Fig. S4. Response curves of each environmental variable from distribution models
 
 
 ###----response plots----####
 
-brt_PricklySculpin <- here("data","PricklySculpin_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+brt1 <- here("data","PricklySculpin_brt_SDM_eval_gbm_step.rds") %>% readRDS()
 
-
+brt1$contributions
 # get the matrix out of the `plot.gbm`
-var<-brt_PricklySculpin$brt$var.names
+var<-brt1$var.names
 response_data<-data.frame()
 
 for (i in 1:length(var)){
-response_plot_data <- gbm::plot.gbm(brt_PricklySculpin$brt,
+response_plot_data <- gbm::plot.gbm(brt1,
                                  i.var = var[i],
                                  return.grid = TRUE)
 
@@ -547,8 +594,8 @@ ggsave(here("Plots","LongfinSmelt_response_plots.png"),
 #       width = 7, height = 6, units = "in", dpi = 300)
 
 ###----variable contribution----####
-rel.inf<-data.frame(Variable = brt_PricklySculpin$brt$contributions$var,
-                        rel.inf=brt_PricklySculpin$brt$contributions$rel.inf)# %>% 
+rel.inf<-data.frame(Variable = brt1$brt$contributions$var,
+                        rel.inf=brt1$brt$contributions$rel.inf)# %>% 
 
 
 

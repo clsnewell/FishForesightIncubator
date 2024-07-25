@@ -95,5 +95,4 @@ Mikaela: For presence/absence model, we don't care about plus counts. Remove all
 ```{r}
 #Save New DF
 write.csv(presabs, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
-
 ```

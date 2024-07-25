@@ -247,9 +247,12 @@ unique(PlusJoined$CatchComments)
 
 OneFishOneRow<-bind_rows(OneMeasuredFishOneRow, PlusJoined)
 #adding age class info. 86917
-
+write.csv(OneFishOneRow, "C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_OneFishOneRow.csv")
 ```
 179 fish were unmeasured but had no other measured fish to be based on. They have NA standard lengths.
+
+
+
 
 # Adding Age Class Info
 ```{r}

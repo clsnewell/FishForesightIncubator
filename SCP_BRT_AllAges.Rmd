@@ -610,49 +610,47 @@ library(Hmisc)
 library(tidyverse)
 library(gbm3)
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
-
-
 ```
 
 ### Visualizations
 ```{r}
-LongfinSmeltYOYData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
-LongfinSmeltYOYData$Month<-as.factor(LongfinSmeltYOYData$Month)
+SCPData<-PresAbs %>% filter(gensp %in% "Cottus asper") %>% dplyr::select(-...1, -...2)
+SCPData$Month<-as.factor(SCPData$Month)
 
-summary(LongfinSmeltYOYData)
+summary(SCPData)
 
 # I want to show presences vs. all samples.
 
-Plot_Water<-LongfinSmeltYOYData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% 
+Plot_Water<-SCPData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% 
   group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=water_temp_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & water temperature SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin.") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+  theme_bw()+ labs(title = "Prickly sculpin & water temperature SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin.") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 #ggplot(aes(y=Count, x=WaterTemperature)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("Count") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
 
-Plot_DO<-LongfinSmeltYOYData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_DO<-SCPData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=do_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
+  theme_bw()+ labs(title = "Prickly sculpin & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
 
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
+#SCPData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
-Plot_Secchi<-LongfinSmeltYOYData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_Secchi<-SCPData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=Secchi, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Secchi (cm)", caption = "Secchi grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+  theme_bw()+ labs(title = "Prickly sculpin & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Secchi (cm)", caption = "Secchi grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
+#SCPData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-LongfinSmeltYOYData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_Salinity<-SCPData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=salinity_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Salinity", caption = "Salinity  rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
+  theme_bw()+ labs(title = "Prickly sculpin & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Salinity", caption = "Salinity  rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
+#SCPData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
 # now add the title
-title <- ggdraw() + draw_label("Age-0 Longfin smelt count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+title <- ggdraw() + draw_label("Prickly sculpin count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
     # add margin on the left of the drawing canvas,
     # so title is aligned with left edge of first plot
     plot.margin = margin(0, 0, 0, 7))
@@ -663,25 +661,24 @@ plot_grid(title, Plots, ncol = 1,
 
 
 #Seasonality
-LongfinSmeltYOYData %>% dplyr::summarize(TotalCount=sum(Count), sd_Count=sd(Count), n=n(), PercentageOfPresence=100*(TotalCount/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
-LongfinSmeltYOYData %>%  group_by(Month) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+SCPData %>% dplyr::summarize(TotalCount=sum(Count), sd_Count=sd(Count), n=n(), PercentageOfPresence=100*(TotalCount/n)) #Total presence = 1971 of 5471. 36.03% presence of samples.
+SCPData %>%  group_by(Month) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=Month, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt by month SMFS 2011-2023", y ="Catch per minute trawl", x="Month", caption = "Month grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
+  theme_bw()+ labs(title = "Prickly sculpin by month SMFS 2011-2023", y ="Catch per minute trawl", x="Month", caption = "Month grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
 #group_by(Month) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch yoy longfin smelt") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-LongfinSmeltYOYData %>% group_by(StationCode) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+SCPData %>% group_by(StationCode) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=StationCode, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt by station SMFS 2011-2023", y ="Catch per minute trawl", x="Station Code", caption = "Station code grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+  theme_bw()+ labs(title = "Prickly sculpin by station SMFS 2011-2023", y ="Catch per minute trawl", x="Station Code", caption = "Station code grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")+ theme(axis.text.x = element_text(angle = 45, hjust=1))
   
   #group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
 
-## LFS data filtering for all counts
+## Data filtering for all counts
 ```{r}
-LongfinSmeltYOYData_All<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2) %>% group_by(SampleRowID, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
-LongfinSmeltYOYData<-as.data.frame(LongfinSmeltYOYData)
-unique(LongfinSmeltYOYData$AgeClass)
+SCPData_All<-PresAbs %>% filter(gensp %in% "Cottus asper") %>%  group_by(SampleRowID, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
+SCPData_All<-as.data.frame(SCPData_All)
 ```
 
 
@@ -693,21 +690,21 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
 ### Setting hyperparameters
 
 ```{r}
-str(LongfinSmeltYOYData_Positive)
+str(SCPData_All)
 
- set.seed(124) # for reproducibility 
+set.seed(124) # for reproducibility 
 Complexity<-4
-LearningRate<-0.05
+LearningRate<-0.005
 Bag<-0.6  
 
 ```
 
 ### gbm.step
 ```{r}
-system.time( brt3 <- dismo::gbm.step(data=LongfinSmeltYOYData_Positive, 
+system.time( brt3 <- dismo::gbm.step(data=SCPData_All, 
                          gbm.x= c(2,3,4,5), # environmental variables.
                          gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
+                         family = "gaussian", # for counts this would be "poisson"
                          tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
                          learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
                          bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
@@ -751,16 +748,15 @@ gbm.perspec(brt3,1, 4) #salinity and DO
 gbm.perspec(brt3,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brt3, here("data", "LongfinSmelt_count_brt_gbm_step.rds"))
+saveRDS(brt3, here("data", "AllSCP_count_brt_gbm_step.rds"))
 ```
 
 
-## LFS data filtering for above 0 counts
+## Data filtering for above 0 counts
 ```{r}
-LongfinSmeltYOYData_Positive<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0", Binary == 1) %>% dplyr::select(-...1, -...2) %>% group_by(SampleRowID, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
-LongfinSmeltYOYData<-as.data.frame(LongfinSmeltYOYData)
-unique(LongfinSmeltYOYData$AgeClass)
-summary(LongfinSmeltYOYData)
+SCPData_Positive<-PresAbs %>% filter(gensp %in% "Cottus asper", Binary == 1) %>% group_by(SampleRowID, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
+SCPData_Positive<-as.data.frame(SCPData_Positive)
+summary(SCPData_Positive)
 ```
 
 
@@ -771,9 +767,9 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
 ### Setting hyperparameters
 
 ```{r}
-str(LongfinSmeltYOYData_Positive)
+str(SCPData_Positive)
 
- set.seed(124) # for reproducibility 
+set.seed(124) # for reproducibility 
 Complexity<-4
 LearningRate<-0.001
 Bag<-0.6  
@@ -782,10 +778,10 @@ Bag<-0.6
 
 ### gbm.step
 ```{r}
-system.time( brt3 <- dismo::gbm.step(data=LongfinSmeltYOYData_Positive, 
+system.time( brt3 <- dismo::gbm.step(data=SCPData_Positive, 
                          gbm.x= c(2,3,4,5), # environmental variables.
                          gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
+                         family = "gaussian", # for counts this would be "poisson"
                          tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
                          learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
                          bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
@@ -829,7 +825,7 @@ gbm.perspec(brt3,1, 4) #salinity and DO
 gbm.perspec(brt3,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brt3, here("data", "LongfinSmelt_count_brt_gbm_step.rds"))
+saveRDS(brt3, here("data", "SCP_positivecount_brt_gbm_step.rds"))
 ```
 
 ## Step 3: Validation
@@ -838,16 +834,16 @@ saveRDS(brt3, here("data", "LongfinSmelt_count_brt_gbm_step.rds"))
 https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
 ```{r}
 set.seed(124)
-inTrain<-createDataPartition(y=LongfinSmeltYOYData_Positive$Count, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
-LongfinSmeltYOYData_Train<-LongfinSmeltYOYData_Positive[inTrain,]
-LongfinSmeltYOYData_Test<-LongfinSmeltYOYData_Positive[-inTrain,]
+inTrain<-createDataPartition(y=SCPData_Positive$Count, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
+SCPData_Positive_Train<-SCPData_Positive[inTrain,]
+SCPData_Positive_Test<-SCPData_Positive[-inTrain,]
 ```
 
 ### Running model again
 
 ```{r}
 LearningRate<-0.05 #had to shift learning rate since only model 80% of the data.
-brt4 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA_Train, 
+brt4 <- dismo::gbm.step(data=SCPData_Positive_Train, 
                          gbm.x= c(5,6,7,9), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
                          gbm.y= 22, 
                          family = "poisson", 
@@ -855,30 +851,30 @@ brt4 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA_Train,
                          learning.rate = LearningRate, 
                          bag.fraction = Bag 
                          ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
-Preds<-predict(object = brt2, newdata = LongfinSmeltYOYDataPA_Test, type = "response")
+Preds<-predict(object = brt2, newdata = SCPData_Positive_Test, type = "response")
 
-#PredGrid<-gbm.predict.grids(brt2, LongfinSmeltYOYDataPA_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
+#PredGrid<-gbm.predict.grids(brt2, SCPData_Positive_Test, want.grids=F, n.trees=brt2$gbm.call$best.trees, type="response")
 PredBinaries<-as.factor(ifelse(Preds>0.5,1,0))
 
-LongfinSmeltYOYDataPA_Test$Binary<-as.factor(LongfinSmeltYOYDataPA_Test$Binary)
+SCPData_Positive_Test$Binary<-as.factor(SCPData_Positive_Test$Binary)
 
-confusionMatrix(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+confusionMatrix(PredBinaries, SCPData_Positive_Test$Binary)
 
-LongfinSmeltYOYDataPA_Test$Binary<-as.numeric(LongfinSmeltYOYDataPA_Test$Binary)
+SCPData_Positive_Test$Binary<-as.numeric(SCPData_Positive_Test$Binary)
 
-calc.deviance(LongfinSmeltYOYDataPA_Test$Binary, Preds, calc.mean=T, family="bernoulli") #6.890836
+calc.deviance(SCPData_Positive_Test$Binary, Preds, calc.mean=T, family="bernoulli") #6.890836
 library(gbm)
 
-roc(LongfinSmeltYOYDataPA_Test$Binary, Preds) #Area under the curve: 0.8112
+roc(SCPData_Positive_Test$Binary, Preds) #Area under the curve: 0.8112
 
-ROC<-pROC::roc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-auc<-round(auc(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary),4)
+ROC<-pROC::roc(PredBinaries, SCPData_Positive_Test$Binary)
+auc<-round(auc(PredBinaries, SCPData_Positive_Test$Binary),4)
 ggroc(ROC,colour = 'steelblue', size = 2) + #create ROC plot
   ggtitle(paste0('ROC Curve', '(AUC= ',auc,') '))+
   theme_minimal()
 PredBinaries<-as.numeric(PredBinaries)
-cor(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
-plot(PredBinaries, LongfinSmeltYOYDataPA_Test$Binary)
+cor(PredBinaries, SCPData_Positive_Test$Binary)
+plot(PredBinaries, SCPData_Positive_Test$Binary)
 ```
 Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
 
@@ -1134,7 +1130,7 @@ fitControlROC <- trainControl(## 10-fold CV
 set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
 
 gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = LongfinSmeltYOYDataPA, 
+                data = SCPData_Positive, 
                 method = "gbm", 
                 trControl = fitControlKappa, 
                 bag.fraction=Bag,
@@ -1149,7 +1145,7 @@ gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret
 gbmFitKappa
 
 gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
-                data = LongfinSmeltYOYDataPA, 
+                data = SCPData_Positive, 
                 method = "gbm", 
                 trControl = fitControlROC, 
                 bag.fraction=Bag,

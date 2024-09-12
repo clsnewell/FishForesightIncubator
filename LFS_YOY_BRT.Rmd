@@ -2101,6 +2101,8 @@ tc1_response_data$Complexity<-"One"
 
 Combined<-rbind(tc1_response_data, tc2_response_data, tc3_response_data, tc4_response_data)
 
+Combined$Complexity<-factor(Combined$Complexity, levels=c("One", "Two", "Three", "Four"))
+
 Combined %>%
   ggplot() + 
   geom_line(aes(x=x, y=y, color=Complexity), size=1) + 

@@ -7,6 +7,52 @@ editor_options:
   chunk_output_type: console
 ---
 
+DO NOT RE-RUN MODELS. Can find models like so:
+
+ALL AGES
+SCPbrt <- here("data","PricklySculpinAllAges_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+scp_brt_allcount <- here("data","AllSCP_Allcount_brt_4_005_6_gbm_step.rds") %>% readRDS() #All count
+
+SCP_BRT_PosCount <- here("data","SCP_all_positivecount_brt_4_005_6_gbm_step.rds") %>% readRDS() #Positive count
+
+AGE 0
+SCPbrt_Age0 <- here("data","PricklySculpinAge0_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+yoy_scp_brt_allcount <- here("data","AllYOYSCP_count_brt_4_005_6_gbm_step.rds") %>% readRDS() #All count
+
+YOYSCP_BRT_PosCount <- here("data","SCP_YOY_positivecount_brt_4_001_6_gbm_step.rds") %>% readRDS() #Positive count
+
+AGE-1+
+SCPbrt_Age1P <- here("data","PricklySculpinAge1P_brt_4_001_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+Adult_scp_brt_allcount <- here("data","AllAge1Plus_SCP_count_brt_4_001_6_gbm_step.rds") %>% readRDS() #All count
+
+AdultSCP_BRT_PosCount <- here("data","SCP_Adult_positivecount_brt_4_0005_6_gbm_step.rds") %>% readRDS() #Positive count
+
+
+CHECK MODEL SETTINGS LIKE SO:
+
+model$gbm.call
+
+
+OTHERSAVED ITEMS (DO NOT RE-RUN)
+ALL AGES
+eval <- here("data","PricklySculpinAllAges_calyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+eval2 <- here("data","PricklySculpinAllAges_watyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+AGE-0
+eval <- here("data","PricklySculpinAge0_calyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+eval2 <- here("data","PricklySculpinAge0_watyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+AGE-1+
+eval <- here("data","PricklySculpinAge1p_calyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+eval2 <- here("data","PricklySculpinAge1P_watyear_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+
 ### Loading libraries and data
 
 ```{r}
@@ -163,14 +209,14 @@ Thanks Nima and Elith!
 ```{r}
 set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
-SCPbrt <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         )
+#SCPbrt <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 11, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         )
 
 # make sure to save the model!
 summary(SCPbrt)
@@ -208,7 +254,7 @@ gbm.perspec(SCPbrt,1, 2) #Water temp and salinity
 
 
 # save the model
-saveRDS(SCPbrt, here("data", "PricklySculpinAllAges_brt_4_005_6_gbm_step.rds"))
+#saveRDS(SCPbrt, here("data", "PricklySculpinAllAges_brt_4_005_6_gbm_step.rds"))
 
 ```
 
@@ -351,11 +397,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
 
 set.seed(124)
 
-brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 1),],
-                        abs = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=11, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 1),],
+#                        abs = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=11, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
@@ -364,7 +410,7 @@ eval <- list(brt = SCPbrt, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval
 #now save it
 
-saveRDS(eval, here("data","PricklySculpinAllAges_calyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval, here("data","PricklySculpinAllAges_calyear_brt_SDM_eval_gbm_step.rds"))
 
 #leave one water year out function
 #To do a loo by water year, I need to add a column for water year to the dataset.
@@ -439,18 +485,18 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 set.seed(124)
-brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
-                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=11, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
+#                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=11, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
 eval2 <- list(brt = SCPbrt, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 
 eval2
-saveRDS(eval2, here("data","PricklySculpinAllAges_watyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval2, here("data","PricklySculpinAllAges_watyear_brt_SDM_eval_gbm_step.rds"))
 ```
 
 # Looking at caret outputs for optimal model (ROC and Kappa)
@@ -627,14 +673,14 @@ Bag<-0.6
 ### gbm.step
 ```{r}
 set.seed(124)
-system.time( scp_brt_allcount <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
-                         gbm.x= c(2,3,4,5), 
-                         gbm.y= 9, 
-                         family = "poisson", 
-                         tree.complexity = Complexity, 
-                         learning.rate = LearningRate, 
-                         bag.fraction = Bag 
-                         ))
+#system.time( scp_brt_allcount <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
+#                         gbm.x= c(2,3,4,5), 
+#                         gbm.y= 9, 
+#                         family = "poisson", 
+#                         tree.complexity = Complexity, 
+#                         learning.rate = LearningRate, 
+#                         bag.fraction = Bag 
+#                         ))
 
 # make sure to save the model!
 summary(scp_brt_allcount)
@@ -674,7 +720,7 @@ gbm.perspec(scp_brt_allcount,1, 4) #salinity and DO
 gbm.perspec(scp_brt_allcount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(scp_brt_allcount, here("data", "AllSCP_Allcount_brt_4_005_6_gbm_step.rds"))
+#saveRDS(scp_brt_allcount, here("data", "AllSCP_Allcount_brt_4_005_6_gbm_step.rds"))
 ```
 
 ## Validation And Plots
@@ -784,14 +830,14 @@ Bag<-0.6
 ```{r}
 set.seed(124) # for reproducibility 
 
-system.time( SCP_BRT_PosCount <- dismo::gbm.step(data=PricklySculpinData_AllAgesPosCount, 
-                         gbm.x= c(2,3,4,5), 
-                         gbm.y= 9, 
-                         family = "poisson", 
-                         tree.complexity = Complexity, 
-                         learning.rate = LearningRate, 
-                         bag.fraction = Bag 
-                         ))
+#system.time( SCP_BRT_PosCount <- dismo::gbm.step(data=PricklySculpinData_AllAgesPosCount, 
+#                         gbm.x= c(2,3,4,5), 
+#                         gbm.y= 9, 
+#                         family = "poisson", 
+#                         tree.complexity = Complexity, 
+#                         learning.rate = LearningRate, 
+#                         bag.fraction = Bag 
+#                         ))
 
 # make sure to save the model!
 summary(SCP_BRT_PosCount)
@@ -833,7 +879,7 @@ gbm.perspec(SCP_BRT_PosCount,1, 4) #salinity and DO
 gbm.perspec(SCP_BRT_PosCount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(SCP_BRT_PosCount, here("data", "SCP_all_positivecount_brt_4_005_6_gbm_step.rds"))
+#saveRDS(SCP_BRT_PosCount, here("data", "SCP_all_positivecount_brt_4_005_6_gbm_step.rds"))
 ```
 
 ## Step 3: Validation
@@ -1044,14 +1090,14 @@ Thanks Nima and Elith!
 ```{r}
 set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
-SCPbrt_Age0 <- dismo::gbm.step(data=PricklySculpinAge0, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 12, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         )
+#SCPbrt_Age0 <- dismo::gbm.step(data=PricklySculpinAge0, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 12, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         )
 
 # make sure to save the model!
 summary(SCPbrt_Age0)
@@ -1087,7 +1133,7 @@ gbm.perspec(SCPbrt_Age0,1, 2) #Water temp and salinity
 
 
 # save the model
-saveRDS(SCPbrt_Age0, here("data", "PricklySculpinAge0_brt_4_005_6_gbm_step.rds"))
+#saveRDS(SCPbrt_Age0, here("data", "PricklySculpinAge0_brt_4_005_6_gbm_step.rds"))
 
 ```
 
@@ -1152,11 +1198,11 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
   
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinAge0,
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=12, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity,
-                        k_folds = 10)
+#brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinAge0,
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=12, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity,
+#                        k_folds = 10)
 brt_SDM_k
 ```
 
@@ -1228,11 +1274,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinAge0[which(PricklySculpinAge0$Binary == 1),],
-                        abs = PricklySculpinAge0[which(PricklySculpinAge0$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=12, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinAge0[which(PricklySculpinAge0$Binary == 1),],
+#                        abs = PricklySculpinAge0[which(PricklySculpinAge0$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=12, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
@@ -1241,7 +1287,7 @@ eval <- list(brt = SCPbrt_Age0, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval
 #now save it
 
-saveRDS(eval, here("data","PricklySculpinAge0_calyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval, here("data","PricklySculpinAge0_calyear_brt_SDM_eval_gbm_step.rds"))
 
 #leave one water year out function
 #To do a loo by water year, I need to add a column for water year to the dataset.
@@ -1316,18 +1362,18 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
-                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=12, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
+#                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=12, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
 eval2 <- list(brt = SCPbrt_Age0, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 
 eval2
-saveRDS(eval2, here("data","PricklySculpinAge0_watyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval2, here("data","PricklySculpinAge0_watyear_brt_SDM_eval_gbm_step.rds"))
 ```
 
 # Looking at caret outputs for optimal model (ROC and Kappa)
@@ -1594,14 +1640,14 @@ Bag<-0.6
 ### gbm.step
 ```{r}
 set.seed(124)
-system.time( yoy_scp_brt_allcount <- dismo::gbm.step(data=SCPYOYData_All, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( yoy_scp_brt_allcount <- dismo::gbm.step(data=SCPYOYData_All, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(yoy_scp_brt_allcount)
@@ -1753,14 +1799,14 @@ Bag<-0.6
 ```{r}
 set.seed(124) # for reproducibility 
 
-system.time( YOYSCP_BRT_PosCount <- dismo::gbm.step(data=SCPData_Positive, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( YOYSCP_BRT_PosCount <- dismo::gbm.step(data=SCPData_Positive, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(YOYSCP_BRT_PosCount)
@@ -1800,7 +1846,7 @@ gbm.perspec(YOYSCP_BRT_PosCount,1, 4) #salinity and DO
 gbm.perspec(YOYSCP_BRT_PosCount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(YOYSCP_BRT_PosCount, here("data", "SCP_YOY_positivecount_brt_4_001_6_gbm_step.rds"))
+#saveRDS(YOYSCP_BRT_PosCount, here("data", "SCP_YOY_positivecount_brt_4_001_6_gbm_step.rds"))
 ```
 
 ## Step 3: Validation
@@ -1942,14 +1988,14 @@ Thanks Nima and Elith!
 ```{r}
 set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
-SCPbrt_Age1P <- dismo::gbm.step(data=PricklySculpinAge1plus, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 12, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         )
+#SCPbrt_Age1P <- dismo::gbm.step(data=PricklySculpinAge1plus, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 12, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         )
 
 # make sure to save the model!
 summary(SCPbrt_Age1P)
@@ -1985,7 +2031,7 @@ gbm.perspec(SCPbrt_Age1P,1, 2) #Water temp and salinity
 
 
 # save the model
-saveRDS(SCPbrt_Age1P, here("data", "PricklySculpinAge1P_brt_4_001_6_gbm_step.rds"))
+#saveRDS(SCPbrt_Age1P, here("data", "PricklySculpinAge1P_brt_4_001_6_gbm_step.rds"))
 
 ```
 
@@ -2050,13 +2096,13 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
   
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinAge1plus,
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=12, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity,
-                        k_folds = 10)
+#brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinAge1plus,
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=12, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity,
+#                        k_folds = 10)
 brt_SDM_k
-saveRDS(brt_SDM_k, here("data","PricklySculpinAge1p_10fold_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(brt_SDM_k, here("data","PricklySculpinAge1p_10fold_brt_SDM_eval_gbm_step.rds"))
 ```
 
 The other validation scheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
@@ -2127,11 +2173,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinAge1plus[which(PricklySculpinAge1plus$Binary == 1),],
-                        abs = PricklySculpinAge1plus[which(PricklySculpinAge1plus$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=12, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinAge1plus[which(PricklySculpinAge1plus$Binary == 1),],
+#                        abs = PricklySculpinAge1plus[which(PricklySculpinAge1plus$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=12, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 
 brt_SDM_loo
 
@@ -2141,7 +2187,7 @@ eval <- list(brt = SCPbrt_Age1P, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval
 #now save it
 
-saveRDS(eval, here("data","PricklySculpinAge1p_calyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval, here("data","PricklySculpinAge1p_calyear_brt_SDM_eval_gbm_step.rds"))
 
 #leave one water year out function
 #To do a loo by water year, I need to add a column for water year to the dataset.
@@ -2222,11 +2268,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
 
 set.seed(124)
 
-brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
-                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=11, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
+#                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=11, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 
 brt_SDM_loo
 unique(SCP_WaterYears$WaterYear)
@@ -2234,7 +2280,7 @@ unique(SCP_WaterYears$WaterYear)
 eval2 <- list(brt = SCPbrt_Age1P, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 
 eval2
-saveRDS(eval2, here("data","PricklySculpinAge1P_watyear_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval2, here("data","PricklySculpinAge1P_watyear_brt_SDM_eval_gbm_step.rds"))
 ```
 
 # Looking at caret outputs for optimal model (ROC and Kappa)
@@ -2437,14 +2483,14 @@ Bag<-0.6
 ### gbm.step
 ```{r}
 set.seed(124)
-system.time( Adult_scp_brt_allcount <- dismo::gbm.step(data=SCP1PData_All, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
-                         tree.complexity = Complexity, 
-                         learning.rate = LearningRate, 
-                         bag.fraction = Bag  
-                         ))
+#system.time( Adult_scp_brt_allcount <- dismo::gbm.step(data=SCP1PData_All, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, 
+#                         learning.rate = LearningRate, 
+#                         bag.fraction = Bag  
+#                         ))
 
 # make sure to save the model!
 summary(Adult_scp_brt_allcount)
@@ -2483,7 +2529,7 @@ gbm.perspec(Adult_scp_brt_allcount,1, 4) #salinity and DO
 gbm.perspec(Adult_scp_brt_allcount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(Adult_scp_brt_allcount, here("data", "AllAge1Plus_SCP_count_brt_4_001_6_gbm_step.rds"))
+#saveRDS(Adult_scp_brt_allcount, here("data", "AllAge1Plus_SCP_count_brt_4_001_6_gbm_step.rds"))
 ```
 
 ## Validation And Plots
@@ -2595,14 +2641,14 @@ Bag<-0.6
 ```{r}
 set.seed(124) # for reproducibility 
 
-system.time( AdultSCP_BRT_PosCount <- dismo::gbm.step(data=SCP1P_Positive, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
-                         tree.complexity = Complexity,
-                         learning.rate = LearningRate,  
-                         bag.fraction = Bag 
-                         ))
+#system.time( AdultSCP_BRT_PosCount <- dismo::gbm.step(data=SCP1P_Positive, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", # for counts this would be "poisson"
+#                         tree.complexity = Complexity,
+#                         learning.rate = LearningRate,  
+#                         bag.fraction = Bag 
+#                         ))
 
 # make sure to save the model!
 summary(AdultSCP_BRT_PosCount)
@@ -2642,7 +2688,7 @@ gbm.perspec(AdultSCP_BRT_PosCount,1, 4) #salinity and DO
 gbm.perspec(AdultSCP_BRT_PosCount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(AdultSCP_BRT_PosCount, here("data", "SCP_Adult_positivecount_brt_4_0005_6_gbm_step.rds"))
+#saveRDS(AdultSCP_BRT_PosCount, here("data", "SCP_Adult_positivecount_brt_4_0005_6_gbm_step.rds"))
 ```
 
 ## Step 3: Validation

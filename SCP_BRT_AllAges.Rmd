@@ -22,8 +22,8 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 ```
 
 
-# Data visualization, Quality Check
-## Quick Plot of plus counts in data
+# Age data visualization
+## Quick Plot of plus counts and age dist
 ```{r}
 #plot lengths by age class
 PresAbs %>% mutate(length_bin = as.numeric(round(StandardLength / 2) * 2)) %>% filter(gensp %in% "Cottus asper", !AgeClass=="NA") %>%   ggplot(aes(x=length_bin,y=Count, fill=AgeClass)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") + xlab("Standard length (mm)")+ theme_bw(base_size = 26) #6044 zeros removed to make plot.
@@ -39,6 +39,7 @@ PresAbs$Month<-as.factor(PresAbs$Month)
 PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass=="Age-0") %>% group_by(Month) %>% dplyr::summarize(TotalCount=sum(Count), TotalTrawlTime=sum(TowDuration), CPUE= TotalCount/TotalTrawlTime) %>% ggplot(aes(x=Month, y=CPUE)) +geom_col()+theme_bw(base_size = 26)+ylab("Catch per minute trawl") +xlab("Month (summed 2011-2023)") + ggtitle("Age-0 longfin smelt CPUE Seasonality")
 
 ```
+
 ## PricklySculpin data filtering and queries
 ```{r}
 PricklySculpinData<-PresAbs %>% filter(gensp %in% "Cottus asper") %>% dplyr::select(-...1, -...2)
@@ -60,6 +61,895 @@ unique(PricklySculpinData$TowDuration)#No NAs for wt, sal, do, sec
 ```
 
 Let's make a couple of plots for making predictions. First I need to make the data be just 1 row for each sampling event.
+
+# ALL AGES TOGETHER 1 row for each sampling event 
+The full dataset cannot be run as the env variables are doubled. Need to summarize regardless of age.
+```{r}
+PricklySculpinData_AllAges<-PricklySculpinData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0)) #For all ages together.
+
+PricklySculpinData_AllAges$PresAbs<-as.factor(PricklySculpinData_AllAges$PresAbs)
+
+PricklySculpinData_AllAges$Year<-as.factor(PricklySculpinData_AllAges$Year)
+
+PricklySculpinData_AllAges$Month<-as.factor(PricklySculpinData_AllAges$Month)
+
+PricklySculpinData_AllAges$StationCode<-as.factor(PricklySculpinData_AllAges$StationCode)
+
+PricklySculpinData_AllAges<-as.data.frame(PricklySculpinData_AllAges)
+```
+
+### Summaries of catch
+```{r}
+
+print(PricklySculpinData_AllAges %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100), n=26) #Boom and bust years, not great for loo validation.
+
+PricklySculpinData_AllAges %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
+
+PricklySculpinData_AllAges %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
+
+#Overall capture probability
+OverallProb<-(sum(PricklySculpinData_AllAges$Binary)/length(unique(PricklySculpinData_AllAges$SampleRowID)))*100
+```
+
+`OverallProb`% probability of capturing all ages PricklySculpin.
+
+## Visualizations
+```{r}
+Plot_Water<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18) + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+
+Plot_DO<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=DO)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
+
+Plot_Secchi<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
+  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+
+Plot_Salinity<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("PricklySculpin presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+SummTable <- PricklySculpinData_AllAges %>% #Keep in mind that the ages are separate but included. A sampling event with both adult and age-0 fish count as present for 2 samples.
+  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
+  dplyr::summarize(
+    Mean_WT = mean(WaterTemperature, na.rm=TRUE),
+    SD_WT = sd(WaterTemperature, na.rm=TRUE),
+    MinWT=min(WaterTemperature, na.rm=TRUE),
+    MaxWT=max(WaterTemperature, na.rm=TRUE),
+    Mean_DO = mean(DO, na.rm=TRUE),
+    SD_DO = sd(DO, na.rm=TRUE),
+    MinDO=min(DO, na.rm=TRUE),
+    MaxDO=max(DO, na.rm=TRUE),
+    Mean_Secchi = mean(Secchi, na.rm=TRUE),
+    SD_Secchi = sd(Secchi, na.rm=TRUE),
+    MinSecchi=min(Secchi, na.rm=TRUE),
+    MaxSecchi=max(Secchi, na.rm=TRUE),
+    Mean_Salinity = mean(Salinity, na.rm=TRUE),
+    SD_Salinity = sd(Salinity, na.rm=TRUE),
+    MinSal=min(Salinity, na.rm=TRUE),
+    MaxSal=max(Salinity, na.rm=TRUE)
+  )
+
+print(SummTable)
+write.csv(SummTable, here("data", "PricklySculpin_SummTable.csv"))
+```
+
+## Use gbm() from dismo to run model and create outputs
+
+
+### Setting data and hyperparameters
+```{r}
+str(PricklySculpinData_AllAges)
+unique(PricklySculpinData_AllAges$Binary)
+(sum(PricklySculpinData_AllAges$Binary)/nrow(PricklySculpinData_AllAges))*100
+
+#gbm.step wants bernoulli response {0, 1} 
+Complexity<-4
+LearningRate<-0.005
+Bag<-0.6  
+```
+
+### gbm.step
+Thanks Nima and Elith!
+
+```{r}
+set.seed(124) # for reproducibility 
+#gbm.step wants bernoulli response {0, 1} 
+SCPbrt <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
+                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+                         gbm.y= 11, # Binary response variable
+                         family = "bernoulli", # for counts this would be "poisson"
+                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+                         )
+
+# make sure to save the model!
+summary(SCPbrt)
+
+names(SCPbrt) #tells us the components of output
+mean(SCPbrt$residuals^2) #mean residual deviance 
+# To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
+
+ # reponse curves
+dismo::gbm.plot(SCPbrt, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value")
+
+gbm::plot.gbm(SCPbrt, n.plots=4, return.grid=TRUE)
+
+dismo::gbm.plot.fits(SCPbrt)
+#I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
+
+
+# This code assesses the extent to which pairwise interactions exist in the data.
+
+
+CV_deviance_explained <- (((SCPbrt$self.statistics$mean.null- SCPbrt$cv.statistics$deviance.mean)/SCPbrt$self.statistics$mean.null)*100)
+CV_deviance_explained
+
+SCPbrt$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identifed optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
+find.int <- gbm.interactions(SCPbrt)
+find.int
+SCPbrt$self.statistics$correlation[[1]]
+# The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+#Use these for plotting interactions
+# You can plot pairwise interactions like this:
+par(mfrow=c(1,2))
+gbm.perspec(SCPbrt,1, 3) #3D PLOT of Water Temp and Secchi
+gbm.perspec(SCPbrt,1, 2) #Water temp and salinity
+#Can also rotate by switching x and y.
+
+
+# save the model
+saveRDS(SCPbrt, here("data", "PricklySculpinAllAges_brt_4_005_6_gbm_step.rds"))
+
+```
+
+Firstly, the things you can see: The R console will show some results (see the Word Working Guide of the Elith tutorial for an example). It reports a brief model summary & all the values are also retained in the model object, so they will be permanently kept (as long as you save the R workspace before quitting).
+
+There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
+
+## Step 3: Validation
+
+### 10-fold and loo
+
+Below are 2 validation schemes that we typically use to assess how well the model is predicting. The first is a K-fold cross-validation where the data is split in k number of equal sections (i.e. folds). A model is the trained on one fold and then its predicts to the rest of the folds. It then iterates this process through all the folds. Most studies do 10 folds as this has shown to be a good number. Too low or too high has shown to potentially bias / cause variability in results.
+
+Performance metrics that are calculated are deviance explained, AUC, and TSS. Deviance explained is a metric for how much variance did our model explain (you can think of is as R squared) and AUC and TSS are assessing predictive skill. Since you are using abundance data you may need to change that to RMSE or MAE (I’d suggest taking a look at the Metrics package for that)
+
+NOTE: whether you are using gbm.fixed or gbm.step to fit your BRTS, you will have to make a slight change to this function below. I’ve commented lines out since I made the model above using gbm.fixed but if used gbm.step I would used the code on those lines instead.
+
+```{r}
+#10 fold cross validation function
+
+eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate, k_folds = 10, tree.complexity = Complexity, bag.fraction = Bag){
+  dataInput$Kset <- dismo::kfold(dataInput, k_folds) #randomly allocate k groups
+  Evaluations_kfold_BRT <- as.data.frame(matrix(data=0,nrow=5,ncol=4)) 
+  colnames(Evaluations_kfold_BRT) <- c("k","Deviance","AUC","TSS")
+  counter=1
+  for (k in 1:k_folds){
+    print(k)
+    train <- dataInput[dataInput$Kset!=k,]
+    test <- dataInput[dataInput$Kset==k,]
+    
+     brt.k <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+                             gbm.y = gbm.y, 
+                              family="bernoulli", 
+                             tree.complexity = tree.complexity,
+                             learning.rate = learning.rate, 
+                             bag.fraction = bag.fraction)
+    
+    preds <- gbm::predict.gbm(brt.k, test,
+                              n.trees=brt.k$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$mean.null #use with gbm.step
+      res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.k)
+    d <- cbind(test[gbm.y], preds)
+    pres <- as.numeric(d[d[,1]==1,2])
+    abs <- as.numeric(d[d[,1]==0,2])
+    e <- dismo::evaluate(p=pres, a=abs)
+    Evaluations_kfold_BRT[counter,1] <- k
+    Evaluations_kfold_BRT[counter,2] <- dev
+    Evaluations_kfold_BRT[counter,3] <- e@auc
+    Evaluations_kfold_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    counter=counter+1 
+  }
+  return(Evaluations_kfold_BRT)
+}
+  
+  
+  
+set.seed(124)
+
+brt_SDM_k <- eval_kfold_brt(dataInput = PricklySculpinData_AllAges,
+                        gbm.x = c(2,3,4,5),
+                        gbm.y=11, learning.rate = LearningRate,
+                        bag.fraction = Bag, tree.complexity = Complexity,
+                        k_folds = 10)
+brt_SDM_k
+```
+
+The other validation scheme that we do is a Leave one [year] out cross-validation. Just like 5 folds but now were trained the model on all the data but one year. And then we predict to that one year that was not included. This give us a sense out how well can we predict year by year as there may be some environmental variability over time.
+
+NOTE: Same as above of changing the code whether you are using gbm.fixed or gbm.step
+
+```{r}
+#leave one year out function
+
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, tree.complexity = Complexity, bag.fraction = Bag){
+  
+  pres$year <- pres$Year
+  abs$year <- abs$Year
+  
+  ## setup output df
+  Evaluations_LOO_BRT <- as.data.frame(matrix(data = 0, nrow = 1, ncol = 5))
+  colnames(Evaluations_LOO_BRT) <- c("k","Deviance","AUC","TSS","n_pres")
+  counter=1
+  
+  u_years <- unique(pres$year)
+  for (y in u_years){
+    
+    print(paste('Running ', which(u_years == y), ' of ', length(u_years), sep=''), sep='')
+    
+    pres_train <- pres[which(pres$year != y),]
+    ## absences are sampled from the full input absence df
+    abs_train <- abs[sample(which(abs$year != y), size = nrow(pres_train), replace=F),]
+    train <- rbind(pres_train, abs_train)
+    
+    pres_test <- pres[which(pres$year == y),]
+    abs_test <- abs[sample(which(abs$year == y), size = nrow(pres_test), replace=F),]
+    test <- rbind(pres_test, abs_test)
+    
+    
+     brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+                                gbm.y = gbm.y, 
+                                family="bernoulli", 
+                                tree.complexity = tree.complexity,
+                               learning.rate = learning.rate, 
+                               bag.fraction = bag.fraction)
+    
+    ## make predictions for eval
+    preds <- gbm::predict.gbm(brt.loo, test,
+                              n.trees=brt.loo$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$mean.null #use with gbm.step
+      res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.loo)
+    d <- cbind(test[,gbm.y], preds)
+    pres_y <- as.numeric(d[d[,1] == 1,2])
+    abs_y <- as.numeric(d[d[,1] == 0,2])
+    e <- dismo::evaluate(p = pres_y, a = abs_y)
+    
+    Evaluations_LOO_BRT[counter,1] <- y
+    Evaluations_LOO_BRT[counter,2] <- dev
+    Evaluations_LOO_BRT[counter,3] <- e@auc
+    Evaluations_LOO_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    Evaluations_LOO_BRT[counter,5] <- length(which(train[,gbm.y] == 1))
+    
+    counter=counter+1 
+  }
+  return(Evaluations_LOO_BRT)
+}
+
+set.seed(124)
+
+brt_SDM_loo <- eval_loo_brt(pres = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 1),],
+                        abs = PricklySculpinData_AllAges[which(PricklySculpinData_AllAges$Binary == 0),],
+                        gbm.x = c(2,3,4,5),
+                        gbm.y=11, learning.rate = LearningRate,
+                        bag.fraction = Bag, tree.complexity = Complexity)
+brt_SDM_loo
+
+#combining the model output, and both validation results into a list to save
+eval <- list(brt = SCPbrt, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
+
+eval
+#now save it
+
+saveRDS(eval, here("data","PricklySculpinAllAges_calyear_brt_SDM_eval_gbm_step.rds"))
+
+#leave one water year out function
+#To do a loo by water year, I need to add a column for water year to the dataset.
+
+
+SCP_WaterYears<-PricklySculpinData_AllAges
+#I have to convert year and month to be numeric as they are currently factors. I can't just do as.numeric. I first have to convert them to characters otherwise the factor level will be the number.
+SCP_WaterYears$Year<-as.character(SCP_WaterYears$Year)
+SCP_WaterYears$Year<-as.numeric(SCP_WaterYears$Year)
+SCP_WaterYears$Month<-as.character(SCP_WaterYears$Month)
+SCP_WaterYears$Month<-as.numeric(SCP_WaterYears$Month)
+
+SCP_WaterYears$WaterYear<-ifelse(SCP_WaterYears$Month >= 10, SCP_WaterYears$Year + 1, SCP_WaterYears$Year)
+
+eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, tree.complexity = Complexity, bag.fraction = Bag){
+  
+  pres$year <- pres$WaterYear
+  abs$year <- abs$WaterYear
+  
+  ## setup output df
+  Evaluations_LOO_BRT <- as.data.frame(matrix(data = 0, nrow = 1, ncol = 5))
+  colnames(Evaluations_LOO_BRT) <- c("k","Deviance","AUC","TSS","n_pres")
+  counter=1
+  
+  u_years <- unique(pres$year)
+  for (y in u_years){
+    
+    print(paste('Running ', which(u_years == y), ' of ', length(u_years), sep=''), sep='')
+    
+    pres_train <- pres[which(pres$year != y),]
+    ## absences are sampled from the full input absence df
+    abs_train <- abs[sample(which(abs$year != y), size = nrow(pres_train), replace=F),]
+    train <- rbind(pres_train, abs_train)
+    
+    pres_test <- pres[which(pres$year == y),]
+    abs_test <- abs[sample(which(abs$year == y), size = nrow(pres_test), replace=F),]
+    test <- rbind(pres_test, abs_test)
+    
+    
+     brt.loo <- dismo::gbm.step(data=train, gbm.x= gbm.x, 
+                                gbm.y = gbm.y, 
+                                family="bernoulli", 
+                                tree.complexity = tree.complexity,
+                               learning.rate = learning.rate, 
+                               bag.fraction = bag.fraction)
+    
+    ## make predictions for eval
+    preds <- gbm::predict.gbm(brt.loo, test,
+                              n.trees=brt.loo$gbm.call$best.trees, 
+                              type="response")
+    
+    dev_eval3<-function(x){
+      null <- x$self.statistics$mean.null #use with gbm.step
+      res <- x$self.statistics$mean.resid #use with gbm.step
+      dev=((null - res)/null)*100
+      return(dev)
+    }
+    dev<-dev_eval3(brt.loo)
+    d <- cbind(test[,gbm.y], preds)
+    pres_y <- as.numeric(d[d[,1] == 1,2])
+    abs_y <- as.numeric(d[d[,1] == 0,2])
+    e <- dismo::evaluate(p = pres_y, a = abs_y)
+    
+    Evaluations_LOO_BRT[counter,1] <- y
+    Evaluations_LOO_BRT[counter,2] <- dev
+    Evaluations_LOO_BRT[counter,3] <- e@auc
+    Evaluations_LOO_BRT[counter,4] <- max(e@TPR + e@TNR-1)
+    Evaluations_LOO_BRT[counter,5] <- length(which(train[,gbm.y] == 1))
+    
+    counter=counter+1 
+  }
+  return(Evaluations_LOO_BRT)
+}
+set.seed(124)
+brt_SDM_loo <- eval_loo_brt(pres = SCP_WaterYears[which(SCP_WaterYears$Binary == 1),],
+                        abs = SCP_WaterYears[which(SCP_WaterYears$Binary == 0),],
+                        gbm.x = c(2,3,4,5),
+                        gbm.y=11, learning.rate = LearningRate,
+                        bag.fraction = Bag, tree.complexity = Complexity)
+brt_SDM_loo
+
+#combining the model output, and both validation results into a list to save
+eval2 <- list(brt = SCPbrt, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
+
+eval2
+saveRDS(eval2, here("data","PricklySculpinAllAges_watyear_brt_SDM_eval_gbm_step.rds"))
+```
+
+# Looking at caret outputs for optimal model (ROC and Kappa)
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
+                       n.trees = 1150,
+                       shrinkage = LearningRate,
+                       n.minobsinnode = 10 )
+
+gbmGrid %>% head() #take a look at what we just made
+
+#specify type of resampling
+fitControlKappa <- trainControl(## 10-fold CV
+                           method = "repeatedcv", #"cv" if roc metric is used below.
+                           number = 10, #Can increase! 
+                           repeats=3, #Delete for roc
+                           )
+
+#specify type of resampling
+fitControlROC <- trainControl(## 10-fold CV
+                           method = "cv", 
+                           number = 10, #Can increase! 
+                           classProbs = TRUE, ## Estimate class probabilities for classification models if ROC
+                           summaryFunction = twoClassSummary #a function to compute performance metrics across resamples. 
+                           )
+
+set.seed(124) #setting the seed for reproducibility. BRT have randomness in them so if you want to make sure you are getting the same result each time make sure to set the seed
+
+gbmFitKappa <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = PricklySculpinData_AllAges, 
+                method = "gbm", 
+                trControl = fitControlKappa, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "Kappa" #Or ROC 
+                )
+
+gbmFitKappa
+
+gbmFitROC <- train(PresAbs ~ WaterTemperature + Secchi + DO + Salinity, #caret wants non-numeric presence, absence. Might need to change it to Yes and No.
+                data = PricklySculpinData_AllAges, 
+                method = "gbm", 
+                trControl = fitControlROC, 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="bernoulli",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                metric = "ROC"  
+                )
+gbmFitROC
+# save the model
+#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+### Nima plots
+```{r}
+# Fig. S3. The relative importance of drivers in distribution models
+# Fig. S4. Response curves of each environmental variable from distribution models
+
+gbm::plot.gbm(SCPbrt, type="response") #Returns a vector of predictions. By default the predictions are on the scale of f(x). For example, for the Bernoulli loss the returned value is on the log odds scale, poisson loss on the log scale, and coxph is on the log hazard scale. If type="response" then gbm converts back to the same scale as the outcome. Currently the only effect this will have is returning probabilities for bernoulli and expected counts for poisson. For the other distributions "response" and "link" return the same.
+
+###----response plots----####
+
+# get the matrix out of the `plot.gbm`
+var<-SCPbrt$var.names
+response_data<-data.frame()
+
+for (i in 1:length(var)){
+response_plot_data <- gbm::plot.gbm(SCPbrt,
+                                    i.var = var[i],
+                                 return.grid = TRUE)
+
+response_plot_data<-response_plot_data %>% gather("variable","x",-y)
+
+response_data<-rbind(response_data, response_plot_data)
+
+}
+
+#Get it on the same scale as elith
+response_data$y <- response_data[,1] - mean(response_data[,1]) #The code above makes the first column y values. This line of code centers the values of the first column around 0.
+
+str(response_data)
+response_data<-response_data %>% distinct()
+response_data %>%
+  ggplot() + 
+  geom_line(aes(x=x, y=y), color = "lightseagreen", size=1) + 
+  facet_wrap(~variable, scales = "free", nrow = 5) +
+  labs(x = "Variable Values",
+       y = "Marginal Effect")+
+  theme_bw() 
+
+
+ggsave(here("Plots","PricklySculpin_response_plots.png"),
+       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
+```
+
+### Splitting out training and testing data.
+https://towardsdatascience.com/understanding-gradient-boosting-machines-9be756fe76ab
+```{r}
+inTrain<-createDataPartition(y=PricklySculpinData_AllAges$Binary, p=0.8, list=FALSE) #data is already limited so I decided to use 80% of data to train and will test on 20%. 
+PricklySculpin_Train<-PricklySculpinData_AllAges[inTrain,]
+PricklySculpin_Test<-PricklySculpinData_AllAges[-inTrain,]
+```
+
+### Running model again
+
+```{r}
+set.seed(124)
+#LearningRate<-0.001 #had to shift learning rate since only model 80% of the data.
+brtest <- dismo::gbm.step(data=PricklySculpin_Train, 
+                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+                         gbm.y= 11, 
+                         family = "bernoulli", 
+                         tree.complexity = Complexity,
+                         learning.rate = LearningRate, 
+                         bag.fraction = Bag 
+                         ) #Learning rate 0.008 gave 650 trees. 0.005 gave 1000 trees
+
+CV_deviance_explained <- (((brtest$self.statistics$mean.null- brtest$cv.statistics$deviance.mean)/brtest$self.statistics$mean.null)*100)
+CV_deviance_explained
+brtest$cv.statistics
+
+Preds<-predict(object = brtest, newdata = PricklySculpin_Test, type = "response")
+
+#PredGrid<-gbm.predict.grids(brtest, PricklySculpinAge0_Test, want.grids=F, n.trees=brtest$gbm.call$best.trees, type="response")
+PredBinaries<-as.factor(ifelse(Preds>0.1,1,0))
+
+
+PricklySculpin_Test$Binary<-as.factor(PricklySculpin_Test$Binary)
+
+confusionMatrix(PredBinaries, PricklySculpin_Test$Binary)
+
+PricklySculpin_Test$Binary<-as.character(PricklySculpin_Test$Binary)
+PricklySculpin_Test$Binary<-as.numeric(PricklySculpin_Test$Binary)
+
+calc.deviance(PricklySculpin_Test$Binary, Preds, calc.mean=T, family="bernoulli") 
+
+PredBinaries<-as.character(PredBinaries)
+PredBinaries<-as.numeric(PredBinaries)
+cor(PredBinaries, PricklySculpinAge0_Test$Binary)
+```
+Roc curve guide: https://www.statology.org/roc-curve-ggplot2/
+
+
+# COUNT DATA
+
+## Use gbm() from dismo to run model
+
+Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> for tuning strategy?
+
+### Setting hyperparameters
+
+```{r}
+str(PricklySculpinData_AllAges)
+
+Complexity<-4
+LearningRate<-0.005
+Bag<-0.6  
+
+```
+
+### gbm.step
+```{r}
+set.seed(124)
+system.time( scp_brt_allcount <- dismo::gbm.step(data=PricklySculpinData_AllAges, 
+                         gbm.x= c(2,3,4,5), 
+                         gbm.y= 9, 
+                         family = "poisson", 
+                         tree.complexity = Complexity, 
+                         learning.rate = LearningRate, 
+                         bag.fraction = Bag 
+                         ))
+
+# make sure to save the model!
+summary(scp_brt_allcount)
+
+mean(scp_brt_allcount$residuals^2) #mean residual deviance 0.309
+#SCPbrt_Age0$
+names(scp_brt_allcount) #tells us the components of output
+CV_deviance_explained <- (((scp_brt_allcount$self.statistics$mean.null- scp_brt_allcount$cv.statistics$deviance.mean)/scp_brt_allcount$self.statistics$mean.null)*100) 
+CV_deviance_explained
+CV_Correlation<-scp_brt_allcount$cv.statistics$correlation.mean
+
+# To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
+
+
+ # reponse curves
+dismo::gbm.plot(scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+gbm::plot.gbm(scp_brt_allcount, n.plots=4, return.grid=TRUE)
+
+dismo::gbm.plot.fits(scp_brt_allcount)
+#I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
+
+
+# This code assesses the extent to which pairwise interactions exist in the data.
+
+find.int <- gbm.interactions(scp_brt_allcount)
+find.int#Salinity and DO, Salinity and Water Temp.
+scp_brt_allcount$self.statistics$correlation[[1]] #The relevant set of evaluation statistics, calculated on the fitted values - i.e. this is only interesting in so far as it demonstrates "evaluation" (i.e. t) on the training data. It should NOT be reported as the model predictive performance.
+# The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+
+scp_brt_allcount$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identifed optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
+
+# You can plot pairwise interactions like this:
+par(mfrow=c(1,2))
+gbm.perspec(scp_brt_allcount,2, 4) #3D PLOT of Water Temp and Salinity
+gbm.perspec(scp_brt_allcount,1, 4) #salinity and DO
+gbm.perspec(scp_brt_allcount,1, 2)
+#5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
+# save the model
+saveRDS(scp_brt_allcount, here("data", "AllSCP_Allcount_brt_4_005_6_gbm_step.rds"))
+```
+
+## Validation And Plots
+### Looking at caret outputs for optimal model 
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
+                       n.trees = 2600,
+                       shrinkage = LearningRate,
+                       n.minobsinnode = 10 )
+
+
+set.seed(124)
+
+gbmFit <- train(Count ~ WaterTemperature + Secchi + DO + Salinity, 
+                data = PricklySculpinData_AllAges, 
+                method = "gbm", 
+                trControl = trainControl(method = "cv", number = 10), 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="poisson",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                #metric = "Kappa" #Or ROC 
+                )
+
+gbmFit
+
+
+# save the model
+#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+### Nima plots
+```{r}
+# Fig. S3. The relative importance of drivers in distribution models
+# Fig. S4. Response curves of each environmental variable from distribution models
+
+gbm::plot.gbm(scp_brt_allcount, type="response") #Returns a vector of predictions. By default the predictions are on the scale of f(x). For example, for the Bernoulli loss the returned value is on the log odds scale, poisson loss on the log scale, and coxph is on the log hazard scale. If type="response" then gbm converts back to the same scale as the outcome. Currently the only effect this will have is returning probabilities for bernoulli and expected counts for poisson. For the other distributions "response" and "link" return the same.
+
+###----response plots----####
+
+# get the matrix out of the `plot.gbm`
+var<-scp_brt_allcount$var.names
+count_response_data<-data.frame()
+
+for (i in 1:length(var)){
+count_response_plot_data <- gbm::plot.gbm(scp_brt_allcount,
+                                    i.var = var[i],
+                                 return.grid = TRUE)
+
+count_response_plot_data<-count_response_plot_data %>% gather("variable","x",-y)
+
+count_response_data<-rbind(count_response_data, count_response_plot_data)
+
+}
+
+#Get it on the same scale as elith https://stats.stackexchange.com/questions/122721/r-partial-dependency-plots-from-gbm-package-values-and-y-axis
+
+count_response_data$y <- count_response_data[,1] - mean(count_response_data[,1])
+
+
+str(count_response_data)
+count_response_data<-count_response_data %>% distinct()
+count_response_data %>%
+  ggplot() + 
+  geom_line(aes(x=x, y=y), color = "lightseagreen", size=1) + 
+  facet_wrap(~variable, scales = "free", nrow = 5) +
+  labs(x = "Variable Values",
+       y = "Marginal Effect")+
+  theme_bw() 
+
+ggsave(here("Plots","AllSCP_allcount_response_plots.png"),
+       width = 7, height = 6, units = "in", dpi = 300)
+#ggsave(here("Plots","LongfinSmelt_response_plots.svg"),
+#       width = 7, height = 6, units = "in", dpi = 300)
+```
+
+## Data filtering for above 0 counts
+```{r}
+PricklySculpinData_AllAgesPosCount<-PricklySculpinData_AllAges %>% filter(Binary == 1)
+
+summary(PricklySculpinData_AllAgesPosCount)
+length(unique(PricklySculpinData_AllAgesPosCount$SampleRowID))
+```
+
+
+## Step 2: Use gbm() from dismo to run model and create outputs
+
+Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> for tuning strategy?
+
+### Setting hyperparameters
+
+```{r}
+str(PricklySculpinData_AllAgesPosCount)
+
+Complexity<-4
+LearningRate<-0.005
+Bag<-0.6  
+
+```
+
+### gbm.step
+```{r}
+set.seed(124) # for reproducibility 
+
+system.time( SCP_BRT_PosCount <- dismo::gbm.step(data=PricklySculpinData_AllAgesPosCount, 
+                         gbm.x= c(2,3,4,5), 
+                         gbm.y= 9, 
+                         family = "poisson", 
+                         tree.complexity = Complexity, 
+                         learning.rate = LearningRate, 
+                         bag.fraction = Bag 
+                         ))
+
+# make sure to save the model!
+summary(SCP_BRT_PosCount)
+SCP_BRT_PosCount$gbm.call
+mean(SCP_BRT_PosCount$residuals^2) #mean residual deviance 0.309
+#SCPbrt_Age0$
+names(SCP_BRT_PosCount) #tells us the components of output
+
+CV_deviance_explained <- (((SCP_BRT_PosCount$self.statistics$mean.null- SCP_BRT_PosCount$cv.statistics$deviance.mean)/SCP_BRT_PosCount$self.statistics$mean.null)*100) 
+CV_deviance_explained
+
+CV_Correlation<-SCP_BRT_PosCount$cv.statistics$correlation.mean
+
+# To pull out one component of the list, use a number (angaus.tc5.lr01[[29]]) or name (angaus.tc5.lr01$cv.statistics); but be careful - some are as big as the dataset! e.g. there will be 1000 fitted values - find this by typing length(angaus.tc5.lr01$fitted)
+
+
+ # reponse curves
+dismo::gbm.plot(SCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+gbm::plot.gbm(SCP_BRT_PosCount, n.plots=4, return.grid=TRUE)
+
+dismo::gbm.plot.fits(SCP_BRT_PosCount)
+#I assume these wtm's are weighted means and are the means used when calculating partial dependence? So each dot is a prediction made from a single tree?
+
+
+# This code assesses the extent to which pairwise interactions exist in the data.
+
+find.int <- gbm.interactions(SCP_BRT_PosCount)
+find.int#Salinity and DO, Salinity and Water Temp.
+SCP_BRT_PosCount$self.statistics$correlation[[1]] #The relevant set of evaluation statistics, calculated on the fitted values - i.e. this is only interesting in so far as it demonstrates "evaluation" (i.e. t) on the training data. It should NOT be reported as the model predictive performance.
+# The returned object, here named test.int, is a list. The first 2 components summarise the results, first as a ranked list of the 5 most important pairwise interactions, and the second tabulating all pairwise interactions. The variable index numbers in $rank.list can be used for plotting.
+
+SCP_BRT_PosCount$cv.statistics #These are the most appropriate evaluation statistics. We calculate each statistic within each fold (at the identifed optimal number of trees that is calculated on the mean change in predictive deviance over all folds), then present here the mean and standard error of those fold-based statistics.
+
+# You can plot pairwise interactions like this:
+par(mfrow=c(1,2))
+gbm.perspec(SCP_BRT_PosCount,2, 4) #3D PLOT of Water Temp and Salinity
+gbm.perspec(SCP_BRT_PosCount,1, 4) #salinity and DO
+gbm.perspec(SCP_BRT_PosCount,1, 2)
+#5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
+# save the model
+saveRDS(SCP_BRT_PosCount, here("data", "SCP_all_positivecount_brt_4_005_6_gbm_step.rds"))
+```
+
+## Step 3: Validation
+
+### Looking at caret outputs for optimal model 
+
+```{r}
+gbmGrid <- expand.grid(interaction.depth = Complexity, #tree complexity
+                       n.trees = 3250,
+                       shrinkage = LearningRate,
+                       n.minobsinnode = 10 )
+
+
+#specify type of resampling
+
+set.seed(124)
+
+gbmFit <- train(Count ~ WaterTemperature + Secchi + DO + Salinity, 
+                data = PricklySculpinData_AllAgesPosCount, 
+                method = "gbm", 
+                trControl = trainControl(method = "cv", number = 10), 
+                bag.fraction=Bag,
+                na.action=na.pass,
+                distribution="poisson",
+                verbose = FALSE, #for gbm's this is needed.
+                ## Now specify the exact models to evaluate:
+                tuneGrid = gbmGrid, #what we made above
+                #metric = "Kappa" #Or ROC 
+                )
+
+gbmFit
+
+
+# save the model
+#saveRDS(gbmFit, here("data", "brt_gbm_fit.rds"))
+
+# we can plot the results too which will be easier to interpret
+ggplot(gbmFit)
+```
+
+## Step 4: Analyzing Response Curves & Variable Importance
+
+Look at Nima's code for pretty plots: <https://github.com/nfarchadi/heatwave_impacts_on_fisheries/blob/main/scripts/4_plots/FS3_FS4_response_relimport_plots.R>
+
+### Nima plots
+```{r}
+# Fig. S3. The relative importance of drivers in distribution models
+# Fig. S4. Response curves of each environmental variable from distribution models
+
+gbm::plot.gbm(SCP_BRT_PosCount, type="response") #Returns a vector of predictions. By default the predictions are on the scale of f(x). For example, for the Bernoulli loss the returned value is on the log odds scale, poisson loss on the log scale, and coxph is on the log hazard scale. If type="response" then gbm converts back to the same scale as the outcome. Currently the only effect this will have is returning probabilities for bernoulli and expected counts for poisson. For the other distributions "response" and "link" return the same.
+
+###----response plots----####
+
+# get the matrix out of the `plot.gbm`
+var<-SCP_BRT_PosCount$var.names
+pcount_response_data<-data.frame()
+
+for (i in 1:length(var)){
+pcount_response_plot_data <- gbm::plot.gbm(SCP_BRT_PosCount,
+                                    i.var = var[i],
+                                 return.grid = TRUE)
+
+pcount_response_plot_data<-pcount_response_plot_data %>% gather("variable","x",-y)
+
+pcount_response_data<-rbind(pcount_response_data, pcount_response_plot_data)
+
+}
+
+#Get it on the same scale as elith https://stats.stackexchange.com/questions/122721/r-partial-dependency-plots-from-gbm-package-values-and-y-axis
+#response_data$y <- response_data[,2] - mean(response_data[,2])
+
+pcount_response_data$y <- pcount_response_data[,1] - mean(pcount_response_data[,1])
+
+
+str(count_response_data)
+pcount_response_data<-pcount_response_data %>% distinct()
+
+pcount_response_data %>%
+  ggplot() + 
+  geom_line(aes(x=x, y=y), color = "lightseagreen", size=1) + 
+  facet_wrap(~variable, scales = "free", nrow = 5) +
+  labs(x = "Variable Values",
+       y = "Marginal Effect")+
+  theme_bw() + 
+  theme(panel.spacing = unit(.30, "lines"),
+        strip.text = element_text(size=10),
+        strip.background = element_blank(),
+        strip.text.x = element_text(margin = margin(0,0,.05,0, "cm")))#+
+ 
+```
+
+```{r}
+#Both counts and binomial on same plot...
+
+count_response_data$Model<-"All Count"
+pcount_response_data$Model<-"Positive Count"
+response_data$Model<-"Presence/Absence"
+
+Combined<-rbind(count_response_data, response_data, pcount_response_data)
+
+Combined %>%
+  ggplot() + 
+  geom_line(aes(x=x, y=y, color=Model), size=1) + 
+  facet_wrap(~variable, scales = "free", nrow = 4) +
+  labs(x = "Variable Values",
+       y = "Marginal Effect")+
+  theme_bw(base_size = 22) + 
+  ggtitle("All Prickly Sculpin Partial Dependence Plots by Response")
+
+ggsave(here("Plots","PricklySculpin_All_3brtresponse_plots.png"),
+       width = 7, height = 6, units = "in", dpi = 300)
+```
+
+When looking at partial dependence plots, the y-axis represents the marginal impact of the independent variable to the dependent variable. If at 0, then there is 0 impact...
+
+
 
 # Separate Ages: 1 row for each sampling event for each age.
 ```{r}
@@ -122,54 +1012,6 @@ MeanSec<-mean(PricklySculpinDataPA$Secchi)
 
 ### Visualizations
 ```{r}
-# I want to show presences vs. all samples. Keep in mind that the ages are separate but included.
-
-Plot_Water<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
-
-Plot_DO<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=DO)) + 
-  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
-
-Plot_Secchi<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
-  geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
-
-Plot_Salinity<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
-
-Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
-
-# now add the title
-title <- ggdraw() + draw_label("PricklySculpin presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7))
-
-plot_grid(title, Plots, ncol = 1,
-  # rel_heights values control vertical title margins
-  rel_heights = c(0.1, 1))
-
-SummTable <- PricklySculpinDataPA %>% #Keep in mind that the ages are separate but included. A sampling event with both adult and age-0 fish count as present for 2 samples.
-  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
-  dplyr::summarize(
-    Mean_WT = mean(WaterTemperature, na.rm=TRUE),
-    SD_WT = sd(WaterTemperature, na.rm=TRUE),
-    MinWT=min(WaterTemperature, na.rm=TRUE),
-    MaxWT=max(WaterTemperature, na.rm=TRUE),
-    Mean_DO = mean(DO, na.rm=TRUE),
-    SD_DO = sd(DO, na.rm=TRUE),
-    MinDO=min(DO, na.rm=TRUE),
-    MaxDO=max(DO, na.rm=TRUE),
-    Mean_Secchi = mean(Secchi, na.rm=TRUE),
-    SD_Secchi = sd(Secchi, na.rm=TRUE),
-    MinSecchi=min(Secchi, na.rm=TRUE),
-    MaxSecchi=max(Secchi, na.rm=TRUE),
-    Mean_Salinity = mean(Salinity, na.rm=TRUE),
-    SD_Salinity = sd(Salinity, na.rm=TRUE),
-    MinSal=min(Salinity, na.rm=TRUE),
-    MaxSal=max(Salinity, na.rm=TRUE)
-  )
-
-print(SummTable)
-write.csv(SummTable, here("data", "PricklySculpin_SummTable.csv"))
-
 #Seasonality
 PricklySculpinDataPA %>% group_by(AgeClass) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=length(unique(SampleRowID)), PercentageOfPresence=100*(TotalPresence/n))
 
@@ -188,6 +1030,8 @@ PricklySculpinDataPA %>% group_by(StationCode, AgeClass) %>% summarize(TotalPres
 PricklySculpinAge0<-PricklySculpinDataPA %>% filter(AgeClass %in% "Age-0")
 str(PricklySculpinAge0)
 unique(PricklySculpinAge0$Binary)
+(sum(PricklySculpinAge0$Binary)/nrow(PricklySculpinAge0))*100
+
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
 LearningRate<-0.005
@@ -1915,36 +2759,6 @@ Combined %>%
 ggsave(here("Plots","LongfinSmelt_YOY_3brtresponse_plots.png"),
        width = 7, height = 6, units = "in", dpi = 300)
 ```
-
-# ALL AGES TOGETHER 1 row for each sampling event for
-```{r}
-PricklySculpinDataPA_AllAges<-PricklySculpinData %>% dplyr::group_by(SampleRowID, WaterTemperature, DO, Secchi, Salinity, Year, Month, StationCode) %>% dplyr::summarize(Count=sum(Count)) %>% mutate(PresAbs = if_else(Count > 0, "present", "absent"), Binary=if_else(Count > 0, 1, 0)) #For all ages together.
-
-PricklySculpinDataPA_AllAges$PresAbs<-as.factor(PricklySculpinDataPA_AllAges$PresAbs)
-
-PricklySculpinDataPA_AllAges$Year<-as.factor(PricklySculpinDataPA_AllAges$Year)
-
-PricklySculpinDataPA_AllAges$Month<-as.factor(PricklySculpinDataPA_AllAges$Month)
-
-PricklySculpinDataPA_AllAges$StationCode<-as.factor(PricklySculpinDataPA_AllAges$StationCode)
-
-PricklySculpinDataPA_AllAges<-as.data.frame(PricklySculpinDataPA_AllAges)
-```
-
-### Summaries of catch
-```{r}
-
-print(PricklySculpinDataPA_AllAges %>% group_by(Year) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100), n=26) #Boom and bust years, not great for loo validation.
-
-PricklySculpinDataPA_AllAges %>% group_by(StationCode) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) %>% print(n=24) #Some are heavily favored.
-
-PricklySculpinDataPA_AllAges %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Count), BinarySum = sum(Binary), Probability=(BinarySum/N)*100) #Never in January and February
-
-#Overall capture probability
-OverallProb<-(sum(PricklySculpinDataPA_AllAges$Binary)/length(unique(PricklySculpinDataPA_AllAges$SampleRowID)))*100
-```
-
-`OverallProb`% probability of capturing all ages PricklySculpin.
 
 
 # NOTES

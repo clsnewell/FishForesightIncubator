@@ -1,5 +1,5 @@
 ---
-title: "Modeling Protocol"
+title: "Prickly Sculpin Models - all 3 age sets"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document

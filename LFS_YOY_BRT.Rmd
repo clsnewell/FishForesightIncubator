@@ -1,11 +1,50 @@
 ---
-title: "Age-0 Longfin Smelt Presence/Absence BRT"
+title: "Age-0 Longfin Smelt BRTs"
 author: "Caroline Newell"
 date: "`r Sys.Date()`"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+DO NOT RE-RUN MODELS. Can find models like so:
+
+TC 1
+brtc1 <- here("data","YOYLongfinSmelt_brt_1_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+TC 2
+brtc2 <- here("data","YOYLongfinSmelt_brt_2_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+TC 3
+brtc3 <- here("data","YOYLongfinSmelt_brt_3_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+TC 4
+brt1 <- here("data","YOYLongfinSmelt_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+brt_allcount <- here("data","LongfinSmelt_allcount_brt_gbm_step.rds") %>% readRDS() #All count
+
+brt_pcount <- here("data","LongfinSmelt_positivecount_brt_gbm_step.rds") %>% readRDS() #Positive count
+
+
+CHECK MODEL SETTINGS LIKE SO:
+
+model$gbm.call
+
+
+OTHERSAVED ITEMS (DO NOT RE-RUN)
+TC 1
+Didn't save these evals...
+
+TC 2
+Didn't save these evals...
+
+TC 3
+Didn't save these evals...
+
+TC 4
+eval <- here("data","YOYLongfinSmelt_brt_SDM_eval_gbm_step.rds") %>% readRDS()
+
+I didn't save the water year output :(
+
 
 # Loading libraries and data
 
@@ -190,7 +229,6 @@ Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> f
 ```{r}
 str(LongfinSmeltYOYDataPA)
 
- set.seed(124) # for reproducibility 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
 LearningRate<-0.005
@@ -201,14 +239,14 @@ Bag<-0.6
 ### gbm.step
 ```{r}
 set.seed(124)
-system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( brt1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 11, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(brt1)
@@ -249,7 +287,7 @@ gbm.perspec(brt1,1, 4) #salinity and DO
 gbm.perspec(brt1,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brt1, here("data", "YOYLongfinSmelt_brt_4_005_6_gbm_step.rds"))
+#saveRDS(brt1, here("data", "YOYLongfinSmelt_brt_4_005_6_gbm_step.rds"))
 ```
 
 ## Step 3: Validation
@@ -425,11 +463,11 @@ eval_kfold_brt <- function(dataInput, gbm.x, gbm.y, learning.rate = LearningRate
 }
   
   
-brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltYOYDataPA,
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=11, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity,
-                        k_folds = 10)
+#brt_SDM_k <- eval_kfold_brt(dataInput = LongfinSmeltYOYDataPA,
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=11, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity,
+#                        k_folds = 10)
 brt_SDM_k
 ```
 
@@ -501,11 +539,11 @@ eval_loo_brt <- function(pres, abs, gbm.x, gbm.y, learning.rate = LearningRate, 
   return(Evaluations_LOO_BRT)
 }
 
-brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 1),],
-                        abs = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 0),],
-                        gbm.x = c(2,3,4,5),
-                        gbm.y=11, learning.rate = LearningRate,
-                        bag.fraction = Bag, tree.complexity = Complexity)
+#brt_SDM_loo <- eval_loo_brt(pres = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 1),],
+#                        abs = LongfinSmeltYOYDataPA[which(LongfinSmeltYOYDataPA$Binary == 0),],
+#                        gbm.x = c(2,3,4,5),
+#                        gbm.y=11, learning.rate = LearningRate,
+#                        bag.fraction = Bag, tree.complexity = Complexity)
 brt_SDM_loo
 
 #combining the model output, and both validation results into a list to save
@@ -514,7 +552,7 @@ eval1 <- list(brt = brt1, brt_k = brt_SDM_k, brt_loo = brt_SDM_loo)
 eval1
 #now save it
 
-saveRDS(eval, here("data","YOYLongfinSmelt_brt_SDM_eval_gbm_step.rds"))
+#saveRDS(eval, here("data","YOYLongfinSmelt_brt_SDM_eval_gbm_step.rds"))
 
 #leave one water year out function
 #To do a loo by water year, I need to add a column for water year to the dataset.
@@ -777,14 +815,14 @@ Bag<-0.6
 ##### gbm.step
 ```{r}
 set.seed(124)
-system.time( brtc1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( brtc1 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 11, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(brtc1)
@@ -824,7 +862,7 @@ gbm.perspec(brtc1,1, 4) #salinity and DO
 gbm.perspec(brtc1,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brtc1, here("data", "YOYLongfinSmelt_brt_1_005_6_gbm_step.rds"))
+#saveRDS(brtc1, here("data", "YOYLongfinSmelt_brt_1_005_6_gbm_step.rds"))
 ```
 
 #### Validation
@@ -1198,14 +1236,14 @@ Bag<-0.6
 ##### gbm.step
 ```{r}
 set.seed(124)
-system.time( brtc2 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( brtc2 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 11, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(brtc2)
@@ -1245,7 +1283,7 @@ gbm.perspec(brtc2,1, 4) #salinity and DO
 gbm.perspec(brtc2,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brtc2, here("data", "YOYLongfinSmelt_brt_2_005_6_gbm_step.rds"))
+#saveRDS(brtc2, here("data", "YOYLongfinSmelt_brt_2_005_6_gbm_step.rds"))
 ```
 
 #### Validation
@@ -1618,14 +1656,14 @@ Bag<-0.6
 ##### gbm.step
 ```{r}
 set.seed(124)
-system.time( brtc3 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
-                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
-                         gbm.y= 11, # Binary response variable
-                         family = "bernoulli", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( brtc3 <- dismo::gbm.step(data=LongfinSmeltYOYDataPA, 
+#                         gbm.x= c(2,3,4,5), # environmental variables. 2 = Water Temperature, 5 = salinity, 3 = DO, 4 = Secchi
+#                         gbm.y= 11, # Binary response variable
+#                         family = "bernoulli", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(brtc3)
@@ -1666,7 +1704,7 @@ gbm.perspec(brtc3,1, 4) #salinity and DO
 gbm.perspec(brtc3,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brtc3, here("data", "YOYLongfinSmelt_brt_3_005_6_gbm_step.rds"))
+#saveRDS(brtc3, here("data", "YOYLongfinSmelt_brt_3_005_6_gbm_step.rds"))
 ```
 
 #### Validation
@@ -2219,14 +2257,14 @@ Bag<-0.6
 
 ### gbm.step
 ```{r}
-system.time( brt_allcount <- dismo::gbm.step(data=LongfinSmeltYOYData_All, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", #Or gaussian
-                         tree.complexity = Complexity, 
-                         learning.rate = LearningRate,  
-                         bag.fraction = Bag 
-                         ))
+#system.time( brt_allcount <- dismo::gbm.step(data=LongfinSmeltYOYData_All, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", #Or gaussian
+#                         tree.complexity = Complexity, 
+#                         learning.rate = LearningRate,  
+#                         bag.fraction = Bag 
+#                         ))
 
 #summary(brt_allcount) #relative influence - ignore.
 
@@ -2265,7 +2303,7 @@ gbm.perspec(brt_allcount,1, 4) #salinity and DO
 gbm.perspec(brt_allcount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brt_allcount, here("data", "LongfinSmelt_allcount_brt_gbm_step.rds"))
+#saveRDS(brt_allcount, here("data", "LongfinSmelt_allcount_brt_gbm_step.rds"))
 ```
 
 ## Step 3: Validation And Plots
@@ -2528,14 +2566,14 @@ Bag<-0.6
 
 ### gbm.step
 ```{r}
-system.time( brt_pcount <- dismo::gbm.step(data=LongfinSmeltYOYData_Positive, 
-                         gbm.x= c(2,3,4,5), # environmental variables.
-                         gbm.y= 6, # Binary response variable
-                         family = "poisson", # for counts this would be "poisson"
-                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
-                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
-                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
-                         ))
+#system.time( brt_pcount <- dismo::gbm.step(data=LongfinSmeltYOYData_Positive, 
+#                         gbm.x= c(2,3,4,5), # environmental variables.
+#                         gbm.y= 6, # Binary response variable
+#                         family = "poisson", # for counts this would be "poisson"
+#                         tree.complexity = Complexity, # complexity of the interactions that the model will fit. 5-way interaction since these may all interact with one another? Typical values range from a depth of 3–8 but it is not uncommon to see a tree depth of 1 (J. Friedman, Hastie, and Tibshirani 2001). Smaller depth trees such as decision stumps are computationally efficient (but require more trees); however, higher depth trees allow the algorithm to capture unique interactions but also increase the risk of over-fitting. Note that larger  n  or  p training data sets are more tolerable to deeper trees.
+#                         learning.rate = LearningRate,  # optimized to end up with >1000 trees. Smaller values make the model robust to the specific characteristics of each individual tree, thus allowing it to generalize well. Smaller values also make it easier to stop prior to overfitting; however, they increase the risk of not reaching the optimum with a fixed number of trees and are more computationally demanding
+#                         bag.fraction = Bag # default for Elith, amount of input data used each time. the fraction of the training set observations randomly selected to propose the next tree in the expansion. This introduces randomnesses into the model fit. If bag.fraction < 1 then running the same model twice will result in similar but different fits. gbm uses the R random number generator so set.seed can ensure that the model can be reconstructed. 0.5 is ridgeway's preference.
+#                         ))
 
 # make sure to save the model!
 summary(brt_pcount)
@@ -2575,7 +2613,7 @@ gbm.perspec(brt_pcount,1, 4) #salinity and DO
 gbm.perspec(brt_pcount,1, 2)
 #5 is tow duration. 4 is secchi. 1 is water temp.2 is salinity. 3 is DO
 # save the model
-saveRDS(brt_pcount, here("data", "LongfinSmelt_positivecount_brt_gbm_step.rds"))
+#saveRDS(brt_pcount, here("data", "LongfinSmelt_positivecount_brt_gbm_step.rds"))
 ```
 
 ## Step 3: Validation

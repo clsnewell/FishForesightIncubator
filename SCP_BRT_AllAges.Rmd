@@ -260,6 +260,26 @@ Firstly, the things you can see: The R console will show some results (see the W
 
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
 
+### Pulling saved model
+```{r}
+#ALL AGES
+SCPbrt <- here("data","PricklySculpinAllAges_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+scp_brt_allcount <- here("data","AllSCP_Allcount_brt_4_005_6_gbm_step.rds") %>% readRDS() #All count
+
+SCP_BRT_PosCount <- here("data","SCP_all_positivecount_brt_4_005_6_gbm_step.rds") %>% readRDS() #Positive count
+
+#PDPs
+
+#plots
+dismo::gbm.plot(SCPbrt, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(SCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+```
+
 ## Step 3: Validation
 
 ### 10-fold and loo

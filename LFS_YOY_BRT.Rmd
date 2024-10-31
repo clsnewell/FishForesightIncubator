@@ -290,6 +290,25 @@ gbm.perspec(brt1,1, 2)
 #saveRDS(brt1, here("data", "YOYLongfinSmelt_brt_4_005_6_gbm_step.rds"))
 ```
 
+### Pulling saved model 
+```{r}
+
+brt1 <- here("data","YOYLongfinSmelt_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+
+brt_allcount <- here("data","LongfinSmelt_allcount_brt_gbm_step.rds") %>% readRDS() #All count
+
+brt_pcount <- here("data","LongfinSmelt_positivecount_brt_gbm_step.rds") %>% readRDS() #Positive count
+
+#plots
+dismo::gbm.plot(brt1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(brt_pcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+```
+
 ## Step 3: Validation
 
 ### Looking at caret outputs for optimal model (ROC and Kappa)

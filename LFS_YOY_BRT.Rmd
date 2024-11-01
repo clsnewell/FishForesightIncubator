@@ -307,6 +307,22 @@ dismo::gbm.plot(brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRU
 
 dismo::gbm.plot(brt_pcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
 
+
+#TC 1
+brtc1 <- here("data","YOYLongfinSmelt_brt_1_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+#TC 2
+brtc2 <- here("data","YOYLongfinSmelt_brt_2_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+#TC 3
+brtc3 <- here("data","YOYLongfinSmelt_brt_3_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+#TC 4
+brt1 <- here("data","YOYLongfinSmelt_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+dismo::gbm.plot(brtc1, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+dismo::gbm.plot(brtc2, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+dismo::gbm.plot(brtc3, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
 ```
 
 ## Step 3: Validation

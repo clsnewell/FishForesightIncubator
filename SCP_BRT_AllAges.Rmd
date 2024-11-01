@@ -269,14 +269,29 @@ scp_brt_allcount <- here("data","AllSCP_Allcount_brt_4_005_6_gbm_step.rds") %>% 
 
 SCP_BRT_PosCount <- here("data","SCP_all_positivecount_brt_4_005_6_gbm_step.rds") %>% readRDS() #Positive count
 
-#PDPs
 
 #plots
-dismo::gbm.plot(SCPbrt, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+dismo::gbm.plot(SCPbrt, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(1,4), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
 
-dismo::gbm.plot(scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+dismo::gbm.plot(scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(1,4), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
 
-dismo::gbm.plot(SCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+dismo::gbm.plot(SCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(1,4), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+#library(ggplotify)
+#library(cowplot)
+
+# Capture each set of plots as ggplot objects
+#plot1 <- as.ggplot(~ dismo::gbm.plot(SCPbrt, n.plots = 4, write.title = F, rug = T, smooth = TRUE, plot.layout = c(1, 4), common.scale = T, y.label = "Fitted Value"))
+#plot2 <- as.ggplot(~ dismo::gbm.plot(scp_brt_allcount, n.plots = 4, write.title = F, rug = T, smooth = TRUE, plot.layout = c(1, 4), common.scale = T, y.label = "Fitted Value"))
+#plot3 <- as.ggplot(~ dismo::gbm.plot(SCP_BRT_PosCount, n.plots = 4, write.title = F, rug = T, smooth = TRUE, plot.layout = c(1, 4), common.scale = T, y.label = "Fitted Value"))
+
+# Arrange the plots vertically
+#cowplot::plot_grid(plot1, plot2, plot3, ncol = 1, rel_heights = c(1, 1, 1.9))
+
+
+# Arrange the plots with alignment and space
+#cowplot::plot_grid(plot1, plot2, plot3, ncol = 1, align = "v", axis = "lr", rel_heights = c(1,1,1), vjust = 2)
+
 
 ```
 
@@ -1159,6 +1174,24 @@ Firstly, the things you can see: The R console will show some results (see the W
 
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
 
+### Pulling saved model
+```{r}
+SCPbrt_Age0 <- here("data","PricklySculpinAge0_brt_4_005_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+yoy_scp_brt_allcount <- here("data","AllYOYSCP_count_brt_4_005_6_gbm_step.rds") %>% readRDS() #All count
+
+YOYSCP_BRT_PosCount <- here("data","SCP_YOY_positivecount_brt_4_001_6_gbm_step.rds") %>% readRDS() #Positive count
+
+
+#plots
+dismo::gbm.plot(SCPbrt_Age0, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(yoy_scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(YOYSCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+
+```
 ## Step 3: Validation
 
 ### 10-fold and loo
@@ -2057,6 +2090,24 @@ Firstly, the things you can see: The R console will show some results (see the W
 
 There will also be a graph.. This model was built with the default 10-fold cross-validation (CV). The solid black curve is the mean, and the dotted curves +- 1 standard error, for the changes in predictive deviance (ie as measured on the excluded folds of the CV). The red line shows the minimum of the mean, and the green line the number of trees at which that occurs. The final model that is returned in the model object is built on the full data set, using the number of trees identified as optimal.
 
+### Pulling Model
+```{r}
+SCPbrt_Age1P <- here("data","PricklySculpinAge1P_brt_4_001_6_gbm_step.rds") %>% readRDS() #Presence Absence
+
+Adult_scp_brt_allcount <- here("data","AllAge1Plus_SCP_count_brt_4_001_6_gbm_step.rds") %>% readRDS() #All count
+
+AdultSCP_BRT_PosCount <- here("data","SCP_Adult_positivecount_brt_4_0005_6_gbm_step.rds") %>% readRDS() #Positive count
+
+
+#plots
+dismo::gbm.plot(SCPbrt_Age1P, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(Adult_scp_brt_allcount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+dismo::gbm.plot(AdultSCP_BRT_PosCount, n.plots = 4, write.title= F, rug = T, smooth = TRUE, plot.layout=c(2,2), common.scale = T, y.label = "Fitted Value") #Makes the partial dependence plots.
+
+
+```
 ## Step 3: Validation
 
 ### 10-fold and loo

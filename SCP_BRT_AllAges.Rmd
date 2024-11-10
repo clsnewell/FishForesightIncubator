@@ -162,7 +162,7 @@ plot_grid(title, Plots, ncol = 1,
   rel_heights = c(0.1, 1))
 
 SummTable <- PricklySculpinData_AllAges %>% #Keep in mind that the ages are separate but included. A sampling event with both adult and age-0 fish count as present for 2 samples.
-  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
+ # group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
   dplyr::summarize(
     Mean_WT = mean(WaterTemperature, na.rm=TRUE),
     SD_WT = sd(WaterTemperature, na.rm=TRUE),
@@ -1101,21 +1101,43 @@ PricklySculpinDataPA %>% group_by(StationCode, AgeClass) %>% summarize(TotalPres
 ```
 
 # Age 0
-## Use gbm() from dismo to run model and create outputs
-
 
 ### Setting data and hyperparameters
 ```{r}
-PricklySculpinAge0<-PricklySculpinDataPA %>% filter(AgeClass %in% "Age-0")
+PricklySculpinAge0<-PricklySculpinData %>% filter(AgeClass %in% "Age-0")
 str(PricklySculpinAge0)
 unique(PricklySculpinAge0$Binary)
 (sum(PricklySculpinAge0$Binary)/nrow(PricklySculpinAge0))*100
+
+SummTable2 <- PricklySculpinAge0 %>% #Keep in mind that the ages are separate but included. A sampling event with both adult and age-0 fish count as present for 2 samples.
+  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
+  dplyr::summarize(
+    Mean_WT = mean(WaterTemperature, na.rm=TRUE),
+    SD_WT = sd(WaterTemperature, na.rm=TRUE),
+    MinWT=min(WaterTemperature, na.rm=TRUE),
+    MaxWT=max(WaterTemperature, na.rm=TRUE),
+    Mean_DO = mean(DO, na.rm=TRUE),
+    SD_DO = sd(DO, na.rm=TRUE),
+    MinDO=min(DO, na.rm=TRUE),
+    MaxDO=max(DO, na.rm=TRUE),
+    Mean_Secchi = mean(Secchi, na.rm=TRUE),
+    SD_Secchi = sd(Secchi, na.rm=TRUE),
+    MinSecchi=min(Secchi, na.rm=TRUE),
+    MaxSecchi=max(Secchi, na.rm=TRUE),
+    Mean_Salinity = mean(Salinity, na.rm=TRUE),
+    SD_Salinity = sd(Salinity, na.rm=TRUE),
+    MinSal=min(Salinity, na.rm=TRUE),
+    MaxSal=max(Salinity, na.rm=TRUE)
+  )
+
 
 #gbm.step wants bernoulli response {0, 1} 
 Complexity<-4
 LearningRate<-0.005
 Bag<-0.6  
 ```
+
+
 
 ### gbm.step
 Thanks Nima and Elith!
@@ -2024,10 +2046,33 @@ When looking at partial dependence plots, the y-axis represents the marginal imp
 
 ### Setting data and hyperparameters
 ```{r}
-PricklySculpinAge1plus<-PricklySculpinDataPA %>% filter(AgeClass %in% "Age-1+")
+PricklySculpinAge1plus<-PricklySculpinData %>% filter(AgeClass %in% "Age-1+")
 str(PricklySculpinAge1plus)
 unique(PricklySculpinAge1plus$AgeClass)
 #gbm.step wants bernoulli response {0, 1} 
+
+SummTable3 <- PricklySculpinAge1plus %>% #Keep in mind that the ages are separate but included. A sampling event with both adult and age-0 fish count as present for 2 samples.
+  group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 
+  dplyr::summarize(
+    Mean_WT = mean(WaterTemperature, na.rm=TRUE),
+    SD_WT = sd(WaterTemperature, na.rm=TRUE),
+    MinWT=min(WaterTemperature, na.rm=TRUE),
+    MaxWT=max(WaterTemperature, na.rm=TRUE),
+    Mean_DO = mean(DO, na.rm=TRUE),
+    SD_DO = sd(DO, na.rm=TRUE),
+    MinDO=min(DO, na.rm=TRUE),
+    MaxDO=max(DO, na.rm=TRUE),
+    Mean_Secchi = mean(Secchi, na.rm=TRUE),
+    SD_Secchi = sd(Secchi, na.rm=TRUE),
+    MinSecchi=min(Secchi, na.rm=TRUE),
+    MaxSecchi=max(Secchi, na.rm=TRUE),
+    Mean_Salinity = mean(Salinity, na.rm=TRUE),
+    SD_Salinity = sd(Salinity, na.rm=TRUE),
+    MinSal=min(Salinity, na.rm=TRUE),
+    MaxSal=max(Salinity, na.rm=TRUE)
+  )
+
+
 Complexity<-4
 LearningRate<-0.001
 Bag<-0.6  

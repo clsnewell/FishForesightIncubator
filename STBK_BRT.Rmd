@@ -92,7 +92,7 @@ SticklebackData %>% group_by(Month) %>% dplyr::summarize(N=n(), Count = sum(Coun
 #Overall capture probability
 OverallProb<-(sum(SticklebackData$Binary)/length(unique(SticklebackData$SampleRowID)))*100
 OverallProb
-
+sum(SticklebackData$Count)
 
 SummTable <- SticklebackData %>% 
   group_by(PresAbs) %>% #break down yearly summaries by including Year as a grouping variable. 

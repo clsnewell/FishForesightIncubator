@@ -99,6 +99,8 @@ Now lets check the dataset.
 glimpse(LongfinSmeltYOYData)
 summary(LongfinSmeltYOYData)
 NumSamples<-unique(LongfinSmeltYOYData$SampleRowID) #3505 sampling events.
+sum(LongfinSmeltYOYData$Count)
+LongfinSmeltYOYData$AgeClass
 ```
 
 ### 1 row for each sampling event.

@@ -2217,36 +2217,33 @@ summary(LongfinSmeltYOYData)
 
 # I want to show presences vs. all samples.
 
-Plot_Water<-LongfinSmeltYOYData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% 
+Plot_Water<-LongfinSmeltYOYData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))%>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
   group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=water_temp_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & water temperature SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin.") + theme(axis.text.x = element_text(angle = 45, hjust=1))
-#ggplot(aes(y=Count, x=WaterTemperature)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("Count") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
+  theme_bw(base_size = 18)+ labs(x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5.") + theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-Plot_DO<-LongfinSmeltYOYData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+
+Plot_DO<-LongfinSmeltYOYData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))%>% mutate(do_bin = as.numeric(do_bin))   %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=do_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
+  theme_bw(base_size = 18)+ labs( x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5.")
 
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
 
 Plot_Secchi<-LongfinSmeltYOYData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=Secchi, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & secchi SMFS 2011-2023", y ="Catch per minute trawl", x="Secchi (cm)", caption = "Secchi grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")
 
-Plot_Salinity<-LongfinSmeltYOYData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_Salinity<-LongfinSmeltYOYData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>%  mutate(salinity_bin = as.numeric(salinity_bin))   %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=salinity_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "YOY Longfin smelt & salinity SMFS 2011-2023", y ="Catch per minute trawl", x="Salinity", caption = "Salinity  rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
-#LongfinSmeltYOYData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
+  theme_bw(base_size = 18)+ labs( x="Salinity (ppt)", caption = "Salinity  rounded to 0.5.")
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
 # now add the title
-title <- ggdraw() + draw_label("Age-0 Longfin smelt count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+title <- ggdraw() + draw_label("Age-0 longfin smelt count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
     # add margin on the left of the drawing canvas,
     # so title is aligned with left edge of first plot
     plot.margin = margin(0, 0, 0, 7))

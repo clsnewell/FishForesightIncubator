@@ -67,7 +67,68 @@ library(gbm3)
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 ```
 
+### Visualizations
+```{r}
+SCPData<-PresAbs %>% filter(gensp %in% "Cottus asper") %>% dplyr::select(-...1, -...2)
+SCPData$Month<-as.factor(SCPData$Month)
 
+summary(SCPData)
+
+# I want to show presences vs. all samples.
+
+Plot_Water<-SCPData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
+  group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=water_temp_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs( x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5") + theme(axis.text.x = element_text(angle = 45, hjust=1))+ guides(fill="none")
+
+
+Plot_DO<-SCPData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))  %>% mutate(do_bin = as.numeric(do_bin))  %>%  group_by(do_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=do_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5.")
+
+#SCPData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
+
+Plot_Secchi<-SCPData %>% group_by(Secchi, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=Secchi, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")+ guides(fill="none")
+#SCPData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+
+Plot_Salinity<-SCPData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>%  mutate(salinity_bin = as.numeric(salinity_bin)) %>%  group_by(salinity_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=salinity_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Salinity (ppt)", caption = "Salinity  rounded to 0.5.") + guides(fill="none")
+#SCPData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Prickly sculpin count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+
+#Seasonality
+SCPData %>% dplyr::summarize(TotalCount=sum(Count), sd_Count=sd(Count), Effort=sum(TowDuration), CPUE=(TotalCount/Effort)) #Total presence = 3455 of 3505 36.03% presence of samples.
+SCPData %>%  group_by(Month, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=Month, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 26)+ labs(title = "Prickly sculpin by month SMFS 2011-2023", y ="Catch per minute trawl", x="Month")#, caption = "Month, age class grouped to get sum of counts and sum trawl duration for that month, age class combination. CPUE = counts by month, age class divided by total tow minutes for that month, age class")
+
+SCPData %>% group_by(StationCode, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=StationCode, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 22)+ labs(title = "Prickly sculpin by station SMFS 2011-2023", y ="Catch per minute trawl", x="Station Code")+ theme(axis.text.x = element_text(angle = 45, hjust=1))#, caption = "Station code grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")+ theme(axis.text.x = element_text(angle = 45, hjust=1))
+  
+  #group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+```
 # Age data visualization
 ## Quick Plot of plus counts and age dist
 ```{r}
@@ -1626,68 +1687,7 @@ library(gbm3)
 PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesightIncubator/Data/SMFS_Thesis_PresAbs_062524.csv")
 ```
 
-### Visualizations
-```{r}
-SCPData<-PresAbs %>% filter(gensp %in% "Cottus asper") %>% dplyr::select(-...1, -...2)
-SCPData$Month<-as.factor(SCPData$Month)
 
-summary(SCPData)
-
-# I want to show presences vs. all samples.
-
-Plot_Water<-SCPData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% 
-  group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=water_temp_bin, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "Prickly sculpin & water temperature SMFS 2011-2023", y ="Catch per minute trawl", x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin.") + theme(axis.text.x = element_text(angle = 45, hjust=1))+ guides(fill="none")
-#ggplot(aes(y=Count, x=WaterTemperature)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw() + ylab("Count") + xlab("Water Temperature (C)") #+ facet_wrap(~Year)
-
-Plot_DO<-SCPData %>% mutate(do_bin = as.factor(round(DO * 2) / 2))  %>% group_by(do_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=do_bin, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "Prickly sculpin & dissolved oxygen SMFS 2011-2023", y ="Catch per minute trawl", x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5  then grouped to get sum of counts and\n sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")
-
-#SCPData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
-
-Plot_Secchi<-SCPData %>% group_by(Secchi, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=Secchi, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "Prickly sculpin & secchi SMFS 2011-2023", y ="Catch per minute trawl", x="Secchi (cm)", caption = "Secchi grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")+ guides(fill="none")
-#SCPData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
-
-Plot_Salinity<-SCPData %>% mutate(salinity_bin = as.factor(round(Salinity * 2) / 2))  %>% group_by(salinity_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=salinity_bin, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw()+ labs(title = "Prickly sculpin & salinity SMFS 2011-2023", y ="Catch per minute trawl", x="Salinity", caption = "Salinity  rounded to 0.5 then grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin") + guides(fill="none")
-#SCPData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
-
-Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
-
-# now add the title
-title <- ggdraw() + draw_label("Prickly sculpin count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7))
-
-plot_grid(title, Plots, ncol = 1,
-  # rel_heights values control vertical title margins
-  rel_heights = c(0.1, 1))
-
-
-#Seasonality
-SCPData %>% dplyr::summarize(TotalCount=sum(Count), sd_Count=sd(Count), Effort=sum(TowDuration), CPUE=(TotalCount/Effort)) #Total presence = 3455 of 3505 36.03% presence of samples.
-SCPData %>%  group_by(Month, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=Month, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw(base_size = 26)+ labs(title = "Prickly sculpin by month SMFS 2011-2023", y ="Catch per minute trawl", x="Month")#, caption = "Month, age class grouped to get sum of counts and sum trawl duration for that month, age class combination. CPUE = counts by month, age class divided by total tow minutes for that month, age class")
-
-SCPData %>% group_by(StationCode, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
-  ggplot(aes(x=StationCode, y=CPUE, fill=AgeClass))+
-  geom_bar(stat="identity")+ 
-  theme_bw(base_size = 22)+ labs(title = "Prickly sculpin by station SMFS 2011-2023", y ="Catch per minute trawl", x="Station Code")+ theme(axis.text.x = element_text(angle = 45, hjust=1))#, caption = "Station code grouped to get sum of counts and sum trawl duration to get CPUE of counts by bin divided by total tow minutes for that bin")+ theme(axis.text.x = element_text(angle = 45, hjust=1))
-  
-  #group_by(StationCode) %>% dplyr::summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch yoy longfin smelt") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
-```
 
 ## Data filtering for ALL YOY counts
 ```{r}

@@ -160,6 +160,17 @@ cor(correlationdf, method = 'spearman')
 
 ### Visualizations
 ```{r}
+WaterTempDenisty<-ggplot(LongfinSmeltYOYDataPA, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(LongfinSmeltYOYDataPA, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(LongfinSmeltYOYDataPA, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(LongfinSmeltYOYDataPA, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
+
+
 # I want to show presences vs. all samples.
 #cdplot(y=LongfinSmeltYOYDataPA$PresAbs, x=LongfinSmeltYOYDataPA$WaterTemperature)
 

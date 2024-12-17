@@ -75,6 +75,8 @@ SCPData$Month<-as.factor(SCPData$Month)
 summary(SCPData)
 
 # I want to show presences vs. all samples.
+Tester<-SCPData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
+  group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow)
 
 Plot_Water<-SCPData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature * 2) / 2))  %>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
   group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
@@ -902,6 +904,17 @@ PricklySculpinData_AllAgesPosCount<-PricklySculpinData_AllAges %>% filter(Binary
 
 summary(PricklySculpinData_AllAgesPosCount)
 length(unique(PricklySculpinData_AllAgesPosCount$SampleRowID))
+
+
+WaterTempDenisty<-ggplot(PricklySculpinData_AllAgesPosCount, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(PricklySculpinData_AllAgesPosCount, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(PricklySculpinData_AllAgesPosCount, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(PricklySculpinData_AllAgesPosCount, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
 ```
 
 
@@ -1850,6 +1863,17 @@ YOY_SCPData_Positive<-PresAbs %>% filter(gensp %in% "Cottus asper", AgeClass %in
 YOY_SCPData_Positive<-as.data.frame(YOY_SCPData_Positive)
 summary(YOY_SCPData_Positive)
 length(unique(YOY_SCPData_Positive$SampleRowID))
+
+
+WaterTempDenisty<-ggplot(YOY_SCPData_Positive, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(YOY_SCPData_Positive, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(YOY_SCPData_Positive, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(YOY_SCPData_Positive, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
 ```
 
 
@@ -2733,6 +2757,17 @@ SCP1P_Positive<-PresAbs %>% filter(gensp %in% "Cottus asper", AgeClass %in% "Age
 SCP1P_Positive<-as.data.frame(SCP1P_Positive)
 summary(SCP1P_Positive)
 length(unique(SCP1P_Positive$SampleRowID))
+
+
+WaterTempDenisty<-ggplot(SCP1P_Positive, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(SCP1P_Positive, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(SCP1P_Positive, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(SCP1P_Positive, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
 ```
 
 

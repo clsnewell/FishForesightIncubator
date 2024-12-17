@@ -853,6 +853,17 @@ SticklebackData_PosCount<-SticklebackData %>% filter(Binary == 1)
 
 summary(SticklebackData_PosCount)
 length(unique(SticklebackData_PosCount$SampleRowID)) #467 samples
+
+
+WaterTempDenisty<-ggplot(SticklebackData_PosCount, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(SticklebackData_PosCount, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(SticklebackData_PosCount, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(SticklebackData_PosCount, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
 ```
 
 

@@ -160,6 +160,8 @@ cor(correlationdf, method = 'spearman')
 
 ### Visualizations
 ```{r}
+CountTable<-LongfinSmeltYOYDataPA %>% group_by(Count) %>% summarize(n=n())
+
 WaterTempDenisty<-ggplot(LongfinSmeltYOYDataPA, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
 
 SalinityDenisty<-ggplot(LongfinSmeltYOYDataPA, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
@@ -2219,7 +2221,7 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 
 LongfinSmeltYOYData<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2)
 LongfinSmeltYOYData$Month<-as.factor(LongfinSmeltYOYData$Month)
-
+LongfinSmeltYOYData %>% group_by()
 ```
 
 ### Visualizations
@@ -2284,6 +2286,8 @@ LongfinSmeltYOYData %>% group_by(StationCode) %>% summarize(TotalCount=sum(Count
 ```{r}
 LongfinSmeltYOYData_All<-PresAbs %>% filter(gensp %in% "Spirinchus thaleichthys", AgeClass %in% "Age-0") %>% dplyr::select(-...1, -...2) %>% group_by(SampleRowID, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
 LongfinSmeltYOYData_All<-as.data.frame(LongfinSmeltYOYData_All)
+
+LongfinSmeltYOYData_All %>% ggplot(aes(x=Count))+
 ```
 
 ## Step 2: Use gbm() from dismo to run model and create outputs
@@ -2590,6 +2594,17 @@ LongfinSmeltYOYData_Positive<-PresAbs %>% filter(gensp %in% "Spirinchus thaleich
 LongfinSmeltYOYData_Positive<-as.data.frame(LongfinSmeltYOYData_Positive)
 unique(LongfinSmeltYOYData_Positive$AgeClass)
 summary(LongfinSmeltYOYData_Positive)
+
+
+WaterTempDenisty<-ggplot(LongfinSmeltYOYData_Positive, aes(WaterTemperature))+geom_area(stat="bin")+ theme_bw()
+
+SalinityDenisty<-ggplot(LongfinSmeltYOYData_Positive, aes(Salinity))+geom_area(stat="bin")+ theme_bw()
+
+DODenisty<-ggplot(LongfinSmeltYOYData_Positive, aes(DO))+geom_area(stat="bin")+ theme_bw()
+
+SecchiDenisty<-ggplot(LongfinSmeltYOYData_Positive, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
+
+plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
 ```
 
 

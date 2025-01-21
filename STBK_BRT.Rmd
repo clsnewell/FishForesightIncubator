@@ -154,16 +154,16 @@ SticklebackData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary
 
 
 # 4 panel of wq
-Plot_Water<-SticklebackData %>% mutate(water_temp_bin = as.numeric( round(WaterTemperature * 2) / 2))  %>% 
+Plot_Water<-SticklebackData %>% mutate(water_temp_bin = as.numeric( round(WaterTemperature)))  %>% 
   group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=water_temp_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw(base_size = 18)+ labs(x="Water Temperature (C)", caption = "Water temperatures rounded to 0.5") 
+  theme_bw(base_size = 18)+ labs(x="Water Temperature (C)") 
 
-Plot_DO<-SticklebackData %>% mutate(do_bin = as.numeric(round(DO * 2) / 2))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_DO<-SticklebackData %>% mutate(do_bin = as.numeric(round(DO)))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=do_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)", caption = "Dissolved oxygen rounded to 0.5")
+  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)")
 
 
 Plot_Secchi<-SticklebackData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
@@ -172,10 +172,10 @@ Plot_Secchi<-SticklebackData %>% group_by(Secchi) %>% summarize(TotalCount=sum(C
   theme_bw(base_size = 18)+ labs(x="Secchi (cm)")+ scale_x_continuous(limits=c(0,100))
 
 
-Plot_Salinity<-SticklebackData %>% mutate(salinity_bin = as.numeric(round(Salinity * 2) / 2))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+Plot_Salinity<-SticklebackData %>% mutate(salinity_bin = as.numeric(round(Salinity)))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=salinity_bin, y=CPUE))+
   geom_bar(stat="identity")+ 
-  theme_bw(base_size = 18)+ labs(x= "Salinity (ppt)", caption = "Salinity  rounded to 0.5") 
+  theme_bw(base_size = 18)+ labs(x= "Salinity (ppt)") 
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 

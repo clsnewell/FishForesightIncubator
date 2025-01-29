@@ -184,7 +184,7 @@ Plot_DO<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=DO)) +
 Plot_Secchi<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-LongfinSmeltYOYDataPA %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("") + xlab("Salinity (ppt)") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -2229,7 +2229,7 @@ LongfinSmeltYOYData %>% group_by()
 summary(LongfinSmeltYOYData)
 
 # I want to show presences vs. all samples.
-
+#CPUE WQ PLOT
 Plot_Water<-LongfinSmeltYOYData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature)))%>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
   group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=water_temp_bin, y=CPUE))+
@@ -2250,6 +2250,44 @@ Plot_Secchi<-LongfinSmeltYOYData %>% group_by(Secchi) %>% summarize(TotalCount=s
 
 Plot_Salinity<-LongfinSmeltYOYData %>% mutate(salinity_bin = as.factor(round(Salinity)))  %>%  mutate(salinity_bin = as.numeric(salinity_bin))   %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=salinity_bin, y=CPUE))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs( x="Salinity (ppt)")
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Age-0 longfin smelt count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+
+
+#COUNT WQ PLOT
+Plot_Water<-LongfinSmeltYOYData %>% mutate(water_temp_bin = as.factor( round(WaterTemperature)))%>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
+  group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=water_temp_bin, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Water Temperature (C)") 
+
+
+Plot_DO<-LongfinSmeltYOYData %>% mutate(do_bin = as.factor(round(DO)))%>% mutate(do_bin = as.numeric(do_bin))   %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=do_bin, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs( x="Dissolved Oxygen (mg/L)")
+
+
+Plot_Secchi<-LongfinSmeltYOYData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=Secchi, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")
+
+Plot_Salinity<-LongfinSmeltYOYData %>% mutate(salinity_bin = as.factor(round(Salinity)))  %>%  mutate(salinity_bin = as.numeric(salinity_bin))   %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=salinity_bin, y=TotalCount))+
   geom_bar(stat="identity")+ 
   theme_bw(base_size = 18)+ labs( x="Salinity (ppt)")
 

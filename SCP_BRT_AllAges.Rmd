@@ -136,11 +136,13 @@ SCPData %>% group_by(StationCode, AgeClass) %>% summarize(TotalCount=sum(Count),
 ## Quick Plot of plus counts and age dist
 ```{r}
 #plot lengths by age class
-PresAbs %>% mutate(length_bin = as.numeric(round(StandardLength / 2) * 2)) %>% filter(gensp %in% "Cottus asper", !AgeClass=="NA") %>%   ggplot(aes(x=length_bin,y=Count, fill=AgeClass)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") + xlab("Standard length (mm)")+ theme_bw(base_size = 26) #6044 zeros removed to make plot.
+PresAbs %>% filter(gensp %in% "Cottus asper", !AgeClass=="NA") %>%   ggplot(aes(x=StandardLength,y=Count, fill=AgeClass)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") + xlab("Standard length (mm)")+ theme_bw(base_size = 26) #6044 zeros removed to make plot.
 
 
 #Plot lengths by plus counts 
-PresAbs %>% mutate(Type= ifelse(is.na(FishID), "Plus", "Measured"), sl_bin = as.numeric(round(StandardLength / 2) * 2)) %>% filter(gensp %in% "Cottus asper") %>% ggplot(aes(x=sl_bin,y=Count, fill=Type)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") +theme_bw(base_size = 20)+xlab("Standard length (mm)")
+#PresAbs %>% mutate(Type= ifelse(is.na(FishID), "Plus", "Measured"), sl_bin = as.numeric(round(StandardLength))) %>% filter(gensp %in% "Cottus asper") %>% ggplot(aes(x=sl_bin,y=Count, fill=Type)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") +theme_bw(base_size = 20)+xlab("Standard length (mm)")
+
+PresAbs %>% mutate(Type= ifelse(is.na(FishID), "Plus", "Measured")) %>% filter(gensp %in% "Cottus asper") %>% ggplot(aes(x=StandardLength,y=Count, fill=Type)) + geom_bar(stat="identity")+ ggtitle("Length distribution of prickly sculpin 2011-2023") +theme_bw(base_size = 20)+xlab("Standard length (mm)")
 
 
 PresAbs$Month<-as.factor(PresAbs$Month)
@@ -211,7 +213,7 @@ Plot_DO<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=DO)) +
 Plot_Secchi<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-PricklySculpinData_AllAges %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity (ppt)") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -919,6 +921,94 @@ plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2,
 ```
 
 
+## Visualization
+
+```{r}
+SCPData_Positive<-PresAbs %>% filter(gensp %in% "Cottus asper", Binary == 1) %>% group_by(SampleRowID, TowDuration, AgeClass, WaterTemperature, Salinity, Secchi, DO) %>% summarize(Count=sum(Count))
+SCPData_Positive<-as.data.frame(SCPData_Positive)
+summary(SCPData_Positive)
+length(unique(SCPData_Positive$SampleRowID))
+
+
+Plot_Water<-SCPData_Positive %>% mutate(water_temp_bin = as.factor(round(WaterTemperature)))  %>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
+  group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=water_temp_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs( x="Water Temperature (C)") + guides(fill="none")
+
+
+Plot_DO<-SCPData_Positive %>% mutate(do_bin = as.factor(round(DO)))  %>% mutate(do_bin = as.numeric(do_bin))  %>%  group_by(do_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=do_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)")
+
+#SCPData %>% ggplot(aes(y=Count, x=DO)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count")+ xlab("Dissolved Oxygen (mg/L)") #+ facet_wrap(~Year)
+
+Plot_Secchi<-SCPData_Positive %>% group_by(Secchi, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=Secchi, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")+ guides(fill="none")
+#SCPData %>% ggplot(aes(y=Count, x=Secchi)) + stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
+#hist_Salinity<-
+
+Plot_Salinity<-SCPData_Positive %>% mutate(salinity_bin = as.factor(round(Salinity)))  %>%  mutate(salinity_bin = as.numeric(salinity_bin)) %>%  group_by(salinity_bin, AgeClass) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
+  ggplot(aes(x=salinity_bin, y=CPUE, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Salinity (ppt)") + guides(fill="none")
+#SCPData %>% ggplot(aes(y=Count, x=Salinity))+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw()+ ylab("Count") + xlab("Salinity") #+ facet_wrap(~Year)
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Prickly sculpin count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+######################################  
+
+Plot_Water<-SCPData_Positive %>% mutate(water_temp_bin = as.factor(round(WaterTemperature)))  %>% mutate(water_temp_bin = as.numeric(water_temp_bin))  %>% 
+  group_by(water_temp_bin, AgeClass) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=water_temp_bin, y=TotalCount, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs( x="Water Temperature (C)") + guides(fill="none")
+
+
+Plot_DO<-SCPData_Positive %>% mutate(do_bin = as.factor(round(DO)))  %>% mutate(do_bin = as.numeric(do_bin))  %>%  group_by(do_bin, AgeClass) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=do_bin, y=TotalCount, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)")
+
+
+Plot_Secchi<-SCPData_Positive %>% group_by(Secchi, AgeClass) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=Secchi, y=TotalCount, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")+ guides(fill="none")
+
+
+Plot_Salinity<-SCPData_Positive %>% mutate(salinity_bin = as.factor(round(Salinity)))  %>%  mutate(salinity_bin = as.numeric(salinity_bin)) %>%  group_by(salinity_bin, AgeClass) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=salinity_bin, y=TotalCount, fill=AgeClass))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Salinity (ppt)") + guides(fill="none")
+
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Prickly sculpin count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+```
 ## Step 2: Use gbm() from dismo to run model and create outputs
 
 Thanks Nima and Elith! Follow <https://bradleyboehmke.github.io/HOML/gbm.html> for tuning strategy?
@@ -1173,6 +1263,30 @@ PricklySculpinDataPA$Month<-as.factor(PricklySculpinDataPA$Month)
 
 PricklySculpinDataPA %>% group_by(Month, AgeClass) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=length(unique(SampleRowID)), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=Month, y=TotalPresence, fill=AgeClass)) +geom_col()+geom_linerange(aes(ymin=TotalPresence-sd_binary, ymax=TotalPresence+sd_binary))+theme_bw(base_size = 26)+ylab("Trawls that catch PricklySculpin") +xlab("Month (summed 2011-2023)") #+ theme(axis.text.x = element_text(angle = 45, hjust=1))
 PricklySculpinDataPA %>% group_by(StationCode, AgeClass) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=length(unique(SampleRowID)), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence, fill=AgeClass)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch PricklySculpin") +xlab("Station Code") + theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+
+
+
+Plot_Water<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=WaterTemperature, fill=AgeClass)) + geom_violin()+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", position = position_dodge(width = 0.9), color="black") + theme_bw(base_size = 18) + ylab("") + xlab("Water Temperature (C)")+ guides(fill="none") + facet_wrap(~AgeClass, nrow=2)
+
+Plot_DO<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=DO, fill=AgeClass)) + 
+  geom_violin()+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", position = position_dodge(width = 0.9), color="black") + theme_bw(base_size = 18)+ ylab("")+ xlab("Dissolved Oxygen (mg/L)") + facet_wrap(~AgeClass, nrow=2)
+
+Plot_Secchi<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=Secchi, fill=AgeClass)) + geom_violin()+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", position = position_dodge(width = 0.9), color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Secchi (cm)") + facet_wrap(~AgeClass, nrow=2)+ guides(fill="none") #+ facet_wrap(~Year)
+
+Plot_Salinity<-PricklySculpinDataPA %>% ggplot(aes(y=PresAbs, x=Salinity, fill=AgeClass)) + geom_violin()+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", position = position_dodge(width = 0.9), color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity (ppt)")+ guides(fill="none")+ facet_wrap(~AgeClass, nrow=2) #+ facet_wrap(~Year)
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+#boing
+# now add the title
+title <- ggdraw() + draw_label("PricklySculpin presence/absence by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
 ```
 
 # Age 0
@@ -1875,6 +1989,8 @@ DODenisty<-ggplot(YOY_SCPData_Positive, aes(DO))+geom_area(stat="bin")+ theme_bw
 SecchiDenisty<-ggplot(YOY_SCPData_Positive, aes(Secchi))+geom_area(stat="bin")+ theme_bw()
 
 plot_grid(WaterTempDenisty, SalinityDenisty, DODenisty, SecchiDenisty, ncol = 2, labels = "AUTO")
+
+
 ```
 
 

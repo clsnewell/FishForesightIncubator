@@ -55,7 +55,7 @@ PresAbs<-read_csv("C:/Users/cnewe/OneDrive/Documents/Incubator/Code/FishForesigh
 # Quick Plot of Lengths and Plus Counts
 ```{r}
 #Plot lengths by plus counts 
-PresAbs %>% mutate(Type= ifelse(is.na(FishID), "Plus", "Measured"), sl_bin = as.numeric(round(StandardLength / 2) * 2)) %>% filter(gensp %in% "Gasterosteus aculeatus") %>% ggplot(aes(x=sl_bin,y=Count, fill=Type)) + geom_bar(stat="identity")+ ggtitle("Length distribution of stickleback 2011-2023") +theme_bw(base_size = 20)+xlab("Standard length (mm)")
+PresAbs %>% mutate(Type= ifelse(is.na(FishID), "Plus", "Measured")) %>% filter(gensp %in% "Gasterosteus aculeatus") %>% ggplot(aes(x=StandardLength,y=Count, fill=Type)) + geom_bar(stat="identity")+ ggtitle("Length distribution of stickleback 2011-2023") +theme_bw(base_size = 20)+xlab("Standard length (mm)")
 ```
 
 # PresenceAbsence
@@ -119,6 +119,9 @@ print(SummTable)
 write.csv(SummTable, here("data", "Stickleback_SummTable.csv"))
 #Seasonality
 SticklebackData %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n))
+
+
+SticklebackData %>% ggplot(aes())
 ```
 
 ### Plots
@@ -132,7 +135,7 @@ Plot_DO<-SticklebackData %>% ggplot(aes(y=PresAbs, x=DO)) +
 Plot_Secchi<-SticklebackData %>% ggplot(aes(y=PresAbs, x=Secchi)) + 
   geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Secchi (cm)") #+ facet_wrap(~Year)
 
-Plot_Salinity<-SticklebackData %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity") #+ facet_wrap(~Year)
+Plot_Salinity<-SticklebackData %>% ggplot(aes(y=PresAbs, x=Salinity)) + geom_violin(fill = "lightseagreen")+ stat_summary(fun.data="mean_sdl", fun.args=list(mult=1), geom= "pointrange", color="black") + theme_bw(base_size = 18)+ ylab("") + xlab("Salinity (ppt)") #+ facet_wrap(~Year)
 
 Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
 
@@ -153,7 +156,7 @@ SticklebackData %>% group_by(Month) %>% summarize(TotalPresence=sum(Binary), sd_
 SticklebackData %>% group_by(StationCode) %>% summarize(TotalPresence=sum(Binary), sd_binary=sd(Binary), n=n(), PercentageOfPresence=100*(TotalPresence/n)) %>% ggplot(aes(x=StationCode, y=PercentageOfPresence)) +geom_col()+theme_bw(base_size = 26)+ylab("% of trawls that catch Stickleback") +xlab("Station Code") + ggtitle("Stickleback % Sampling Stations")+ theme(axis.text.x = element_text(angle = 45, hjust=1))
 
 
-# 4 panel of wq
+# 4 panel of wq CPUE
 Plot_Water<-SticklebackData %>% mutate(water_temp_bin = as.numeric( round(WaterTemperature)))  %>% 
   group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=water_temp_bin, y=CPUE))+
@@ -174,6 +177,44 @@ Plot_Secchi<-SticklebackData %>% group_by(Secchi) %>% summarize(TotalCount=sum(C
 
 Plot_Salinity<-SticklebackData %>% mutate(salinity_bin = as.numeric(round(Salinity)))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count), TotalTow=sum(TowDuration), CPUE = TotalCount/TotalTow) %>% 
   ggplot(aes(x=salinity_bin, y=CPUE))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x= "Salinity (ppt)") 
+
+Plots<-plot_grid(Plot_Water, Plot_DO, Plot_Secchi, Plot_Salinity, ncol = 2, labels = "AUTO")
+
+# now add the title
+title <- ggdraw() + draw_label("Stickleback count by water quality variables for SMFS 2011-2023", fontface = 'bold', x = 0, hjust = 0) +  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, Plots, ncol = 1,
+  # rel_heights values control vertical title margins
+  rel_heights = c(0.1, 1))
+
+
+
+# 4 panel of wq COUNT
+Plot_Water<-SticklebackData %>% mutate(water_temp_bin = as.numeric(round(WaterTemperature))) %>% 
+  group_by(water_temp_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=water_temp_bin, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Water Temperature (C)") 
+
+Plot_DO<-SticklebackData %>% mutate(do_bin = as.numeric(round(DO)))  %>% group_by(do_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=do_bin, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Dissolved Oxygen (mg/L)")
+
+
+Plot_Secchi<-SticklebackData %>% group_by(Secchi) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=Secchi, y=TotalCount))+
+  geom_bar(stat="identity")+ 
+  theme_bw(base_size = 18)+ labs(x="Secchi (cm)")+ scale_x_continuous(limits=c(0,100))
+
+
+Plot_Salinity<-SticklebackData %>% mutate(salinity_bin = as.numeric(round(Salinity)))  %>% group_by(salinity_bin) %>% summarize(TotalCount=sum(Count)) %>% 
+  ggplot(aes(x=salinity_bin, y=TotalCount))+
   geom_bar(stat="identity")+ 
   theme_bw(base_size = 18)+ labs(x= "Salinity (ppt)") 
 
